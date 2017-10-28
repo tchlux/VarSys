@@ -95,12 +95,12 @@ if ((not os.path.exists(MEAN_MDA_DIR)) or
 
     # Generate the testing data files if necessary
     inputs = stat_data[settings]
-    if not(os.path.exists(MEAN_MDA_DIR)):
-        output = stat_data["Mean"]
-        make_test_data(inputs, output, "VarSys-2017"+"-Mean", settings)
-    # if not(os.path.exists(VAR_MDA_DIR)):
-    #     output = stat_data["Variance"]
-    #     make_test_data(inputs, output, "VarSys-2016"+"-Variance", settings)
+    # if not(os.path.exists(MEAN_MDA_DIR)):
+    #     output = stat_data["Mean"]
+    #     make_test_data(inputs, output, "VarSys-2017"+"-Mean", settings)
+    if not(os.path.exists(VAR_MDA_DIR)):
+        output = stat_data["Variance"]
+        make_test_data(inputs, output, "VarSys-2016"+"-Variance", settings)
 
     print("Ready to test and evaluate")
 
