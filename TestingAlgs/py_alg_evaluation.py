@@ -35,21 +35,20 @@ from py_settings import *
 # 4) repeat step 1 using all 4 continuous dimensions, averaging the
 #    variance / mean for overlapping configurations 
 
-# DATA = "CFQ_NOOP_Fread.pkl"
-# TARGET = "Throughput"
-# # Two data sets, one for mean throughput data, the other for variance
-# # of throughput data.
-# MEAN_MDA_DIR = "VarSys-2016-Mean_MDA_Data_0"
-# VAR_MDA_DIR = "VarSys-2016-Variance_MDA_Data_0"
-# MAKE_ERROR_PLOT = False
-
-
-DATA = "Stage_1_Fread.pkl"
+DATA = "CFQ_NOOP_Fread.pkl"
 TARGET = "Throughput"
 # Two data sets, one for mean throughput data, the other for variance
 # of throughput data.
-MEAN_MDA_DIR = "VarSys-2017-Mean_MDA_Data_0"
-VAR_MDA_DIR = "VarSys-2017-Variance_MDA_Data_0"
+MEAN_MDA_DIR = "VarSys-2016-Mean_MDA_Data_0"
+VAR_MDA_DIR = "VarSys-2016-Variance_MDA_Data_0"
+
+# DATA = "Stage_1_Fread.pkl"
+# TARGET = "Throughput"
+# # Two data sets, one for mean throughput data, the other for variance
+# # of throughput data.
+# MEAN_MDA_DIR = "VarSys-2017-Mean_MDA_Data_0"
+# VAR_MDA_DIR = "VarSys-2017-Variance_MDA_Data_0"
+
 
 # Load the original data file (and get the column names)
 with open(DATA,"rb") as f:
