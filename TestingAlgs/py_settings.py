@@ -22,9 +22,9 @@ import os, sys, time, fcntl, signal, inspect
 from util.algorithms import *
 
 ALGORITHMS = [NearestNeighbor(), LinearModel(), FitBoxMesh(),
-              Delaunay(), LSHEP(), MARS(), BayesTree(),
-              NearestPlane(), MaxBoxMesh(), tgp(), dynaTree(),
-              BBS()]
+              qHullDelaunay(), Delaunay(), LSHEP(), MARS(),
+              BayesTree(), NearestPlane(), MaxBoxMesh(), tgp(),
+              dynaTree(), BBS()]
 
 # Get the name of a class as listed in python source file.
 GET_CLASS_NAME = lambda obj: (repr(obj)[1:].split(" ")[0]).split(".")[-1]
