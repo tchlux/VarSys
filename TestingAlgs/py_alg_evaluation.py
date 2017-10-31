@@ -201,8 +201,8 @@ for alg_name in to_test:
                 fit_times = np.array(alg_performance_data[x_point]["Fit_Time"])
                 eval_times = np.array(alg_performance_data[x_point]["Evaluation_Time"])
                 truth = alg_performance_data[x_point]["Truth"]
-                guess_min = min(guesses)
-                guess_max = max(guesses)
+                guess_min = np.min(guesses)
+                guess_max = np.max(guesses)
                 mean_error = (guesses - truth).mean()
                 mean_abs_error = (abs(guesses - truth)).mean()
                 rel_error = (((guesses - truth) / truth) if truth != 0 
