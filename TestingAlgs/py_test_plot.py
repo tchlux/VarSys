@@ -8,7 +8,7 @@ from util.plotly import *
 from py_settings import *
 
 # Preparing the data
-normalize_points = False
+normalize_points = True
 random_points = False
 random_perturbation = False
 tight_plot = False
@@ -34,7 +34,9 @@ multiplier = 10
 # algorithms = [NearestNeighbor()]
 # algorithms = [LSHEP()]
 # algorithms = [LinearModel()]
-algorithms = [Delaunay()]
+# algorithms = [Delaunay()]
+# algorithms = [ MLPRegressor() ] 
+algorithms = [ SVR() ] 
 
 # algorithms = [NearestPlane()]
 
@@ -51,6 +53,13 @@ else:
 
 if random_perturbation:
     points += np.random.random(size=points.shape)*perturbation_multiplier
+
+FUN = lambda x: 100 * np.sum(x)**2
+# FUN = lambda x: (x[0]-2)*(x[1]-1) if ((x[0] > 2) and (x[1] > 1)) else 0
+# FUN = lambda x: 1*x[0]
+# FUN = lambda x: (x[0]-num_points/3)*(x[1]-num_points/2)**2
+# FUN = lambda x: np.cos(x[0]) * (np.sin(x[1]) if len(x) > 1 else 1.0) + 1
+# FUN = lambda x: np.product(np.sin(np.array(x))/10)
 
 points *= 0.05
 # Calculate the associated response values

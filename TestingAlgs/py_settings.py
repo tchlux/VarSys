@@ -4,31 +4,10 @@ from util.classes import AtomicOpen
 import numpy as np
 # For retrieving the comparing algorithms
 import os, sys, time, fcntl, signal, inspect
-# HOME = os.path.expanduser("~")
-# CURR_DIR = os.path.abspath(os.path.dirname(__file__))
-# SOURCE_DIRS = [
-#     os.path.join(CURR_DIR,"fmodpy_fit_box_mod"),
-#     os.path.join(CURR_DIR,"fmodpy_max_box_mod"),
-#     os.path.join(CURR_DIR,"fmodpy_linear_shepard"),
-#     os.path.join(CURR_DIR,"fmodpy_marspack"),
-#     os.path.join(CURR_DIR,"fmodpy_VTdelaunay"),
-#     os.path.join(CURR_DIR,"rpy2_BayesTree"),
-#     os.path.join(CURR_DIR,"rpy2_tgp"),
-#     os.path.join(CURR_DIR,"rpy2_dynaTree"),
-#     os.path.join(CURR_DIR,"extra_algorithms")
-# ]
-# sys.path += SOURCE_DIRS
-
 from util.algorithms import *
-
-ALGORITHMS = [NearestNeighbor(), LinearModel(), FitBoxMesh(),
-              qHullDelaunay(), Delaunay(), LSHEP(), MARS(),
-              BayesTree(), NearestPlane(), MaxBoxMesh(), tgp(),
-              dynaTree(), BBS()]
 
 # Get the name of a class as listed in python source file.
 GET_CLASS_NAME = lambda obj: (repr(obj)[1:].split(" ")[0]).split(".")[-1]
-
 
 # Reduce a number to its minimal display form (no unnecessary 0's on right)
 CLEAN_NUMBER_STRING = lambda number: str(number).rstrip("0").rstrip(".") \

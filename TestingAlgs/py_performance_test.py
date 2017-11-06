@@ -7,7 +7,10 @@ from py_settings import *
 fit_times = {}
 eval_times = {}
 max_iters = MAX_ITERS
-surfs = ALGORITHMS.copy()
+surfs = [NearestNeighbor(), LinearModel(), FitBoxMesh(),
+         qHullDelaunay(), Delaunay(), LSHEP(), MARS(),
+         BayesTree(), NearestPlane(), MaxBoxMesh(), tgp(),
+         dynaTree(), BBS(), MLPRegressor()]
 num_points = NUM_POINTS
 dim = DIM
 surfs = surfs[:4]

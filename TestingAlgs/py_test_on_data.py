@@ -64,7 +64,7 @@ for i in range(200):
 
     # train = "/Users/thomaslux/Desktop/VarSys-2016-Mean_MDA_Data_0/2-F_Size--Threads/14.81--85.19/Train-0.csv"
     # test  = "/Users/thomaslux/Desktop/VarSys-2016-Mean_MDA_Data_0/2-F_Size--Threads/14.81--85.19/Test-0.csv"
-
+ 
 
     # Create surface
     # surf = NearestNeighbor()

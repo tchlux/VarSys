@@ -105,14 +105,18 @@ if ((not os.path.exists(MEAN_MDA_DIR)) and
     print("Ready to test and evaluate")
 
 
-
-# ALGORITHMS = [FitBoxMesh(), LSHEP(), MARS(), Delaunay(), 
-#               dynaTree(), BayesTree(), tgp()]
+# Generate the list of algorithms (from all possible algorithms in util)
+algorithms = []
+for name in dir(util.algorithms):
+    try:
+        if issubclass(util.algorithms.Approximator, getattr(util.algorithms,name)):
+            algorithms.append(getattr(util.algorithms,name)())
+    except:
+        pass
 
 # All algorithms have:
 #  <alg>.fit(<inputs>, <responses>)
 #  <alg>(<inputs>) -> <responses>
-
 
 # The names of the outputs from testing
 data_header = settings.copy() + ["Algorithm", "Dimension",
@@ -136,7 +140,7 @@ data_header = settings.copy() + ["Algorithm", "Dimension",
 to_test = sys.argv[1:]
 for alg_name in to_test:
     # Retreive the requested algorithm
-    for alg in ALGORITHMS:
+    for alg in algorithms:
         name = GET_CLASS_NAME(alg)
         if (name == alg_name): break
     else:
