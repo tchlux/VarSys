@@ -110,7 +110,7 @@ if ((not os.path.exists(MEAN_MDA_DIR)) and
 algorithms = []
 for name in dir(util.algorithms):
     try:
-        if issubclass(util.algorithms.Approximator, getattr(util.algorithms,name)):
+        if issubclass(getattr(util.algorithms,name), util.algorithms.Approximator):
             algorithms.append(getattr(util.algorithms,name)())
     except:
         pass
@@ -140,6 +140,7 @@ data_header = settings.copy() + ["Algorithm", "Dimension",
 
 to_test = sys.argv[1:]
 for alg_name in to_test:
+    print(alg_name)
     # Retreive the requested algorithm
     for alg in algorithms:
         name = GET_CLASS_NAME(alg)
