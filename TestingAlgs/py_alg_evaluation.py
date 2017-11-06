@@ -3,6 +3,7 @@ import pickle, sys, pathlib
 from util.multi_dim_analysis import make_test_data, MDA_Iterator
 from notifications import send_email
 from util.decorators import timeout_after
+import util.algorithms
 from py_settings import *
 
 # 1) using all 4 continuous dimensions (file size, record size,
