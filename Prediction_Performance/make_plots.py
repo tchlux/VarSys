@@ -39,10 +39,13 @@ print(len(data))
 
 algorithms = sorted(np.unique(data["Algorithm"]))
 
-lower = -5000000
-upper =  5000000
+# lower = -5000000
+# upper =  5000000
+lower = -2
+upper =  2
 y_bins = dict(start=lower, end=upper, size=(upper - lower) / 100)
-
+lower_x = 0
+upper_x = .21
 
 # ============================================
 #      Making histogram plot by dimension     
@@ -57,26 +60,27 @@ brief_title = "Distributions of Prediction Error with Increasing Dimension Data"
 full_text_title = "<b>"+brief_title+"</b><br>"+\
                   "Where the individual x-axes are the probability ranges"+\
                   " for the bars in each histogram."
+error_col = "Relative_Mean_Error"
 
-for dim in range(1,5):
+for dim in range(1,np.max(data["Dimension"])+1):
     dim_data = data[(data["Dimension"] == dim)]
     title = (brief_title if dim == 4 else "")
     x_axis = "%i Dimension"%dim + ("s" if dim > 1 else "")
-    y_axis = ("Error in Predicted System Throughput" if dim == 1 else "")
+    y_axis = ("Relative Error in Predicted System Throughput" if dim == 1 else "")
     p = Plot(title, x_axis, y_axis)
     for alg in algorithms:
         alg_data = dim_data[(dim_data["Algorithm"] == alg)]
-        values = alg_data["Mean_Error"]
+        values = alg_data[error_col]
         y_bins['start'] = min(values)
         y_bins['end'] = max(values)
         results[((dim,),alg)] = abs(values).mean()
         p.add_histogram(alg, values, bar_spacing="y", group=alg,
                         histnorm='probability',
                         ybins=y_bins, show_in_legend=(dim==1))
-    plots.append(p.plot(y_range=(lower,upper), html=False,
-                        layout={'title':full_text_title}))
+    plots.append(p.plot(y_range=(lower,upper), x_range=(lower_x,upper_x),
+                         html=False, layout={'title':full_text_title}))
 
-multiplot(plots, shared_y=True, file_name=out_name,show=False)
+# multiplot(plots, shared_y=True, file_name=out_name,show=False)
 
 # ======================================================
 #      Making histogram plot by training percentage     
@@ -103,22 +107,22 @@ for min_train,max_train in training_ranges:
     min_val = min(set_data["Train_Percentage"])
     max_val = max(set_data["Train_Percentage"])
     x_axis = "[%.0f - %.0f%%] Training"%(min_val,max_val)
-    y_axis = ("Error in Predicted System Throughput" if last_entry else "")
+    y_axis = ("Relative Error in Predicted System Throughput" if first_entry else "")
     # Initialize thep lot
     p = Plot(title, x_axis, y_axis)
     for alg in algorithms:
         alg_data = set_data[(set_data["Algorithm"] == alg)]
-        values = alg_data["Mean_Error"]
+        values = alg_data[error_col]
         y_bins['start'] = min(values)
         y_bins['end'] = max(values)
         results[((round(min_val),round(max_val)),alg)] = abs(values).mean()
         p.add_histogram(alg, values, bar_spacing="y", group=alg,
                         histnorm='probability', ybins=y_bins,
                         show_in_legend=first_entry)
-    plots.append(p.plot(y_range=(lower,upper), html=False,
-                        layout={'title':full_text_title}))
+    plots.append(p.plot(y_range=(lower,upper), x_range=(lower_x,upper_x),
+                         html=False, layout={'title':full_text_title}))
 
-multiplot(plots, shared_y=True, file_name=out_name, append=True, show=True)
+# multiplot(plots, shared_y=True, file_name=out_name, append=True, show=True)
 
 # ===========================================
 #      Printing out results in text form     
@@ -143,7 +147,7 @@ for k in keys:
             print("[%.0f - %.0f%%] Training Data"%(min_val,max_val))
     # Extract out information for printing neatly
     alg = k[1]
-    val = str(int(round(results[k])))
+    val = "%0.2f"%(results[k])
     print('',alg+(longest_name - len(alg))*" ",
           (longest_result - len(val))*" " + val)
     # Collect algorithm results
@@ -153,9 +157,9 @@ for k in keys:
 print()
 print()
 algorithms.sort(key=lambda alg: sum(alg_results[alg]) / len(alg_results[alg]))
-print("ALGORITHM   AVG ABSOLUTE MEAN ERROR")
+print("ALGORITHM   AVG RELATIVE MEAN ERROR")
 for alg in algorithms:
-    val = str(int(round(sum(alg_results[alg]) / len(alg_results[alg]))))
+    val = "%0.2f"%(sum(alg_results[alg]) / len(alg_results[alg]))
     print(alg+(longest_name-len(alg))*" ",
           " "*(longest_result - len(val))+val)
 exit()

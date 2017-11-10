@@ -84,7 +84,7 @@
 \def\SCSsymposiumacro{HPC} % High Performance Computing Symposium
 
 % title
-\title{Comparison of Models of I/O Characteristics \\ in High
+\title{Predictive Modeling of I/O Characteristics \\ in High
   Performance Computing Systems}
 
 % AUTHOR LIST
@@ -140,7 +140,7 @@ consumption, or maximize computational throughput of a given
 system. This paper analyzes a seven-dimensional dataset measuring the
 input/output (I/O) characteristics of a cluster of identical computers
 using the benchmark IOzone. The I/O performance characteristics are
-modelled with respect to system configuration using multivariate
+modeled with respect to system configuration using multivariate
 interpolation and approximation techniques. The analysis reveals that
 accurate models of I/O characteristics for a computer system may be
 created from a small fraction of possible configurations, and that
@@ -149,7 +149,8 @@ of system parameters being modeled increases. These results have
 strong implications for future predictive analyses based on more
 comprehensive sets of system parameters.
 
-\textbf{Keywords:} Regression, approximation, other stuff
+\textbf{Keywords:} Regression, approximation, interpolation,
+performance modeling
 
 
 %     Introduction     
@@ -161,9 +162,9 @@ chore necessary for configuring HPC systems. The procedures for this
 tuning vary largely from system to system and are often subjectively
 guided by the system engineer(s). Once a desired level of performance
 is achieved, HPC systems often remain in that base configuration with
-all subsequent modifications being incremental. The changes made are
-often associated with updates and job-specific customizations. In the
-case that a system has changing workloads or non-stationary
+all subsequent modifications being incremental. Future changes made
+are often associated with updates and job-specific customizations. In
+the case that a system has changing workloads or non-stationary
 performance objectives that range from maximizing computational
 throughput to minimizing power consumption and system variability, it
 becomes obvious that a more effective and automated tool is needed for
@@ -171,40 +172,43 @@ configuring systems. This scenario presents a challenging and
 important application of multivariate approximation and interpolation
 techniques.
 
+
 \begin{enumerate}
-\item The value of multivariate modlling
+\item The value of multivariate Modeling
 \item The data context
 \item The proposed method for using multivariate models
 \item The impact of effective models
 \end{enumerate}
 
-\subsection{Approximation}
-
 This paper compares five multivariate approximation techniques that
 operate on inputs in $\mathbb{R}^d$ (vectors of $d$ real numbers) and
-produce predicted responses in $\mathbb{R}^1$. Three of the techniques
-are regression-based and produce models that do not perfectly
-reproduce the inputs, but are hopefully more generalizable. The
-ramaining two techniques are interpolation techniques that reproduce
-input data exactly at the expense of higher model complexity. The
-sections below outline the mathematical formulations of each technique
-and provide computational complexity bounds.
+produce predicted responses in $\mathbb{R}^1$. In order to provide
+coverage of the varied mathematical strategies that can be employed to
+solve the continuous modeling problem, three of the techniques are
+regression-based and the remaining two techniques produce
+interpolants. The sections below outline the mathematical formulations
+of each technique and provide computational complexity bounds.
 
+\subsection{Approximation}
 \subsubsection{Multivariate Adaptive Regression Splines}
 \subsubsection{Multi-Layer Perceptron Regressor}
 \subsubsection{Support Vector Regressor}
 
 \subsection{Interpolation}
-\subsubsection{Linear Shepard}
 \subsubsection{Delaunay}
+\subsubsection{Linear Shepard}
 
+The remainder of the paper is broken up into \_ parts. \textit{(will
+  fill in the parts and descriptions once they are finalized)}
 
 %     Related Work     
 %======================
 \section{Related Work}
 \begin{enumerate}
 \item Not sure how much to include here? Shooting for thoroughness or
-  simply necessary coverage?
+  simply necessary coverage? How much background should I expect the
+  readers of this paper to have in the ``multivariate modeling of
+  systems'' area?
 \end{enumerate}
 
 
@@ -212,14 +216,34 @@ and provide computational complexity bounds.
 %=====================
 \section{Methodology}
 \subsection{Data}
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c|c|}
+    
+  \end{tabular}
+  \caption{}
+  \label{tab:data_type}
+\end{table}
+
 \subsection{Dimensional Analysis}
+This work utilizes an extension to standard k-fold cross validation
+that allows for a more thorough investigation of the expected model
+performance in a variety of real-world situations. Alongside
+randomized splits, two extra components are considered: the amount of
+training data provided, and the dimension of the input data. It is
+important to consider that algorithms which perform well with less
+training input also require less experimentation. Although, the amount
+of training data required may change as a function of the number of
+input dimensions and this needs to be studied as well.
+
 \begin{enumerate}
 \item Cycling the categorical settings
 \item Selecting subsets of 1,2,3 up to 4 dimensions
 \item Cycling different training : testing ratios (5:95 $\rightarrow$ 95:5)
-\item Generating 200 random training : testing splits that ensure the
-  testing points are not outside the convex hull of the training.
-\item Selecting training points to be well-spaced using QNSTOPP algorithm.
+\item Generating 200 random training : testing splits
+\item Ensuring the testing points are on/inside the convex hull of the training.
+\item Ensuring the training points are well-spaced.
 \end{enumerate}
 
 \subsection{Prediction}
@@ -233,6 +257,105 @@ and provide computational complexity bounds.
 %=================
 \section{Results}
 \subsection{I/O Throughput Mean}
+
+%% \begin{center}
+%%   \includegraphics[width=\textwidth]{Prediction_Performance_Dim.pdf}
+%%   \caption{In this figure we see how the distribution of errors }
+%% \end{center}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth]{Prediction_Performance_TT_Ratio.pdf}
+  \caption{In this figure, it can be seen how the distribution of
+    prediction errors for each algorithm is affected by the quantity
+    of training data provided. Notice that for all amounts of training
+    data, Delaunay has the largest likelihoods around 0 error.}
+  \label{fig:tt_ratio}
+\end{figure}
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c||c|c|c|}
+    %% \hline
+    %% \multicolumn{4}{|c|}{Table Title}\\
+    \hline
+    \textbf{Algorithm} & \textbf{Input Dimension} & \textbf{Mean Absolute Error} & \textbf{Mean Relative Error}\\
+    \hline
+    Delaunay     & 1 & 2060267   & 0.03 \\
+                 & 2 & 2916224   & 0.07 \\
+                 & 3 & 3001794   & 0.09 \\
+                 & 4 & 3134779   & 0.10 \\
+    \hline
+    LSHEP        & 1 & 6353148   & 0.06 \\
+                 & 2 & 13038882  & 1.52 \\
+                 & 3 & 5446207   & 1.13 \\
+                 & 4 & 5133648   & 1.07 \\
+    \hline
+    MARS         & 1 & 2176368   & 0.03 \\
+                 & 2 & 6213369   & 0.61 \\
+                 & 3 & 4024964   & 0.65 \\
+                 & 4 & 4497414   & 1.01 \\
+    \hline
+    MLPRegressor & 1 & 2461097   & 0.06 \\
+                 & 2 & 8883580   & 0.81 \\
+                 & 3 & 11190977  & 2.03 \\
+                 & 4 & 11831721  & 2.20 \\
+    \hline
+    SVR          & 1 & 19306731  & 0.96 \\
+                 & 2 & 78213963  & 18.49\\
+                 & 3 & 97761266  & 31.27\\
+                 & 4 & 113551300 & 37.2 \\
+    \hline
+  \end{tabular}
+  \caption{Most models experience a decay in predictive performance as
+    the dimension of the data increases. This is expected because
+    higher dimension input has exponentially more possible patterns to
+    identify. The MLP Regressor and SVR experience the worst decay in
+    performance with increasing dimension.}
+  \label{tab:perf_by_dim}
+\end{table}
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c||c|c|c|}
+    %% \hline
+    %% \multicolumn{4}{|c|}{Table Title}\\
+    \hline
+    \textbf{Algorithm} & \textbf{Training Data} & \textbf{Mean Absolute Error} & \textbf{Mean Relative Error}\\
+    \hline
+    Delaunay     & [5-21]\%  & 5274933   & 0.11 \\
+                 & [25-46]\% & 2898330   & 0.08 \\
+                 & [50-74]\% & 1518477   & 0.07 \\
+                 & [75-96]\% & 886346    & 0.08 \\
+    \hline
+    LSHEP        & [5-21]\%  & 13218469  & 2.53 \\
+                 & [25-46]\% & 4936381   & 0.85 \\
+                 & [50-74]\% & 2251409   & 0.26 \\
+                 & [75-96]\% & 1415034   & 0.15 \\
+    \hline
+    MARS         & [5-21]\%  & 6543153   & 0.61 \\
+                 & [25-46]\% & 4324916   & 0.80 \\
+                 & [50-74]\% & 3115943   & 0.95 \\
+                 & [75-96]\% & 2591451   & 0.74 \\
+    \hline
+    MLPRegressor & [5-21]\%  & 17348982  & 2.58 \\
+                 & [25-46]\% & 12504957  & 2.29 \\
+                 & [50-74]\% & 5292177   & 1.17 \\
+                 & [75-96]\% & 2996253   & 1.02 \\
+    \hline
+    SVR          & [5-21]\%  & 170906944 & 49.45\\
+                 & [25-46]\% & 99851846  & 31.28\\
+                 & [50-74]\% & 51565405  & 19.63\\
+                 & [75-96]\% & 27125130  & 12.6 \\
+    \hline
+  \end{tabular}
+  \caption{All models experience a reduction in error with increasing
+    amounts of training data. This suggests that the data being
+    modeled is pattern-dense, over-fitting is \textit{not} occurring,
+    and that oversimplifications will tend towards worse predictions.}
+  \label{tab:perf_by_tt}
+\end{table}
+
 \subsection{I/O Throughput Variance}
 \subsection{Increasing Dimension}
 
@@ -240,7 +363,7 @@ and provide computational complexity bounds.
 %     Discussion     
 %====================
 \section{Discussion}
-\subsection{Modelling the System}
+\subsection{Modeling the System}
 \subsection{Quantifying Variability}
 \subsection{Extending the Analysis}
 
@@ -253,3 +376,71 @@ and provide computational complexity bounds.
 \bibliography{paper}
 
 \end{document}
+
+
+%%  ALGORITHM     MEAN ABSOLUTE ERROR    MEAN RELATIVE ERROR
+                                                      
+%% 1 Dimension                                        
+%%  Delaunay         2060267             0.03 
+%%  MARS             2176368             0.03 
+%%  MLPRegressor     2461097             0.06 
+%%  LSHEP            6353148             0.06 
+%%  SVR             19306731             0.96 
+                                                      
+%% 2 Dimensions                                       
+%%  Delaunay         2916224             0.07 
+%%  MARS             6213369             0.61 
+%%  MLPRegressor     8883580             0.81 
+%%  LSHEP           13038882             1.52 
+%%  SVR             78213963             18.49
+                                                      
+%% 3 Dimensions                                       
+%%  Delaunay         3001794             0.09 
+%%  MARS             4024964             0.65 
+%%  LSHEP            5446207             1.13 
+%%  MLPRegressor    11190977             2.03 
+%%  SVR             97761266             31.27
+                                                      
+%% 4 Dimensions                                       
+%%  Delaunay         3134779             0.10 
+%%  MARS             4497414             1.01 
+%%  LSHEP            5133648             1.07 
+%%  MLPRegressor    11831721             2.20 
+%%  SVR            113551300             37.26
+                                                      
+%% [5 - 21%] Training Data               
+%%  Delaunay         5274933             0.11 
+%%  MARS             6543153             0.61 
+%%  LSHEP           13218469             2.53 
+%%  MLPRegressor    17348982             2.58 
+%%  SVR            170906944             49.45
+                                                      
+%% [25 - 46%] Training Data              
+%%  Delaunay         2898330             0.08 
+%%  MARS             4324916             0.80 
+%%  LSHEP            4936381             0.85 
+%%  MLPRegressor    12504957             2.29 
+%%  SVR             99851846             31.28
+                                                      
+%% [50 - 74%] Training Data              
+%%  Delaunay         1518477             0.07 
+%%  LSHEP            2251409             0.26 
+%%  MARS             3115943             0.95 
+%%  MLPRegressor     5292177             1.17 
+%%  SVR             51565405             19.63
+                                                      
+%% [75 - 96%] Training Data              
+%%  Delaunay          886346             0.08 
+%%  LSHEP            1415034             0.15 
+%%  MARS             2591451             0.74 
+%%  MLPRegressor     2996253             1.02 
+%%  SVR             27125130             12.64
+                                                      
+                                                      
+%% ALGORITHM   AVG ABSOLUTE MEAN ERROR   AVG RELATIVE ERROR
+%% Delaunay         2711394              0.08  
+%% MARS             4185947              0.72  
+%% LSHEP            6474147              0.94  
+%% MLPRegressor     9063718              1.48  
+%% SVR             82285323              25.12 
+

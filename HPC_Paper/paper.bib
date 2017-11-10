@@ -1,0 +1,183 @@
+@Comment Multi-layer perceptron regressor source paper
+@article{hornik1989multilayer,
+  title={Multilayer feedforward networks are universal approximators},
+  author={Hornik, Kurt and Stinchcombe, Maxwell and White, Halbert},
+  journal={Neural networks},
+  volume={2},
+  number={5},
+  pages={359--366},
+  year={1989},
+  publisher={Elsevier}
+}
+
+@Comment MARS originial paper
+@article{friedman1991multivariate,
+  title={Multivariate adaptive regression splines},
+  author={Friedman, Jerome H},
+  journal={The annals of statistics},
+  pages={1--67},
+  year={1991},
+  publisher={JSTOR}
+}
+
+@Comment The Fast variant of MARS
+@book{stanford1993fast,
+  title={Fast MARS.},
+  author={Stanford University. Laboratory for Computational Statistics and Friedman, Jerome H},
+  year={1993}
+}
+
+@Comment Quick hull algorithm (implementation of Delaunay) used.
+@article{barber1996qhull,
+ author = {Barber, C. Bradford and Dobkin, David P. and Huhdanpaa, Hannu},
+ title = {The Quickhull Algorithm for Convex Hulls},
+ journal = {ACM Trans. Math. Softw.},
+ issue_date = {Dec. 1996},
+ volume = {22},
+ number = {4},
+ month = dec,
+ year = {1996},
+ issn = {0098-3500},
+ pages = {469--483},
+ numpages = {15},
+ url = {http://doi.acm.org/10.1145/235815.235821},
+ doi = {10.1145/235815.235821},
+ acmid = {235821},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {Delaunay triangulation, Voronoi diagram, convex hull, halfspace intersection},
+} 
+
+@Comment This is an old article, the authors argue it is best to use
+@Comment the fewest possible parameters to model the expected
+@Comment performance of a systme. They subjectively decided those
+@Comment parameters (two for system, a few more for applications) to
+@Comment predict performance based on memory / network bottlenecks.
+@inproceedings{snavely2002framework,
+  title={A framework for performance modeling and prediction},
+  author={Snavely, Allan and Carrington, Laura and Wolter, Nicole and Labarta, Jesus and Badia, Rosa and Purkayastha, Avi},
+  booktitle={Supercomputing, ACM/IEEE 2002 Conference},
+  pages={21--21},
+  year={2002},
+  organization={IEEE}
+}
+                  
+@Comment This paper presents a continuation of the PERC work that
+@Comment predicts the time-performance of a machine and an application
+@Comment given a detailed hardware specification along with an
+@Comment application description. This paper EXCPLICITLY MENTIONS
+@Comment "..models do not do a good job of modeling I/O.." They don't
+@Comment say how the model is constructed, only that they use
+@Comment "statistical methods".
+@inproceedings{bailey2005performance,
+  title={Performance modeling: Understanding the past and predicting the future},
+  author={Bailey, David H and Snavely, Allan},
+  booktitle={European Conference on Parallel Processing},
+  pages={185--195},
+  year={2005},
+  organization={Springer}
+}
+
+@Comment This article focuses on predive modelling using a simulation
+@Comment environment, citing analytic modelling as "over-simplified"
+@Comment in order to make the problem solveable. Their framework
+@Comment relies almost entirely on simulation in order to estimate
+@Comment system performance.
+@article{grobelny2007fase,
+  title={FASE: A framework for scalable performance prediction of HPC systems and applications},
+  author={Grobelny, Eric and Bueno, David and Troxel, Ian and George, Alan D and Vetter, Jeffrey S},
+  journal={Simulation},
+  volume={83},
+  number={10},
+  pages={721--745},
+  year={2007},
+  publisher={Sage Publications Sage UK: London, England}
+}
+
+@Comment This article is an extension of snavely2002framework, using
+@Comment only high level system architecture characterstics combined
+@Comment with a detailed application study to predict how long a given
+@Comment application will take to run on given hardware. It focuses a
+@Comment lot more on the subjectively chosen best ways to combine
+@Comment knowledge about a system and application into a naively
+@Comment generated performance prediction (relying on linear relationships)
+@article{barker2009using,
+  title={Using performance modeling to design large-scale systems},
+  author={Barker, Kevin J and Davis, Kei and Hoisie, Adolfy and Kerbyson, Darren J and Lang, Michael and Pakin, Scott and Sancho, Jos{\'e} Carlos},
+  journal={Computer},
+  volume={42},
+  number={11},
+  year={2009},
+  publisher={IEEE}
+}
+
+@Comment This article is focused on analyzing the viability of virtual
+@Comment machine useage in HPC settings. They say that is possible,
+@Comment and they have created "non-linear regression models" of the
+@Comment system performance. These models are only over 1 variable at
+@Comment a time, they are not function of multiple variables.
+@inproceedings{ye2010analyzing,
+  title={Analyzing and modeling the performance in xen-based virtual cluster environment},
+  author={Ye, Kejiang and Jiang, Xiaohong and Chen, Siding and Huang, Dawei and Wang, Bei},
+  booktitle={High Performance Computing and Communications (HPCC), 2010 12th IEEE International Conference on},
+  pages={273--280},
+  year={2010},
+  organization={IEEE}
+}
+
+@Comment LSHEP paper
+@article{thacker2010algorithm,
+  title={Algorithm 905: SHEPPACK: Modified Shepard algorithm for interpolation of scattered multivariate data},
+  author={Thacker, William I and Zhang, Jingwei and Watson, Layne T and Birch, Jeffrey B and Iyer, Manjula A and Berry, Michael W},
+  journal={ACM Transactions on Mathematical Software (TOMS)},
+  volume={37},
+  number={3},
+  pages={34},
+  year={2010},
+  publisher={ACM}
+}
+
+@Comment Implementation of MLP Regressor and SVR used.
+@article{scikit-learn,
+ title={Scikit-learn: Machine Learning in {P}ython},
+ author={Pedregosa, F. and Varoquaux, G. and Gramfort, A. and Michel, V.
+         and Thirion, B. and Grisel, O. and Blondel, M. and Prettenhofer, P.
+         and Weiss, R. and Dubourg, V. and Vanderplas, J. and Passos, A. and
+         Cournapeau, D. and Brucher, M. and Perrot, M. and Duchesnay, E.},
+ journal={Journal of Machine Learning Research},
+ volume={12},
+ pages={2825--2830},
+ year={2011}
+}
+
+@Comment This paper focuses on modelling application level performance
+@Comment by doing a combination of static analysis and generation of
+@Comment small reference executables (produced from annotated
+@Comment application source code). They use this to estimate the
+@Comment performance of an application on a given hardware set.
+@inproceedings{tallent2014palm,
+  title={Palm: easing the burden of analytical performance modeling},
+  author={Tallent, Nathan R and Hoisie, Adolfy},
+  booktitle={Proceedings of the 28th ACM international conference on Supercomputing},
+  pages={221--230},
+  year={2014},
+  organization={ACM}
+}
+
+@Comment MARS implementation used in this work.
+@online{rudy2017pyearth,
+  author={Jason Rudy, Mehdi Cherti, et al.},
+  title={Py-Earth: A Python Implementation of Multivariate Adaptive Regression Splines},
+  year=2017,
+  url={https://github.com/scikit-learn-contrib/py-earth},
+  urldate={2017-07-09}
+}
+
+@Comment Scipy code, Delaunay implementation used
+@Misc{scipy,
+  author = {Eric Jones and Travis Oliphant and Pearu Peterson and others},
+  title = {{SciPy}: Open source scientific tools for {Python}},
+  year = {2001--},
+  url = "http://www.scipy.org/",
+  note = {[Online; accessed 2017-06-23]}
+}
