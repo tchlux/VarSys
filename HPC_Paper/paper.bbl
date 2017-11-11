@@ -1,3 +1,90 @@
 \begin{thebibliography}{}
 
+\bibitem[\protect\citeauthoryear{Bailey and Snavely}{Bailey and
+  Snavely}{2005}]{bailey2005performance}
+Bailey, D.~H., and A.~Snavely. 2005.
+\newblock ``Performance modeling: Understanding the past and predicting the
+  future''.
+\newblock In {\em European Conference on Parallel Processing}, pp.  185--195.
+\newblock Springer.
+
+\bibitem[\protect\citeauthoryear{Barker, Davis, Hoisie, Kerbyson, Lang, Pakin,
+  and Sancho}{Barker et~al.}{2009}]{barker2009using}
+Barker, K.~J., K.~Davis, A.~Hoisie, D.~J. Kerbyson, M.~Lang, S.~Pakin, and
+  J.~C. Sancho. 2009.
+\newblock ``Using performance modeling to design large-scale systems''.
+\newblock {\em Computer\/}~vol. 42 (11).
+
+
+\bibitem[\protect\citeauthoryear{Beckman, Iskra, Yoshii, Coghlan, and
+  Nataraj}{Beckman et~al.}{2008}]{beckman2008benchmarking}
+Beckman, P., K.~Iskra, K.~Yoshii, S.~Coghlan, and A.~Nataraj. 2008.
+\newblock ``Benchmarking the effects of operating system interference on
+  extreme-scale parallel machines''.
+\newblock {\em Cluster Computing\/}~vol. 11 (1), pp. 3--16.
+
+
+\bibitem[\protect\citeauthoryear{De, Kothari, and Mann}{De
+  et~al.}{2007}]{de2007identifying}
+De, P., R.~Kothari, and V.~Mann. 2007.
+\newblock ``Identifying sources of operating system jitter through fine-grained
+  kernel instrumentation''.
+\newblock In {\em Cluster Computing, 2007 IEEE International Conference on},
+  pp.  331--340.
+\newblock IEEE.
+
+\bibitem[\protect\citeauthoryear{Grobelny, Bueno, Troxel, George, and
+  Vetter}{Grobelny et~al.}{2007}]{grobelny2007fase}
+Grobelny, E., D.~Bueno, I.~Troxel, A.~D. George, and J.~S. Vetter. 2007.
+\newblock ``FASE: A framework for scalable performance prediction of HPC
+  systems and applications''.
+\newblock {\em Simulation\/}~vol. 83 (10), pp. 721--745.
+
+
+\bibitem[\protect\citeauthoryear{Lofstead, Zheng, Liu, Klasky, Oldfield,
+  Kordenbrock, Schwan, and Wolf}{Lofstead et~al.}{2010}]{lofstead2010managing}
+Lofstead, J., F.~Zheng, Q.~Liu, S.~Klasky, R.~Oldfield, T.~Kordenbrock,
+  K.~Schwan, and M.~Wolf. 2010.
+\newblock ``Managing variability in the IO performance of petascale storage
+  systems''.
+\newblock In {\em High Performance Computing, Networking, Storage and Analysis
+  (SC), 2010 International Conference for}, pp.  1--12.
+\newblock IEEE.
+
+\bibitem[\protect\citeauthoryear{Snavely, Carrington, Wolter, Labarta, Badia,
+  and Purkayastha}{Snavely et~al.}{2002}]{snavely2002framework}
+Snavely, A., L.~Carrington, N.~Wolter, J.~Labarta, R.~Badia, and
+  A.~Purkayastha. 2002.
+\newblock ``A framework for performance modeling and prediction''.
+\newblock In {\em Supercomputing, ACM/IEEE 2002 Conference}, pp.  21--21.
+\newblock IEEE.
+
+\bibitem[\protect\citeauthoryear{Wang, Butt, Pandey, and Gupta}{Wang
+  et~al.}{2009}]{wang2009simulation}
+Wang, G., A.~R. Butt, P.~Pandey, and K.~Gupta. 2009.
+\newblock ``A simulation approach to evaluating design decisions in mapreduce
+  setups''.
+\newblock In {\em Modeling, Analysis \& Simulation of Computer and
+  Telecommunication Systems, 2009. MASCOTS'09. IEEE International Symposium
+  on}, pp.  1--11.
+\newblock IEEE.
+
+\bibitem[\protect\citeauthoryear{Wang, Khasymski, Krish, and Butt}{Wang
+  et~al.}{2013}]{wang2013towards}
+Wang, G., A.~Khasymski, K.~Krish, and A.~R. Butt. 2013.
+\newblock ``Towards improving mapreduce task scheduling using online simulation
+  based predictions''.
+\newblock In {\em Parallel and Distributed Systems (ICPADS), 2013 International
+  Conference on}, pp.  299--306.
+\newblock IEEE.
+
+\bibitem[\protect\citeauthoryear{Ye, Jiang, Chen, Huang, and Wang}{Ye
+  et~al.}{2010}]{ye2010analyzing}
+Ye, K., X.~Jiang, S.~Chen, D.~Huang, and B.~Wang. 2010.
+\newblock ``Analyzing and modeling the performance in xen-based virtual cluster
+  environment''.
+\newblock In {\em High Performance Computing and Communications (HPCC), 2010
+  12th IEEE International Conference on}, pp.  273--280.
+\newblock IEEE.
+
 \end{thebibliography}

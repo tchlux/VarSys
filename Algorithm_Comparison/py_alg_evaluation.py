@@ -1,5 +1,5 @@
 import numpy as np
-import pickle, sys, pathlib
+import pickle, sys, pathlib, os
 from util.multi_dim_analysis import make_test_data, MDA_Iterator
 from notifications import send_email
 from util.decorators import timeout_after
@@ -36,20 +36,21 @@ from py_settings import *
 # 4) repeat step 1 using all 4 continuous dimensions, averaging the
 #    variance / mean for overlapping configurations 
 
-DATA = "CFQ_NOOP_Fread.pkl"
+SOURCE_DIR = "Data_Source"
+
+DATA = os.path.join(SOURCE_DIR, "CFQ_NOOP_Fread.pkl")
 TARGET = "Throughput"
 # Two data sets, one for mean throughput data, the other for variance
 # of throughput data.
 MEAN_MDA_DIR = "VarSys-2016-Mean_MDA_Data_0"
 VAR_MDA_DIR = "VarSys-2016-Variance_MDA_Data_0"
 
-# DATA = "Stage_1_Fread.pkl"
+# DATA = os.path.join(SOURCE_DIR, "Stage_1_Fread.pkl")
 # TARGET = "Throughput"
 # # Two data sets, one for mean throughput data, the other for variance
 # # of throughput data.
 # MEAN_MDA_DIR = "VarSys-2017-Mean_MDA_Data_0"
 # VAR_MDA_DIR = "VarSys-2017-Variance_MDA_Data_0"
-
 
 # Load the original data file (and get the column names)
 with open(DATA,"rb") as f:
@@ -58,7 +59,7 @@ with open(DATA,"rb") as f:
     settings.remove(TARGET)
 
 # Generate the MDA data set if necessary
-if ((not os.path.exists(MEAN_MDA_DIR)) and
+if ((not os.path.exists(MEAN_MDA_DIR)) or
     (not os.path.exists(VAR_MDA_DIR))):
     # Filter down the data into the unique x-coordinates
     unique_pts = {}
@@ -99,9 +100,9 @@ if ((not os.path.exists(MEAN_MDA_DIR)) and
     if not(os.path.exists(MEAN_MDA_DIR)):
         output = stat_data["Mean"]
         make_test_data(inputs, output, "VarSys-2016"+"-Mean", settings)
-    # if not(os.path.exists(VAR_MDA_DIR)):
-    #     output = stat_data["Variance"]
-    #     make_test_data(inputs, output, "VarSys-2016"+"-Variance", settings)
+    if not(os.path.exists(VAR_MDA_DIR)):
+        output = stat_data["Variance"]
+        make_test_data(inputs, output, "VarSys-2016"+"-Variance", settings)
 
     print("Ready to test and evaluate")
 
@@ -138,7 +139,23 @@ data_header = settings.copy() + ["Algorithm", "Dimension",
                                  "Absolute_Mean_Error",
                                  "Relative_Mean_Error"] 
 
-to_test = sys.argv[1:]
+# String to recommend certain usage
+HELP_STRING = """
+USAGE:
+  python3 %s <test_type> <alg1> [<alg2>, ..., <algn>]
+
+Where <test_type> is one of "mean" or "variance", and each <alg> is
+one of the algorithms provided in the algorithms module of the util
+package. A full set of tests will be run on the appropriate MDA data
+set.
+"""
+
+if len(sys.argv) < 3:
+    print(HELP_STRING)
+    exit()
+
+to_predict = (sys.argv[1]).title()
+to_test = sys.argv[2:]
 for alg_name in to_test:
     print(alg_name)
     # Retreive the requested algorithm
@@ -152,10 +169,10 @@ for alg_name in to_test:
     # Notify user, create output file name
     print()
     print("Testing: '%s', "%(name), end="")
-    output_data_folder = "Output-"+name+"-"+OUTPUT_DATA_FILE[:-4]
+    output_data_folder = "Output-"+name+"_"+to_predict+"-"+OUTPUT_DATA_FILE[:-4]
     # Create an output data folder
     os.makedirs(output_data_folder)
-    output_data_file = "Output-"+name+"-"+OUTPUT_DATA_FILE
+    output_data_file = "Output-"+name+"_"+to_predict+"-"+OUTPUT_DATA_FILE
     checkpoint_file = "Checkpoint-%s.txt"%(name)
     print("results being stored in '%s'"%output_data_file)
     print()
@@ -174,7 +191,10 @@ for alg_name in to_test:
     
     # Get a file iterator that will cycle through all of the
     # train/test files for evaluation. Initialize variables.
-    file_iterator = MDA_Iterator(MEAN_MDA_DIR)
+    if "variance" in sys.argv:
+        file_iterator = MDA_Iterator(VAR_MDA_DIR)
+    else:
+        file_iterator = MDA_Iterator(MEAN_MDA_DIR)
     data = {}
     start = time.time()
     # "estimated time remaining" using linear extrapolation

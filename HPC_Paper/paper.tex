@@ -161,35 +161,89 @@ Performance tuning is often an experimentally complex and time-intense
 chore necessary for configuring HPC systems. The procedures for this
 tuning vary largely from system to system and are often subjectively
 guided by the system engineer(s). Once a desired level of performance
-is achieved, HPC systems often remain in that base configuration with
-all subsequent modifications being incremental. Future changes made
-are often associated with updates and job-specific customizations. In
-the case that a system has changing workloads or non-stationary
-performance objectives that range from maximizing computational
-throughput to minimizing power consumption and system variability, it
-becomes obvious that a more effective and automated tool is needed for
-configuring systems. This scenario presents a challenging and
-important application of multivariate approximation and interpolation
-techniques.
+is achieved, an HPC system may only be incremenetally reconfigured as
+required by updates or specific jobs. In the case that a system has
+changing workloads or non-stationary performance objectives that range
+from maximizing computational throughput to minimizing power
+consumption and system variability, it becomes clear that a more
+effective and automated tool is needed for configuring systems. This
+scenario presents a challenging and important application of
+multivariate approximation and interpolation techniques.
 
+Predicting the performance of an HPC system is a challenging problem
+that is primarily attempted in one of two ways: (1) build a
+statistical model of the performance by running experiments on the
+system at select settings or (2) use a performance simulator to run
+artificial experiments and search for optimal configurations. In this
+paper the proposed multivariate modelling techniques rest in the first
+category, however they represent a notable increase in the ability to
+model more complex interactions between system parameters.
 
-\begin{enumerate}
-\item The value of multivariate Modeling
-\item The data context
-\item The proposed method for using multivariate models
-\item The impact of effective models
-\end{enumerate}
+Many previous works attempting to model system performance have used
+simulated environments to estimate the performance of a
+system. \cite{grobelny2007fase} \cite{wang2009simulation}
+\cite{wang2013towards} Some of these works cite statistical models as
+being over-simplified and not capabel of capturing the true complexity
+of the underlying system. This claim is partially correct, noticing
+that a large portion of predictive statistical models rely on
+simplifying the system to one or two
+parameters. \cite{snavely2002framework} \cite{bailey2005performance}
+\cite{barker2009using} \cite{ye2010analyzing} These limited
+statistical models have provided satisfactory performance in very
+narrow application settings. Many of the aforementioned statistical
+modeling techniques claim to generalize, while simultaneously
+requiring additional code annotations, hardware abstractions, or
+additional application level understandings in order to generate
+models. The approach presented here requires no modifications of the
+application, no architecture abstractions, nor any structural
+descriptions of the input data being modelled. The techniques used are
+purely mathematical and only need formatted data as input.
 
-This paper compares five multivariate approximation techniques that
-operate on inputs in $\mathbb{R}^d$ (vectors of $d$ real numbers) and
-produce predicted responses in $\mathbb{R}^1$. In order to provide
-coverage of the varied mathematical strategies that can be employed to
-solve the continuous modeling problem, three of the techniques are
-regression-based and the remaining two techniques produce
-interpolants. The sections below outline the mathematical formulations
-of each technique and provide computational complexity bounds.
+Among the statistcal models presented in prior works,
+\cite{bailey2005performance} specifically mentioned that it is
+difficult for the models to capture variability introduced by
+I/O. System variability in general has become a problem of increasing
+interest to the systems and HPC communities, however most of the work
+has focused on Operating System induced variability.
+\cite{beckman2008benchmarking} \cite{de2007identifying} The work that
+has focused on managing I/O variability, \cite{lofstead2010managing},
+does not use any sophisticated modeling techniques. Hence, this paper
+presents a case study applying advanced mathematical and statistical
+modeling techniques to the domain of HPC system I/O
+characteristics. The models are used to predict the mean throughput of
+a system and the variance in throughput of a system. The discussion
+section outlines how the exact techniques presented can be applied to
+any performance metric and any system.
+
+%% Multivariate models for an HPC system would be a function of the
+%% tunable parameters built to accurately model some desired performance
+%% metric.
+
+%% \begin{enumerate}
+%% \item The value of multivariate Modeling
+%% \item The data context
+%% \item The proposed method for using multivariate models
+%% \item The impact of effective models
+%% \end{enumerate}
+
+In general, this paper compares five multivariate approximation
+techniques that operate on inputs in $\mathbb{R}^d$ (vectors of $d$
+real numbers) and produce predicted responses in $\mathbb{R}^1$. In
+order to provide coverage of the varied mathematical strategies that
+can be employed to solve the continuous modeling problem, three of the
+techniques are regression-based and the remaining two techniques
+produce interpolants. The sections below outline the mathematical
+formulations of each technique and provide computational complexity
+bounds with respect to the size (number of points and dimension) of
+input data.
 
 \subsection{Approximation}
+Multivariate approximations are capable of accurately modelling
+complex relationships between the dimensions of any set of points in
+$\mathbb{R}^n$ with respect to some response in $\mathbb{R}$. The
+approximations produce a function $f: \mathbb{R}^n \rightarrow
+\mathbb{R}$ which minimizes some metric related to the provided data.
+
 \subsubsection{Multivariate Adaptive Regression Splines}
 \subsubsection{Multi-Layer Perceptron Regressor}
 \subsubsection{Support Vector Regressor}
@@ -201,28 +255,43 @@ of each technique and provide computational complexity bounds.
 The remainder of the paper is broken up into \_ parts. \textit{(will
   fill in the parts and descriptions once they are finalized)}
 
-%     Related Work     
-%======================
-\section{Related Work}
-\begin{enumerate}
-\item Not sure how much to include here? Shooting for thoroughness or
-  simply necessary coverage? How much background should I expect the
-  readers of this paper to have in the ``multivariate modeling of
-  systems'' area?
-\end{enumerate}
+%% %     Related Work     
+%% %======================
+%% \section{Related Work}
+%% \begin{enumerate}
+%% \item Not sure how much to include here? Shooting for thoroughness or
+%%   simply necessary coverage? How much background should I expect the
+%%   readers of this paper to have in the ``multivariate modeling of
+%%   systems'' area?
+%% \end{enumerate}
 
 
 %     Methodology     
 %=====================
 \section{Methodology}
 \subsection{Data}
+The summary of the data used in the experiments for this paper can be
+seen in Table \ref{tab:data_type}.
 
 \begin{table}
   \centering
-  \begin{tabular}{|c|c|}
-    
+  \begin{tabular}{|c|c|c|}
+    \hline
+    \textbf{System Parameter} & \textbf{Type} & \textbf{Values}\\
+    \hline
+    Hypervisor Scheduler & Categorical & CFQ, NOOP, DEAD\\
+    Operating System Scheduler & Categorical & CFQ, NOOP, DEAD\\
+    IOZone Test Type & Categorical & Fread, Fwrite, RandomRead\\
+    File Size & Continuous & 64, 128, 256, 512, 1024\\
+    Record Size & Continuous & 32 64, 128, 256, 512\\
+    Thread Count & Continuous & 1,2,4,8,16,32,64\\
+    Frequency & Continuous & 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3.0, 3.1\\
+    \hline
   \end{tabular}
-  \caption{}
+  \caption{A description of the system parameters being considered in
+    the IOZone tests. There are three categorical settings and four
+    continuous settings. Notice that the ranges of values for
+    continuous settings are different.}
   \label{tab:data_type}
 \end{table}
 
@@ -236,6 +305,10 @@ important to consider that algorithms which perform well with less
 training input also require less experimentation. Although, the amount
 of training data required may change as a function of the number of
 input dimensions and this needs to be studied as well.
+
+The framework used in this paper will be referred to as a
+multi-dimensional analysis (MDA) of the IOZone data presented in this
+study. However, the MDA framework can be applied to other datasets.
 
 \begin{enumerate}
 \item Cycling the categorical settings
@@ -370,6 +443,11 @@ input dimensions and this needs to be studied as well.
 %     Future Work     
 %=====================
 \section{Future Work}
+The most severe limitation to the presented work is the present
+inability to model the relationship between categorical system
+parameters. This could be seen as a limitation of the models selected,
+because only MARS is capable of handling non-numeric variables, or as
+a limitation of the MDA framework.
 
 
 \bibliographystyle{scsproc}

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  9 NOV 2017 11:59
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  11 NOV 2017 12:16
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -962,39 +962,36 @@ LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <9> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 131.
  [1
 
-{/usr/local/texlive/2016/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2]
-<Prediction_Performance_TT_Ratio.pdf, id=17, 722.7pt x 478.42741pt>
+{/usr/local/texlive/2016/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] [3]
+
+<Prediction_Performance_TT_Ratio.pdf, id=21, 722.7pt x 478.42741pt>
 File: Prediction_Performance_TT_Ratio.pdf Graphic file (type pdf)
 
 <use Prediction_Performance_TT_Ratio.pdf>
 Package pdftex.def Info: Prediction_Performance_TT_Ratio.pdf used on input line
- 268.
+ 341.
 (pdftex.def)             Requested size: 469.75499pt x 310.98143pt.
- (./paper.bbl
-
-LaTeX Warning: Empty `thebibliography' environment on input line 3.
-
-) [3] [4 <./Prediction_Performance_TT_Ratio.pdf>] [5] [6] [7] (./paper.aux) ) 
+ (./paper.bbl [4] [5 <./Prediction_Performance_TT_Ratio.pdf>] [6] [7]) [8] (./p
+aper.aux) ) 
 Here is how much of TeX's memory you used:
- 13398 strings out of 493014
- 256648 string characters out of 6133351
- 303319 words of memory out of 5000000
- 16604 multiletter control sequences out of 15000+600000
+ 13408 strings out of 493014
+ 256848 string characters out of 6133351
+ 303000 words of memory out of 5000000
+ 16614 multiletter control sequences out of 15000+600000
  35385 words of font info for 67 fonts, out of 8000000 for 9000
  1144 hyphenation exceptions out of 8191
- 62i,11n,56p,398b,656s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/
-usr/local/texlive/2016/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/texli
-ve/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texliv
-e/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/
-2016/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texl
-ive/2016/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2016/t
-exmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2016/texmf-dist/
-fonts/type1/urw/times/utmri8a.pfb>
-Output written on paper.pdf (7 pages, 128207 bytes).
+ 62i,12n,56p,398b,656s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/local/texlive/2016/texmf-dist/fonts/enc/dvips/base/8r.enc}</us
+r/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr
+/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/l
+ocal/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></u
+sr/local/texlive/2016/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/t
+exlive/2016/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/201
+6/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on paper.pdf (8 pages, 135466 bytes).
 PDF statistics:
- 172 PDF objects out of 1000 (max. 8388607)
- 117 compressed objects within 2 object streams
+ 175 PDF objects out of 1000 (max. 8388607)
+ 119 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  18 words of extra memory for PDF output out of 10000 (max. 10000000)
 
