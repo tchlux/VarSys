@@ -148,7 +148,7 @@ Where <test_type> is one of "mean" or "variance", and each <alg> is
 one of the algorithms provided in the algorithms module of the util
 package. A full set of tests will be run on the appropriate MDA data
 set.
-"""
+"""%(__file__)
 
 if len(sys.argv) < 3:
     print(HELP_STRING)
