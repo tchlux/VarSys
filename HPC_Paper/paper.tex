@@ -271,9 +271,10 @@ of fit. In effect, MARS creates a locally component-wise linear
 approximation of the data that is $C^0$. The overall computational
 complexity of Fast MARS is $\mathcal{O}(n d m^3)$ where $m$ is a user
 selected value that is the maximum complexity of the model in terms of
-the number of underlying basis functions. This paper uses a default
-max number of basis functions of $n$, however with larger datasets ($n
-> 1000$)this value would need to be reduced.
+the number of underlying basis functions. This paper uses an Earth
+implementation of MARS \cite{rudy2017pyearth} with a max number of
+basis functions of $n$, however with larger datasets ($n > 1000$) this
+value would need to be reduced.
 
 \subsubsection{Multi-Layer Perceptron Regressor}
 The neural network is a well studied and widely used mathematical tool
@@ -294,28 +295,40 @@ training a multi-layer perceptron is approximately $\mathcal{O}(n d
 m)$ where $m$ is a constant determined by a linear function of the
 sizes of the layers of the network and the convergence stopping
 criteria of the BFGS minimization used for finding weights. This paper
-uses a single hidden layer with 100 nodes, ReLU activation, and BFGS
-for training.
+uses the scikit-learn MLP regressor \cite{scikit-learn} with a single
+hidden layer with 100 nodes, ReLU activation, and BFGS for training.
 
 \subsubsection{Support Vector Regressor}
 Support vector machines are a common tool used in machine learning
 classification tasks that can be adapted for the purpose of regression
 \cite{basak2007support}. The mathematical formalisms for exactly how
 to build a support vector regressor (SVR) are beyond the scope of this
-summary, but the core of the technique solves an optimization problem
-of the form
+summary, but the resulting functional fit is of the form
 
-$$ \text{Minimize } \bigg\{ \frac{1}{2}\sum_{i=1}^{n}\sum_{j=1}^{n}
-a_i a_j K(x_i, x_j) + \epsilon \sum_{i=1}^{n} a_i - \sum_{i=1}^{n} y_i
-a_i \bigg\} $$
+$$ f(x) : \mathbb{R}^d \rightarrow \mathbb{R} = \sum_{i=1}^{n}a_i
+K(x,x_i) $$
 
-$$ \text{Subject to } \sum_{i=1}^{n}a_i = 0 \text{ } \text{ and }
-\text{ } a_i \in [0,C] $$
+
+%% $$ \text{Minimize } \bigg\{ \frac{1}{2}\sum_{i=1}^{n}\sum_{j=1}^{n}
+%% a_i a_j K(x_i, x_j) + \epsilon \sum_{i=1}^{n} a_i - \sum_{i=1}^{n} y_i
+%% a_i \bigg\} $$
+
+%% $$ \text{Subject to } \sum_{i=1}^{n}a_i = 0 \text{ } \text{ and }
+%% \text{ } a_i \in [0,C] $$
 
 Where $K$ is the selected kernel function, $a \in \mathbb{R}^n$ is the
-solved coefficient vector, and $\epsilon$ is the error tolerance. 
+solved coefficient vector, and $\epsilon$ is the error tolerance. The
+SVR is always fitting a linear function, however the kernel mapping of
+the data can be non-linear to create non-linear fits. The
+computational complexity of the SVR minimization (for the
+implementation used) is $\mathcal{O}(n^2dm)$ with $m$ being a constant
+determined by the minimization convergence criteria. This paper uses
+the scikit-learn SVR \cite{scikit-learn} with a polynomial kernel
+function.
 
 \subsection{Interpolation}
+
+
 \subsubsection{Delaunay}
 \subsubsection{Linear Shepard}
 

@@ -3,48 +3,50 @@ Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
 The top-level auxiliary file: paper.aux
 The style file: scsproc.bst
 Database file #1: paper.bib
+Warning--entry type for "rudy2017pyearth" isn't style-file defined
+--line 256 of file paper.bib
 Warning--page numbers missing in barker2009using
 Warning--no number and no volume in friedman1991multivariate
 Warning--empty publisher in stanford1993fast
-You've used 16 entries,
+You've used 18 entries,
             2956 wiz_defined-function locations,
-            725 strings with 8399 characters,
-and the built_in function-call counts, 14271 in all, are:
-= -- 1171
-> -- 1202
+            736 strings with 8896 characters,
+and the built_in function-call counts, 16625 in all, are:
+= -- 1321
+> -- 1507
 < -- 8
-+ -- 376
-- -- 386
-* -- 1360
-:= -- 2485
-add.period$ -- 55
-call.type$ -- 16
-change.case$ -- 125
-chr.to.int$ -- 16
-cite$ -- 19
-duplicate$ -- 384
-empty$ -- 807
-format.name$ -- 438
-if$ -- 2775
++ -- 477
+- -- 491
+* -- 1626
+:= -- 2941
+add.period$ -- 60
+call.type$ -- 18
+change.case$ -- 150
+chr.to.int$ -- 18
+cite$ -- 21
+duplicate$ -- 416
+empty$ -- 886
+format.name$ -- 547
+if$ -- 3192
 int.to.chr$ -- 1
 int.to.str$ -- 0
-missing$ -- 17
-newline$ -- 98
-num.names$ -- 160
-pop$ -- 146
+missing$ -- 18
+newline$ -- 108
+num.names$ -- 179
+pop$ -- 169
 preamble$ -- 1
-purify$ -- 237
+purify$ -- 276
 quote$ -- 0
-skip$ -- 371
+skip$ -- 405
 stack$ -- 0
-substring$ -- 688
-swap$ -- 152
+substring$ -- 759
+swap$ -- 162
 text.length$ -- 8
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 370
+type$ -- 418
 warning$ -- 3
-while$ -- 148
+while$ -- 165
 width$ -- 0
-write$ -- 248
-(There were 3 warnings)
+write$ -- 274
+(There were 4 warnings)

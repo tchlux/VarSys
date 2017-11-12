@@ -82,7 +82,7 @@ if ((not os.path.exists(MEAN_MDA_DIR)) or
     stat_data = []
     for key in data_keys:
         vals = np.array(unique_pts[key])
-        stat_data.append( key + (vals.mean(), vals.var()) )
+        stat_data.append( key + (vals.mean(), vals.var(ddof=1)) )
     # List of the column names and their data types, simply adding two
     # columns for mean and variance for conversion back into numpy
     # structured arrays.

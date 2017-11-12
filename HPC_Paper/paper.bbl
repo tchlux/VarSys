@@ -71,6 +71,11 @@ Hornik, K., M.~Stinchcombe, and H.~White. 1989.
 \newblock {\em Neural networks\/}~vol. 2 (5), pp. 359--366.
 
 
+\bibitem[\protect\citeauthoryear{Jason~Rudy}{Jason~Rudy}{2017}]{rudy2017pyearth}
+Jason Rudy, Mehdi Cherti, et al. 2017.
+\newblock ``Py-Earth: A Python Implementation of Multivariate Adaptive
+  Regression Splines''.
+
 \bibitem[\protect\citeauthoryear{Jerome H~Friedman}{Jerome
   H~Friedman}{1993}]{stanford1993fast}
 Jerome H~Friedman, S. U. L. f. C.~S. 1993.
@@ -92,6 +97,17 @@ M{\o}ller, M.~F. 1993.
 \newblock ``A scaled conjugate gradient algorithm for fast supervised
   learning''.
 \newblock {\em Neural networks\/}~vol. 6 (4), pp. 525--533.
+
+
+\bibitem[\protect\citeauthoryear{Pedregosa, Varoquaux, Gramfort, Michel,
+  Thirion, Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos,
+  Cournapeau, Brucher, Perrot, and Duchesnay}{Pedregosa
+  et~al.}{2011}]{scikit-learn}
+Pedregosa, F., G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
+  M.~Blondel, P.~Prettenhofer, R.~Weiss, V.~Dubourg, J.~Vanderplas, A.~Passos,
+  D.~Cournapeau, M.~Brucher, M.~Perrot, and E.~Duchesnay. 2011.
+\newblock ``Scikit-learn: Machine Learning in {P}ython''.
+\newblock {\em Journal of Machine Learning Research\/}~vol. 12, pp. 2825--2830.
 
 
 \bibitem[\protect\citeauthoryear{Snavely, Carrington, Wolter, Labarta, Badia,
