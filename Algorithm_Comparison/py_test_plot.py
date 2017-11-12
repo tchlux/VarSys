@@ -32,11 +32,11 @@ multiplier = 10
 # algorithms = [MaxBoxMesh()]
 # algorithms = [SplineMesh()]
 # algorithms = [NearestNeighbor()]
-algorithms = [LSHEP()]
+# algorithms = [LSHEP()]
 # algorithms = [LinearModel()]
 # algorithms = [Delaunay()]
 # algorithms = [ MLPRegressor() ] 
-# algorithms = [ SVR() ] 
+algorithms = [ SVR() ] 
 
 # algorithms = [NearestPlane()]
 

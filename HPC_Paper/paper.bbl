@@ -16,6 +16,14 @@ Barker, K.~J., K.~Davis, A.~Hoisie, D.~J. Kerbyson, M.~Lang, S.~Pakin, and
 \newblock {\em Computer\/}~vol. 42 (11).
 
 
+\bibitem[\protect\citeauthoryear{Basak, Pal, and Patranabis}{Basak
+  et~al.}{2007}]{basak2007support}
+Basak, D., S.~Pal, and D.~C. Patranabis. 2007.
+\newblock ``Support vector regression''.
+\newblock {\em Neural Information Processing-Letters and Reviews\/}~vol. 11
+  (10), pp. 203--224.
+
+
 \bibitem[\protect\citeauthoryear{Beckman, Iskra, Yoshii, Coghlan, and
   Nataraj}{Beckman et~al.}{2008}]{beckman2008benchmarking}
 Beckman, P., K.~Iskra, K.~Yoshii, S.~Coghlan, and A.~Nataraj. 2008.
@@ -23,6 +31,15 @@ Beckman, P., K.~Iskra, K.~Yoshii, S.~Coghlan, and A.~Nataraj. 2008.
   extreme-scale parallel machines''.
 \newblock {\em Cluster Computing\/}~vol. 11 (1), pp. 3--16.
 
+
+\bibitem[\protect\citeauthoryear{Dahl, Sainath, and Hinton}{Dahl
+  et~al.}{2013}]{dahl2013improving}
+Dahl, G.~E., T.~N. Sainath, and G.~E. Hinton. 2013.
+\newblock ``Improving deep neural networks for LVCSR using rectified linear
+  units and dropout''.
+\newblock In {\em Acoustics, Speech and Signal Processing (ICASSP), 2013 IEEE
+  International Conference on}, pp.  8609--8613.
+\newblock IEEE.
 
 \bibitem[\protect\citeauthoryear{De, Kothari, and Mann}{De
   et~al.}{2007}]{de2007identifying}
@@ -33,12 +50,31 @@ De, P., R.~Kothari, and V.~Mann. 2007.
   pp.  331--340.
 \newblock IEEE.
 
+\bibitem[\protect\citeauthoryear{Friedman}{Friedman}{1991}]{friedman1991multivariate}
+Friedman, J.~H. 1991.
+\newblock ``Multivariate adaptive regression splines''.
+\newblock {\em The annals of statistics\/}, pp. 1--67.
+
+
 \bibitem[\protect\citeauthoryear{Grobelny, Bueno, Troxel, George, and
   Vetter}{Grobelny et~al.}{2007}]{grobelny2007fase}
 Grobelny, E., D.~Bueno, I.~Troxel, A.~D. George, and J.~S. Vetter. 2007.
 \newblock ``FASE: A framework for scalable performance prediction of HPC
   systems and applications''.
 \newblock {\em Simulation\/}~vol. 83 (10), pp. 721--745.
+
+
+\bibitem[\protect\citeauthoryear{Hornik, Stinchcombe, and White}{Hornik
+  et~al.}{1989}]{hornik1989multilayer}
+Hornik, K., M.~Stinchcombe, and H.~White. 1989.
+\newblock ``Multilayer feedforward networks are universal approximators''.
+\newblock {\em Neural networks\/}~vol. 2 (5), pp. 359--366.
+
+
+\bibitem[\protect\citeauthoryear{Jerome H~Friedman}{Jerome
+  H~Friedman}{1993}]{stanford1993fast}
+Jerome H~Friedman, S. U. L. f. C.~S. 1993.
+\newblock {\em Fast MARS.}
 
 
 \bibitem[\protect\citeauthoryear{Lofstead, Zheng, Liu, Klasky, Oldfield,
@@ -50,6 +86,13 @@ Lofstead, J., F.~Zheng, Q.~Liu, S.~Klasky, R.~Oldfield, T.~Kordenbrock,
 \newblock In {\em High Performance Computing, Networking, Storage and Analysis
   (SC), 2010 International Conference for}, pp.  1--12.
 \newblock IEEE.
+
+\bibitem[\protect\citeauthoryear{M{\o}ller}{M{\o}ller}{1993}]{moller1993scaled}
+M{\o}ller, M.~F. 1993.
+\newblock ``A scaled conjugate gradient algorithm for fast supervised
+  learning''.
+\newblock {\em Neural networks\/}~vol. 6 (4), pp. 525--533.
+
 
 \bibitem[\protect\citeauthoryear{Snavely, Carrington, Wolter, Labarta, Badia,
   and Purkayastha}{Snavely et~al.}{2002}]{snavely2002framework}

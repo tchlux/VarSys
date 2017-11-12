@@ -137,7 +137,7 @@ security have their own interests in modeling and predicting the
 performance of computers with respect to how they are configured. An
 effective model might infer internal mechanics, minimize power
 consumption, or maximize computational throughput of a given
-system. This paper analyzes a seven-dimensional dataset measuring the
+system. This paper analyzes a four-dimensional dataset measuring the
 input/output (I/O) characteristics of a cluster of identical computers
 using the benchmark IOzone. The I/O performance characteristics are
 modeled with respect to system configuration using multivariate
@@ -181,39 +181,39 @@ model more complex interactions between system parameters.
 
 Many previous works attempting to model system performance have used
 simulated environments to estimate the performance of a
-system. \cite{grobelny2007fase} \cite{wang2009simulation}
-\cite{wang2013towards} Some of these works cite statistical models as
-being over-simplified and not capabel of capturing the true complexity
-of the underlying system. This claim is partially correct, noticing
-that a large portion of predictive statistical models rely on
-simplifying the system to one or two
-parameters. \cite{snavely2002framework} \cite{bailey2005performance}
-\cite{barker2009using} \cite{ye2010analyzing} These limited
-statistical models have provided satisfactory performance in very
-narrow application settings. Many of the aforementioned statistical
-modeling techniques claim to generalize, while simultaneously
-requiring additional code annotations, hardware abstractions, or
-additional application level understandings in order to generate
-models. The approach presented here requires no modifications of the
-application, no architecture abstractions, nor any structural
-descriptions of the input data being modelled. The techniques used are
-purely mathematical and only need formatted data as input.
+system. \cite{grobelny2007fase,wang2009simulation,wang2013towards}
+Some of these works cite statistical models as being over-simplified
+and not capabel of capturing the true complexity of the underlying
+system. This claim is partially correct, noting that a large portion
+of predictive statistical models rely on simplifying the system to one
+or two parameters.
+\cite{snavely2002framework,bailey2005performance,barker2009using,ye2010analyzing}
+These limited statistical models have provided satisfactory
+performance in very narrow application settings. Many of the
+aforementioned statistical modeling techniques claim to generalize,
+while simultaneously requiring additional code annotations, hardware
+abstractions, or additional application level understandings in order
+to generate models. The approach presented here requires no
+modifications of the application, no architecture abstractions, nor
+any structural descriptions of the input data being modelled. The
+techniques used are purely mathematical and only need formatted data
+as input.
 
 Among the statistcal models presented in prior works,
-\cite{bailey2005performance} specifically mentioned that it is
-difficult for the models to capture variability introduced by
-I/O. System variability in general has become a problem of increasing
-interest to the systems and HPC communities, however most of the work
-has focused on Operating System induced variability.
-\cite{beckman2008benchmarking} \cite{de2007identifying} The work that
+\cite{bailey2005performance} specifically mentions that it is
+difficult for the simplified models to capture variability introduced
+by I/O. System variability in general has become a problem of
+increasing interest to the HPC and systems communities, however most
+of the work has focused on Operating System (OS) induced variability.
+\cite{beckman2008benchmarking,de2007identifying} The work that
 has focused on managing I/O variability, \cite{lofstead2010managing},
 does not use any sophisticated modeling techniques. Hence, this paper
 presents a case study applying advanced mathematical and statistical
-modeling techniques to the domain of HPC system I/O
-characteristics. The models are used to predict the mean throughput of
-a system and the variance in throughput of a system. The discussion
-section outlines how the exact techniques presented can be applied to
-any performance metric and any system.
+modeling techniques to the domain of HPC I/O characteristics. The
+models are used to predict the mean throughput of a system and the
+variance in throughput of a system. The discussion section outlines
+how the exact techniques presented can be applied to any performance
+metric and any system.
 
 %% Multivariate models for an HPC system would be a function of the
 %% tunable parameters built to accurately model some desired performance
@@ -228,25 +228,92 @@ any performance metric and any system.
 
 In general, this paper compares five multivariate approximation
 techniques that operate on inputs in $\mathbb{R}^d$ (vectors of $d$
-real numbers) and produce predicted responses in $\mathbb{R}^1$. In
+real numbers) and produce predicted responses in $\mathbb{R}$. In
 order to provide coverage of the varied mathematical strategies that
 can be employed to solve the continuous modeling problem, three of the
 techniques are regression-based and the remaining two techniques
 produce interpolants. The sections below outline the mathematical
 formulations of each technique and provide computational complexity
 bounds with respect to the size (number of points and dimension) of
-input data.
+input data. Throughout the sections, $d$ will refer to the dimension
+of the input data, $n$ is the number of points in the input data,
+$x_i \in \mathbb{R}^d$ is the $i^{th}$ input data point, and $y_i$ is
+the response value of the $i^{th}$ input data point.
 
 \subsection{Approximation}
 Multivariate approximations are capable of accurately modelling
 complex relationships between the dimensions of any set of points in
-$\mathbb{R}^n$ with respect to some response in $\mathbb{R}$. The
-approximations produce a function $f: \mathbb{R}^n \rightarrow
-\mathbb{R}$ which minimizes some metric related to the provided data.
+$\mathbb{R}^d$ with respect to some response in $\mathbb{R}$. The
+approximations produce a function $f: \mathbb{R}^d \rightarrow
+\mathbb{R}$ which minimizes some selected error metric related to the
+provided data. Often, as in least-squares regression, the distance
+metric chosen is the sum of squared differences between modeled
+response values and true response values.
 
 \subsubsection{Multivariate Adaptive Regression Splines}
+This algorithm was introduced by statistician J. Friedman in
+\cite{friedman1991multivariate} and subsequently improved to it's
+current version in \cite{stanford1993fast}. This work uses the Fast
+Multivariate Adaptive Regression Splines (Fast MARS) formulation. In
+Fast MARS, a least-squares fit model is iteratively built by beginning
+with a single constant valued function and adding two new basis
+functions at each iteration of the form
+
+$$ B_{2s-1}(x) = B_l(x) [c(x_i-v)]_+ $$
+$$ B_{2s}(x) = B_k(x) [c(x_i-v)]_- $$
+
+Where $s$ is the iteration number, $B_l(x)$ and $B_k(x)$ are some
+previously generated basis functions, $c, v \in \mathbb{R}$, and $x_i$
+with $0 < i \leq d$ is the $i^{th}$ component (1 indexed) of input
+vector $x$. After iteratively constructing a model, MARS then
+iteratively removes basis functions that do not contribute to goodness
+of fit. In effect, MARS creates a locally component-wise linear
+approximation of the data that is $C^0$. The overall computational
+complexity of Fast MARS is $\mathcal{O}(n d m^3)$ where $m$ is a user
+selected value that is the maximum complexity of the model in terms of
+the number of underlying basis functions. This paper uses a default
+max number of basis functions of $n$, however with larger datasets ($n
+> 1000$)this value would need to be reduced.
+
 \subsubsection{Multi-Layer Perceptron Regressor}
+The neural network is a well studied and widely used mathematical tool
+for both regression and classification tasks.
+\cite{hornik1989multilayer} When using the rectified linear unit
+(ReLU) activation functions \cite{dahl2013improving} and trained using
+the BFGS technique \cite{moller1993scaled}, the model built by a
+multi-layer perceptron uses layers of the form
+
+$$l(x) : \mathbb{R}^{i} \rightarrow \mathbb{R}^{j} = \text{max}\big( x
+W_l, 0 \big)$$
+
+Where $W_l$ is the $i$ by $j$ weight matrix of layer $l$ and the max
+function is applied element-wise to the resulting vector. In this
+form, the multi-layer perceptron (MLP) produces a locally linear model
+of the input data that is $C^0$. The computational complexity of
+training a multi-layer perceptron is approximately $\mathcal{O}(n d
+m)$ where $m$ is a constant determined by a linear function of the
+sizes of the layers of the network and the convergence stopping
+criteria of the BFGS minimization used for finding weights. This paper
+uses a single hidden layer with 100 nodes, ReLU activation, and BFGS
+for training.
+
 \subsubsection{Support Vector Regressor}
+Support vector machines are a common tool used in machine learning
+classification tasks that can be adapted for the purpose of regression
+\cite{basak2007support}. The mathematical formalisms for exactly how
+to build a support vector regressor (SVR) are beyond the scope of this
+summary, but the core of the technique solves an optimization problem
+of the form
+
+$$ \text{Minimize } \bigg\{ \frac{1}{2}\sum_{i=1}^{n}\sum_{j=1}^{n}
+a_i a_j K(x_i, x_j) + \epsilon \sum_{i=1}^{n} a_i - \sum_{i=1}^{n} y_i
+a_i \bigg\} $$
+
+$$ \text{Subject to } \sum_{i=1}^{n}a_i = 0 \text{ } \text{ and }
+\text{ } a_i \in [0,C] $$
+
+Where $K$ is the selected kernel function, $a \in \mathbb{R}^n$ is the
+solved coefficient vector, and $\epsilon$ is the error tolerance. 
 
 \subsection{Interpolation}
 \subsubsection{Delaunay}
