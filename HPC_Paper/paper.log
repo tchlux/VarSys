@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  12 NOV 2017 13:33
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  27 NOV 2017 17:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -816,47 +816,84 @@ Package: amsthm 2015/03/04 v2.20.2
 \thm@headsep=\skip58
 \dth@everypar=\toks39
 )
-(/usr/local/texlive/2016/texmf-dist/tex/latex/hyphenat/hyphenat.sty
+(/usr/local/texlive/2016/texmf-dist/tex/latex/algorithms/algorithm.sty
+Package: algorithm 2009/08/24 v0.1 Document Style `algorithm' - floating enviro
+nment
+
+(/usr/local/texlive/2016/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count120
+\float@exts=\toks40
+\float@box=\box39
+\@float@everytoks=\toks41
+\@floatcapt=\box40
+)
+(/usr/local/texlive/2016/texmf-dist/tex/latex/base/ifthen.sty
+Package: ifthen 2014/09/29 v1.1c Standard LaTeX ifthen package (DPC)
+)
+\@float@every@algorithm=\toks42
+\c@algorithm=\count121
+)
+(/usr/local/texlive/2016/texmf-dist/tex/latex/algorithmicx/algpseudocode.sty
+Package: algpseudocode 
+
+(/usr/local/texlive/2016/texmf-dist/tex/latex/algorithmicx/algorithmicx.sty
+Package: algorithmicx 2005/04/27 v1.2 Algorithmicx
+
+Document Style algorithmicx 1.2 - a greatly improved `algorithmic' style
+\c@ALG@line=\count122
+\c@ALG@rem=\count123
+\c@ALG@nested=\count124
+\ALG@tlm=\skip59
+\ALG@thistlm=\skip60
+\c@ALG@Lnr=\count125
+\c@ALG@blocknr=\count126
+\c@ALG@storecount=\count127
+\c@ALG@tmpcounter=\count128
+\ALG@tmplength=\skip61
+)
+Document Style - pseudocode environments for use with the `algorithmicx' style
+) (/usr/local/texlive/2016/texmf-dist/tex/latex/hyphenat/hyphenat.sty
 Package: hyphenat 2009/09/02 v2.3c hyphenation utilities
 \langwohyphens=\language83
 LaTeX Info: Redefining \_ on input line 43.
 )
-\c@theorem=\count120
-\c@definition=\count121
+\c@theorem=\count129
+\c@definition=\count130
 
 (./paper.aux)
 \openout1 = `paper.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 74.
-LaTeX Font Info:    ... okay on input line 74.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 74.
-LaTeX Font Info:    ... okay on input line 74.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 74.
-LaTeX Font Info:    ... okay on input line 74.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 74.
-LaTeX Font Info:    ... okay on input line 74.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 74.
-LaTeX Font Info:    ... okay on input line 74.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 74.
-LaTeX Font Info:    ... okay on input line 74.
-LaTeX Font Info:    Try loading font information for T1+ptm on input line 74.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 77.
+LaTeX Font Info:    ... okay on input line 77.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 77.
+LaTeX Font Info:    ... okay on input line 77.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 77.
+LaTeX Font Info:    ... okay on input line 77.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 77.
+LaTeX Font Info:    ... okay on input line 77.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 77.
+LaTeX Font Info:    ... okay on input line 77.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 77.
+LaTeX Font Info:    ... okay on input line 77.
+LaTeX Font Info:    Try loading font information for T1+ptm on input line 77.
  (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/t1ptm.fd
 File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
 )
 ABD: EveryShipout initializing macros
 (/usr/local/texlive/2016/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count122
+\scratchcounter=\count131
 \scratchdimen=\dimen162
-\scratchbox=\box39
-\nofMPsegments=\count123
-\nofMParguments=\count124
-\everyMPshowfont=\toks40
-\MPscratchCnt=\count125
+\scratchbox=\box41
+\nofMPsegments=\count132
+\nofMParguments=\count133
+\everyMPshowfont=\toks43
+\MPscratchCnt=\count134
 \MPscratchDim=\dimen163
-\MPnumerator=\count126
-\makeMPintoPDFobject=\count127
-\everyMPtoPDFconversion=\toks41
+\MPnumerator=\count135
+\makeMPintoPDFobject=\count136
+\everyMPtoPDFconversion=\toks44
 ) (/usr/local/texlive/2016/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
 Package: pdftexcmds 2016/05/10 v0.21 Utility functions of pdfTeX for LuaTeX (HO
 )
@@ -908,100 +945,107 @@ e
 \bibindent=\dimen164
 )
 LaTeX Font Info:    Font shape `T1/ptm/bx/n' in size <10.95> not available
-(Font)              Font shape `T1/ptm/b/n' tried instead on input line 131.
+(Font)              Font shape `T1/ptm/b/n' tried instead on input line 134.
 LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 13
-1.
+4.
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
 LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 13
-1.
+4.
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/omlztmcm.fd
 File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
 )
 LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 13
-1.
+4.
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/omsztmcm.fd
 File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
 )
 LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 13
-1.
+4.
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for U+lasy on input line 131.
+LaTeX Font Info:    Try loading font information for U+lasy on input line 134.
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/base/ulasy.fd
 File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
 )
-LaTeX Font Info:    Try loading font information for OT1+ptm on input line 131.
+LaTeX Font Info:    Try loading font information for OT1+ptm on input line 134.
 
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/ot1ptm.fd
 File: ot1ptm.fd 2001/06/04 font definitions for OT1/ptm.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10.95> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 131.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 134.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 131.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 134.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 131.
-LaTeX Font Info:    Try loading font information for OMS+ptm on input line 131.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 134.
+LaTeX Font Info:    Try loading font information for OMS+ptm on input line 134.
 
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/omsptm.fd
 File: omsptm.fd 
 )
 LaTeX Font Info:    Font shape `OMS/ptm/m/it' in size <9> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 131.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 134.
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <9> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 131.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 134.
  [1
 
 {/usr/local/texlive/2016/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] [3]
  [4]
-<Prediction_Performance_TT_Ratio.pdf, id=30, 722.7pt x 478.42741pt>
-File: Prediction_Performance_TT_Ratio.pdf Graphic file (type pdf)
+<Raw_Throughput.pdf, id=30, 433.62pt x 289.08pt>
+File: Raw_Throughput.pdf Graphic file (type pdf)
+ <use Raw_Throughput.pdf>
+Package pdftex.def Info: Raw_Throughput.pdf used on input line 442.
+(pdftex.def)             Requested size: 469.75499pt x 195.74092pt.
 
-<use Prediction_Performance_TT_Ratio.pdf>
-Package pdftex.def Info: Prediction_Performance_TT_Ratio.pdf used on input line
- 418.
-(pdftex.def)             Requested size: 469.75499pt x 310.98143pt.
- (./paper.bbl [5] [6 <./Prediction_Performance_TT_Ratio.pdf>] [7] [8] [9]) [10]
- (./paper.aux)
+[5] [6 <./Raw_Throughput.pdf>]
+<Mean_TT_Ratio.pdf, id=76, 686.565pt x 433.62pt>
+File: Mean_TT_Ratio.pdf Graphic file (type pdf)
+ <use Mean_TT_Ratio.pdf>
+Package pdftex.def Info: Mean_TT_Ratio.pdf used on input line 576.
+(pdftex.def)             Requested size: 469.75499pt x 197.78926pt.
 
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
- ) 
+<Mean_Dim.pdf, id=77, 686.565pt x 433.62pt>
+File: Mean_Dim.pdf Graphic file (type pdf)
+ <use Mean_Dim.pdf>
+Package pdftex.def Info: Mean_Dim.pdf used on input line 608.
+(pdftex.def)             Requested size: 469.75499pt x 148.34195pt.
+ [7] [8 <./Mean_TT_Ratio.pdf> <./Mean_Dim.pdf>] (./paper.bbl [9] [10]) [11] (./
+paper.aux) ) 
 Here is how much of TeX's memory you used:
- 13423 strings out of 493014
- 257052 string characters out of 6133351
- 306497 words of memory out of 5000000
- 16624 multiletter control sequences out of 15000+600000
- 39873 words of font info for 74 fonts, out of 8000000 for 9000
+ 14053 strings out of 493014
+ 266021 string characters out of 6133351
+ 303888 words of memory out of 5000000
+ 17228 multiletter control sequences out of 15000+600000
+ 46869 words of font info for 82 fonts, out of 8000000 for 9000
  1144 hyphenation exceptions out of 8191
- 62i,12n,56p,398b,656s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2016/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
-exlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/te
-xlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/tex
-live/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texli
-ve/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texliv
-e/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/
-2016/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texl
-ive/2016/texmf-dist/fonts/type1/public/rsfs/rsfs10.pfb></usr/local/texlive/2016
-/texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2016/texmf-dist
-/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2016/texmf-dist/fonts/type
-1/urw/times/utmb8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/urw/time
-s/utmr8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/urw/times/utmri8a.
-pfb>
-Output written on paper.pdf (10 pages, 178480 bytes).
+ 62i,12n,56p,507b,656s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/local/texlive/2016/texmf-dist/fonts/enc/dvips/base/8r.enc}</u
+sr/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></us
+r/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr
+/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/l
+ocal/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/lo
+cal/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/loca
+l/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/
+local/texlive/2016/texmf-dist/fonts/type1/public/rsfs/rsfs10.pfb></usr/local/te
+xlive/2016/texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2016/
+texmf-dist/fonts/type1/urw/symbol/usyr.pfb></usr/local/texlive/2016/texmf-dist/
+fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type
+1/urw/times/utmr8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/urw/time
+s/utmri8a.pfb>
+Output written on paper.pdf (11 pages, 1646863 bytes).
 PDF statistics:
- 211 PDF objects out of 1000 (max. 8388607)
- 141 compressed objects within 2 object streams
+ 203 PDF objects out of 1000 (max. 8388607)
+ 146 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
- 18 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 28 words of extra memory for PDF output out of 10000 (max. 10000000)
 

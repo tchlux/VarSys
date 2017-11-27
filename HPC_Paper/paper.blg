@@ -4,49 +4,55 @@ The top-level auxiliary file: paper.aux
 The style file: scsproc.bst
 Database file #1: paper.bib
 Warning--entry type for "rudy2017pyearth" isn't style-file defined
---line 256 of file paper.bib
+--line 292 of file paper.bib
+Warning--entry type for "iozone" isn't style-file defined
+--line 309 of file paper.bib
+Warning--no journal in amos2014algorithm
+Warning--no number and no volume in amos2014algorithm
+Warning--page numbers missing in amos2014algorithm
 Warning--page numbers missing in barker2009using
 Warning--no number and no volume in friedman1991multivariate
 Warning--empty publisher in stanford1993fast
-You've used 18 entries,
+Warning--page numbers missing in sartipizadeh2016computing
+You've used 25 entries,
             2956 wiz_defined-function locations,
-            736 strings with 8896 characters,
-and the built_in function-call counts, 16625 in all, are:
-= -- 1321
-> -- 1507
+            777 strings with 10224 characters,
+and the built_in function-call counts, 22144 in all, are:
+= -- 1771
+> -- 2034
 < -- 8
-+ -- 477
-- -- 491
-* -- 1626
-:= -- 2941
-add.period$ -- 60
-call.type$ -- 18
-change.case$ -- 150
-chr.to.int$ -- 18
-cite$ -- 21
-duplicate$ -- 416
-empty$ -- 886
-format.name$ -- 547
-if$ -- 3192
++ -- 646
+- -- 666
+* -- 2185
+:= -- 3940
+add.period$ -- 79
+call.type$ -- 25
+change.case$ -- 203
+chr.to.int$ -- 25
+cite$ -- 32
+duplicate$ -- 528
+empty$ -- 1149
+format.name$ -- 750
+if$ -- 4218
 int.to.chr$ -- 1
 int.to.str$ -- 0
-missing$ -- 18
-newline$ -- 108
-num.names$ -- 179
-pop$ -- 169
+missing$ -- 23
+newline$ -- 146
+num.names$ -- 243
+pop$ -- 212
 preamble$ -- 1
-purify$ -- 276
+purify$ -- 378
 quote$ -- 0
-skip$ -- 405
+skip$ -- 541
 stack$ -- 0
-substring$ -- 759
-swap$ -- 162
+substring$ -- 957
+swap$ -- 196
 text.length$ -- 8
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 418
-warning$ -- 3
-while$ -- 165
+type$ -- 586
+warning$ -- 7
+while$ -- 218
 width$ -- 0
-write$ -- 274
-(There were 4 warnings)
+write$ -- 368
+(There were 9 warnings)

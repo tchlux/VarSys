@@ -1,5 +1,13 @@
 \begin{thebibliography}{}
 
+\bibitem[\protect\citeauthoryear{Amos, Easterling, Watson, Thacker, Castle, and
+  Trosset}{Amos et~al.}{2014}]{amos2014algorithm}
+Amos, B.~D., D.~R. Easterling, L.~T. Watson, W.~I. Thacker, B.~S. Castle, and
+  M.~W. Trosset. 2014.
+\newblock ``Algorithm XXX: QNSTOP—quasi-Newton algorithm for stochastic
+  optimization''.
+
+
 \bibitem[\protect\citeauthoryear{Bailey and Snavely}{Bailey and
   Snavely}{2005}]{bailey2005performance}
 Bailey, D.~H., and A.~Snavely. 2005.
@@ -7,6 +15,13 @@ Bailey, D.~H., and A.~Snavely. 2005.
   future''.
 \newblock In {\em European Conference on Parallel Processing}, pp.  185--195.
 \newblock Springer.
+
+\bibitem[\protect\citeauthoryear{Barber, Dobkin, and Huhdanpaa}{Barber
+  et~al.}{1996}]{barber1996qhull}
+Barber, C.~B., D.~P. Dobkin, and H.~Huhdanpaa. 1996, December.
+\newblock ``The Quickhull Algorithm for Convex Hulls''.
+\newblock {\em ACM Trans. Math. Softw.\/}~vol. 22 (4), pp. 469--483.
+
 
 \bibitem[\protect\citeauthoryear{Barker, Davis, Hoisie, Kerbyson, Lang, Pakin,
   and Sancho}{Barker et~al.}{2009}]{barker2009using}
@@ -56,6 +71,12 @@ Friedman, J.~H. 1991.
 \newblock {\em The annals of statistics\/}, pp. 1--67.
 
 
+\bibitem[\protect\citeauthoryear{Friedman and Stanford~University}{Friedman and
+  Stanford~University}{1993}]{stanford1993fast}
+Friedman, J.~H., and C.~S. L.~o. Stanford~University. 1993.
+\newblock {\em Fast MARS.}
+
+
 \bibitem[\protect\citeauthoryear{Grobelny, Bueno, Troxel, George, and
   Vetter}{Grobelny et~al.}{2007}]{grobelny2007fase}
 Grobelny, E., D.~Bueno, I.~Troxel, A.~D. George, and J.~S. Vetter. 2007.
@@ -71,15 +92,18 @@ Hornik, K., M.~Stinchcombe, and H.~White. 1989.
 \newblock {\em Neural networks\/}~vol. 2 (5), pp. 359--366.
 
 
-\bibitem[\protect\citeauthoryear{Jason~Rudy}{Jason~Rudy}{2017}]{rudy2017pyearth}
-Jason Rudy, Mehdi Cherti, et al. 2017.
-\newblock ``Py-Earth: A Python Implementation of Multivariate Adaptive
-  Regression Splines''.
+\bibitem[\protect\citeauthoryear{Jones, Oliphant, Peterson, et~al.}{Jones, Eric
+  and Oliphant, Travis and Peterson, Pearu and others}{01  }]{scipy}
+Jones, Eric and Oliphant, Travis and Peterson, Pearu and others 2001--.
+\newblock ``{SciPy}: Open source scientific tools for {Python}''.
+\newblock [Online; accessed 2017-06-23].
 
-\bibitem[\protect\citeauthoryear{Jerome H~Friedman}{Jerome
-  H~Friedman}{1993}]{stanford1993fast}
-Jerome H~Friedman, S. U. L. f. C.~S. 1993.
-\newblock {\em Fast MARS.}
+\bibitem[\protect\citeauthoryear{Lee and Schachter}{Lee and
+  Schachter}{1980}]{lee1980two}
+Lee, D.-T., and B.~J. Schachter. 1980.
+\newblock ``Two algorithms for constructing a Delaunay triangulation''.
+\newblock {\em International Journal of Computer \& Information
+  Sciences\/}~vol. 9 (3), pp. 219--242.
 
 
 \bibitem[\protect\citeauthoryear{Lofstead, Zheng, Liu, Klasky, Oldfield,
@@ -99,6 +123,10 @@ M{\o}ller, M.~F. 1993.
 \newblock {\em Neural networks\/}~vol. 6 (4), pp. 525--533.
 
 
+\bibitem[\protect\citeauthoryear{Norcott}{Norcott}{2017}]{iozone}
+Norcott, William D. 2017.
+\newblock ``IOzone Filesystem Benchmark''.
+
 \bibitem[\protect\citeauthoryear{Pedregosa, Varoquaux, Gramfort, Michel,
   Thirion, Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos,
   Cournapeau, Brucher, Perrot, and Duchesnay}{Pedregosa
@@ -110,6 +138,19 @@ Pedregosa, F., G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
 \newblock {\em Journal of Machine Learning Research\/}~vol. 12, pp. 2825--2830.
 
 
+\bibitem[\protect\citeauthoryear{Rudy, Cherti, et~al.}{Rudy
+  et~al.}{2017}]{rudy2017pyearth}
+Rudy, Jason and Cherti, Mehdi and others 2017.
+\newblock ``Py-Earth: A Python Implementation of Multivariate Adaptive
+  Regression Splines''.
+
+\bibitem[\protect\citeauthoryear{Sartipizadeh and Vincent}{Sartipizadeh and
+  Vincent}{2016}]{sartipizadeh2016computing}
+Sartipizadeh, H., and T.~L. Vincent. 2016.
+\newblock ``Computing the Approximate Convex Hull in High Dimensions''.
+\newblock {\em CoRR\/}~vol. abs/1603.04422.
+
+
 \bibitem[\protect\citeauthoryear{Snavely, Carrington, Wolter, Labarta, Badia,
   and Purkayastha}{Snavely et~al.}{2002}]{snavely2002framework}
 Snavely, A., L.~Carrington, N.~Wolter, J.~Labarta, R.~Badia, and
@@ -117,6 +158,16 @@ Snavely, A., L.~Carrington, N.~Wolter, J.~Labarta, R.~Badia, and
 \newblock ``A framework for performance modeling and prediction''.
 \newblock In {\em Supercomputing, ACM/IEEE 2002 Conference}, pp.  21--21.
 \newblock IEEE.
+
+\bibitem[\protect\citeauthoryear{Thacker, Zhang, Watson, Birch, Iyer, and
+  Berry}{Thacker et~al.}{2010}]{thacker2010algorithm}
+Thacker, W.~I., J.~Zhang, L.~T. Watson, J.~B. Birch, M.~A. Iyer, and M.~W.
+  Berry. 2010.
+\newblock ``Algorithm 905: SHEPPACK: Modified Shepard algorithm for
+  interpolation of scattered multivariate data''.
+\newblock {\em ACM Transactions on Mathematical Software (TOMS)\/}~vol. 37 (3),
+  pp. 34.
+
 
 \bibitem[\protect\citeauthoryear{Wang, Butt, Pandey, and Gupta}{Wang
   et~al.}{2009}]{wang2009simulation}
@@ -130,7 +181,7 @@ Wang, G., A.~R. Butt, P.~Pandey, and K.~Gupta. 2009.
 
 \bibitem[\protect\citeauthoryear{Wang, Khasymski, Krish, and Butt}{Wang
   et~al.}{2013}]{wang2013towards}
-Wang, G., A.~Khasymski, K.~Krish, and A.~R. Butt. 2013.
+Wang, G., A.~Khasymski, K.~R. Krish, and A.~R. Butt. 2013.
 \newblock ``Towards improving mapreduce task scheduling using online simulation
   based predictions''.
 \newblock In {\em Parallel and Distributed Systems (ICPADS), 2013 International

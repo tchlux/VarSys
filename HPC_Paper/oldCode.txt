@@ -1,0 +1,99 @@
+%% \begin{center}
+%%   \includegraphics[width=\textwidth]{Prediction_Performance_Dim.pdf}
+%%   \caption{In this figure we see how the distribution of errors }
+%% \end{center}
+
+%% \begin{figure}
+%%   \centering
+%%   \includegraphics[width=\textwidth]{Prediction_Performance_TT_Ratio.pdf}
+%%   \caption{In this figure, it can be seen how the distribution of
+%%     prediction errors for each algorithm is affected by the quantity
+%%     of training data provided. Notice that for all amounts of training
+%%     data, Delaunay has the largest likelihoods around 0 error.}
+%%   \label{fig:tt_ratio}
+%% \end{figure}
+
+%% \begin{table}
+%%   \centering
+%%   \begin{tabular}{|c||c|c|c|}
+%%     %% \hline
+%%     %% \multicolumn{4}{|c|}{Table Title}\\
+%%     \hline
+%%     \textbf{Algorithm} & \textbf{Input Dimension} & \textbf{Mean Absolute Error} & \textbf{Mean Relative Error}\\
+%%     \hline
+%%     Delaunay     & 1 & 2060267   & 0.03 \\
+%%                  & 2 & 2916224   & 0.07 \\
+%%                  & 3 & 3001794   & 0.09 \\
+%%                  & 4 & 3134779   & 0.10 \\
+%%     \hline
+%%     LSHEP        & 1 & 6353148   & 0.06 \\
+%%                  & 2 & 13038882  & 1.52 \\
+%%                  & 3 & 5446207   & 1.13 \\
+%%                  & 4 & 5133648   & 1.07 \\
+%%     \hline
+%%     MARS         & 1 & 2176368   & 0.03 \\
+%%                  & 2 & 6213369   & 0.61 \\
+%%                  & 3 & 4024964   & 0.65 \\
+%%                  & 4 & 4497414   & 1.01 \\
+%%     \hline
+%%     MLPRegressor & 1 & 2461097   & 0.06 \\
+%%                  & 2 & 8883580   & 0.81 \\
+%%                  & 3 & 11190977  & 2.03 \\
+%%                  & 4 & 11831721  & 2.20 \\
+%%     \hline
+%%     SVR          & 1 & 19306731  & 0.96 \\
+%%                  & 2 & 78213963  & 18.49\\
+%%                  & 3 & 97761266  & 31.27\\
+%%                  & 4 & 113551300 & 37.2 \\
+%%     \hline
+%%   \end{tabular}
+%%   \caption{Most models experience a decay in predictive performance as
+%%     the dimension of the data increases. This is expected because
+%%     higher dimension input has exponentially more possible patterns to
+%%     identify. The MLP Regressor and SVR experience the worst decay in
+%%     performance with increasing dimension.}
+%%   \label{tab:perf_by_dim}
+%% \end{table}
+
+%% \begin{table}
+%%   \centering
+%%   \begin{tabular}{|c||c|c|c|}
+%%     %% \hline
+%%     %% \multicolumn{4}{|c|}{Table Title}\\
+%%     \hline
+%%     \textbf{Algorithm} & \textbf{Training Data} & \textbf{Mean Absolute Error} & \textbf{Mean Relative Error}\\
+%%     \hline
+%%     Delaunay     & [5-21]\%  & 5274933   & 0.11 \\
+%%                  & [25-46]\% & 2898330   & 0.08 \\
+%%                  & [50-74]\% & 1518477   & 0.07 \\
+%%                  & [75-96]\% & 886346    & 0.08 \\
+%%     \hline
+%%     LSHEP        & [5-21]\%  & 13218469  & 2.53 \\
+%%                  & [25-46]\% & 4936381   & 0.85 \\
+%%                  & [50-74]\% & 2251409   & 0.26 \\
+%%                  & [75-96]\% & 1415034   & 0.15 \\
+%%     \hline
+%%     MARS         & [5-21]\%  & 6543153   & 0.61 \\
+%%                  & [25-46]\% & 4324916   & 0.80 \\
+%%                  & [50-74]\% & 3115943   & 0.95 \\
+%%                  & [75-96]\% & 2591451   & 0.74 \\
+%%     \hline
+%%     MLPRegressor & [5-21]\%  & 17348982  & 2.58 \\
+%%                  & [25-46]\% & 12504957  & 2.29 \\
+%%                  & [50-74]\% & 5292177   & 1.17 \\
+%%                  & [75-96]\% & 2996253   & 1.02 \\
+%%     \hline
+%%     SVR          & [5-21]\%  & 170906944 & 49.45\\
+%%                  & [25-46]\% & 99851846  & 31.28\\
+%%                  & [50-74]\% & 51565405  & 19.63\\
+%%                  & [75-96]\% & 27125130  & 12.6 \\
+%%     \hline
+%%   \end{tabular}
+%%   \caption{All models experience a reduction in error with increasing
+%%     amounts of training data. This suggests that the data being
+%%     modeled is pattern-dense, over-fitting is \textit{not} occurring,
+%%     and that oversimplifications will tend towards worse predictions.}
+%%   \label{tab:perf_by_tt}
+%% \end{table}
+
+

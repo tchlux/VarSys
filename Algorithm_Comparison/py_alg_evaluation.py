@@ -274,6 +274,7 @@ for alg_name in to_test:
         # - load the training and testing data files
         # - train the algorithm on the training data
         # - test the algorithm on the testing data
+        # - record the prediction performance for each point predicted
         perc_complete = 100.0*file_iterator.current/len(file_iterator)
 
         print("%.2f%% of %i tests"%(perc_complete, len(file_iterator)),
@@ -296,47 +297,47 @@ for alg_name in to_test:
         data_scale = np.max(train_points, axis=0)
         train_points /= data_scale
         test_points /= data_scale
-        # try:
-        # Fit the training points
-        # Get any extra arguments to pass to individual alrogithm fits
-        extra_args = EXTRA_ARGS.get(name,[])
-        # Wrap the fit function to monitor timeouts
-        fit_func = timeout_after(FIT_TIMEOUT_SECONDS,FAIL_VALUE)(alg.fit)
-        # Time the fit operation
-        fit_time = time.time()
-        fit_output = fit_func(train_points, train_values, *extra_args)
-        fit_time = time.time() - fit_time
-        if ((type(fit_output) == type(FAIL_VALUE)) and
-            (fit_output == FAIL_VALUE)):
+        try:
+            # Fit the training points
+            # Get any extra arguments to pass to individual alrogithm fits
+            extra_args = EXTRA_ARGS.get(name,[])
+            # Wrap the fit function to monitor timeouts
+            fit_func = timeout_after(FIT_TIMEOUT_SECONDS,FAIL_VALUE)(alg.fit)
+            # Time the fit operation
+            fit_time = time.time()
+            fit_output = fit_func(train_points, train_values, *extra_args)
+            fit_time = time.time() - fit_time
+            if ((type(fit_output) == type(FAIL_VALUE)) and
+                (fit_output == FAIL_VALUE)):
+                print()
+                print('ERROR: %s failed to fit within %i seconds.'%(
+                    name,FIT_TIMEOUT_SECONDS))
+                print("Training file: '%s'"%(train))
+                print("Testing file:  '%s'"%(test))
+                print()
+                break # Cancel the rest of data collection for this algorithm
+            # Wrap the approximation function to monitor timeouts
+            approx_func = timeout_after(APPROX_TIMEOUT_SECONDS,FAIL_VALUE)(alg)
+            # Evaluate at the testing points
+            eval_time = time.time()
+            test_approx = approx_func(test_points)
+            eval_time = time.time() - eval_time
+            if ((type(test_approx) == type(FAIL_VALUE)) and
+                (test_approx == FAIL_VALUE)):
+                print()
+                print('ERROR: %s failed to create approximation within %i seconds.'%(
+                    name, APPROX_TIMEOUT_SECONDS))
+                print("Training file: '%s'"%(train))
+                print("Testing file:  '%s'"%(test))
+                print()
+                break # Cancel the rest of data collection for this algorithm
+        except:
             print()
-            print('ERROR: %s failed to fit within %i seconds.'%(
-                name,FIT_TIMEOUT_SECONDS))
+            print('ERROR: %s failed to fit and approximate data.'%(name))
             print("Training file: '%s'"%(train))
             print("Testing file:  '%s'"%(test))
             print()
-            break # Cancel the rest of data collection for this algorithm
-        # Wrap the approximation function to monitor timeouts
-        approx_func = timeout_after(APPROX_TIMEOUT_SECONDS,FAIL_VALUE)(alg)
-        # Evaluate at the testing points
-        eval_time = time.time()
-        test_approx = approx_func(test_points)
-        eval_time = time.time() - eval_time
-        if ((type(test_approx) == type(FAIL_VALUE)) and
-            (test_approx == FAIL_VALUE)):
-            print()
-            print('ERROR: %s failed to create approximation within %i seconds.'%(
-                name, APPROX_TIMEOUT_SECONDS))
-            print("Training file: '%s'"%(train))
-            print("Testing file:  '%s'"%(test))
-            print()
-            break # Cancel the rest of data collection for this algorithm
-        # except:
-        #     print()
-        #     print('ERROR: %s failed to fit and approximate data.'%(name))
-        #     print("Training file: '%s'"%(train))
-        #     print("Testing file:  '%s'"%(test))
-        #     print()
-        #     break # Cancel the rest of data collection for this algorithm            
+            break # Cancel the rest of data collection for this algorithm            
 
         # De-normalize the data so that correct values are writtne to file
         train_points *= data_scale

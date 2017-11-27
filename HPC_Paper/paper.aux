@@ -5,7 +5,8 @@
 \citation{bailey2005performance}
 \citation{beckman2008benchmarking,de2007identifying}
 \citation{lofstead2010managing}
-\@writefile{toc}{\contentsline {section}{\numberline {1}\uppercase {Introduction}}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {1}\uppercase {Introduction and related work}}{2}}
+\newlabel{sec:introduction}{{1}{2}}
 \citation{friedman1991multivariate}
 \citation{stanford1993fast}
 \citation{rudy2017pyearth}
@@ -13,53 +14,74 @@
 \citation{dahl2013improving}
 \citation{moller1993scaled}
 \citation{scikit-learn}
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Approximation}{3}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.1}\ \ \hspace  {1.5pt}{Multivariate Adaptive Regression Splines}}{3}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.2}\ \ \hspace  {1.5pt}{Multi-Layer Perceptron Regressor}}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}\uppercase {Multivariate Models}}{3}}
+\newlabel{sec:multivariate}{{2}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Regression}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}\ \ \hspace  {1.5pt}{Multivariate Adaptive Regression Splines}}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.2}\ \ \hspace  {1.5pt}{Multilayer Perceptron Regressor}}{3}}
 \citation{basak2007support}
 \citation{scikit-learn}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.1.3}\ \ \hspace  {1.5pt}{Support Vector Regressor}}{4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Interpolation}{4}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.1}\ \ \hspace  {1.5pt}{Delaunay}}{4}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {1.2.2}\ \ \hspace  {1.5pt}{Linear Shepard}}{4}}
-\@writefile{toc}{\contentsline {section}{\numberline {2}\uppercase {Methodology}}{4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Data}{4}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Dimensional Analysis}{4}}
+\citation{lee1980two}
+\citation{sartipizadeh2016computing}
+\citation{scipy}
+\citation{barber1996qhull}
+\citation{thacker2010algorithm}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.3}\ \ \hspace  {1.5pt}{Support Vector Regressor}}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Interpolation}{4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}\ \ \hspace  {1.5pt}{Delaunay}}{4}}
+\citation{thacker2010algorithm}
+\citation{iozone}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces A description of the system parameters being considered in the IOzone tests. Record size must not be greater than file size and hence there are only six valid combinations of the two. In total there are $6 \times 9 \times 16 = 864$ unique system configurations.}}{5}}
+\newlabel{tab:data_type}{{1}{5}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}\ \ \hspace  {1.5pt}{Linear Shepard}}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}\uppercase {Methodology}}{5}}
+\newlabel{sec:methodology}{{3}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Data}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Dimensional Analysis}{5}}
+\citation{amos2014algorithm}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Histograms of 100-bin reductions of the PMF of I/O throughput mean (top) and I/O throughput sample variance (bottom). In the mean plot, the first 1\% bin (truncated in plot) has a probability mass of .45. In the variance plot, the first 1\% bin has a probability mass of .58. It can be seen that the distributions of throughputs are primarily of lower magnitude with occasional extreme outliers.}}{6}}
+\newlabel{fig:raw_throughput}{{1}{6}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.2.1}\ \ \hspace  {1.5pt}{Multidimensional Analysis}}{6}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}\uppercase {Results}}{7}}
+\newlabel{sec:results}{{4}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}I/O Throughput Mean}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}I/O Throughput Variance}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Increasing Dimension}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces These box plots show the prediction error of means with increasing amounts of training data provided to the models. Notice that the response values being predicted span 3 orders of magnitude and hence relative error in that range would not be unexpected. For SVR the top box whisker goes from around 100 to 50 from left to right and is chopped in order to maintain focus on the more performant models.}}{8}}
+\newlabel{fig:mean_tt_ratio}{{2}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces These box plots show the prediction error of means with increasing dimension. }}{8}}
+\newlabel{fig:mean_dim}{{3}{8}}
 \bibstyle{scsproc}
 \bibdata{paper}
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces A description of the system parameters being considered in the IOZone tests. There are three categorical settings and four continuous settings. Notice that the ranges of values for continuous settings are different.}}{5}}
-\newlabel{tab:data_type}{{1}{5}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Prediction}{5}}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces In this figure, it can be seen how the distribution of prediction errors for each algorithm is affected by the quantity of training data provided. Notice that for all amounts of training data, Delaunay has the largest likelihoods around 0 error.}}{6}}
-\newlabel{fig:tt_ratio}{{1}{6}}
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Most models experience a decay in predictive performance as the dimension of the data increases. This is expected because higher dimension input has exponentially more possible patterns to identify. The MLP Regressor and SVR experience the worst decay in performance with increasing dimension.}}{7}}
-\newlabel{tab:perf_by_dim}{{2}{7}}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces All models experience a reduction in error with increasing amounts of training data. This suggests that the data being modeled is pattern-dense, over-fitting is \textit  {not} occurring, and that oversimplifications will tend towards worse predictions.}}{8}}
-\newlabel{tab:perf_by_tt}{{3}{8}}
+\bibcite{amos2014algorithm}{\citeauthoryear {Amos, Easterling, Watson, Thacker, Castle, and Trosset}{Amos et\nobreakspace  {}al.}{2014}}
 \bibcite{bailey2005performance}{\citeauthoryear {Bailey and Snavely}{Bailey and Snavely}{2005}}
+\bibcite{barber1996qhull}{\citeauthoryear {Barber, Dobkin, and Huhdanpaa}{Barber et\nobreakspace  {}al.}{1996}}
 \bibcite{barker2009using}{\citeauthoryear {Barker, Davis, Hoisie, Kerbyson, Lang, Pakin, and Sancho}{Barker et\nobreakspace  {}al.}{2009}}
 \bibcite{basak2007support}{\citeauthoryear {Basak, Pal, and Patranabis}{Basak et\nobreakspace  {}al.}{2007}}
 \bibcite{beckman2008benchmarking}{\citeauthoryear {Beckman, Iskra, Yoshii, Coghlan, and Nataraj}{Beckman et\nobreakspace  {}al.}{2008}}
 \bibcite{dahl2013improving}{\citeauthoryear {Dahl, Sainath, and Hinton}{Dahl et\nobreakspace  {}al.}{2013}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}\uppercase {Discussion}}{9}}
+\newlabel{sec:discussion}{{5}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Modeling the System}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Extending the Analysis}{9}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}\uppercase {Conclusion}}{9}}
+\newlabel{sec:conclusion}{{6}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Future Work}{9}}
 \bibcite{de2007identifying}{\citeauthoryear {De, Kothari, and Mann}{De et\nobreakspace  {}al.}{2007}}
 \bibcite{friedman1991multivariate}{\citeauthoryear {Friedman}{Friedman}{1991}}
+\bibcite{stanford1993fast}{\citeauthoryear {Friedman and Stanford\nobreakspace  {}University}{Friedman and Stanford\nobreakspace  {}University}{1993}}
 \bibcite{grobelny2007fase}{\citeauthoryear {Grobelny, Bueno, Troxel, George, and Vetter}{Grobelny et\nobreakspace  {}al.}{2007}}
 \bibcite{hornik1989multilayer}{\citeauthoryear {Hornik, Stinchcombe, and White}{Hornik et\nobreakspace  {}al.}{1989}}
-\bibcite{rudy2017pyearth}{\citeauthoryear {Jason\nobreakspace  {}Rudy}{Jason\nobreakspace  {}Rudy}{2017}}
-\bibcite{stanford1993fast}{\citeauthoryear {Jerome H\nobreakspace  {}Friedman}{Jerome H\nobreakspace  {}Friedman}{1993}}
+\bibcite{scipy}{\citeauthoryear {Jones, Oliphant, Peterson, et\nobreakspace  {}al.}{Jones, Eric and Oliphant, Travis and Peterson, Pearu and others}{01 }}
+\bibcite{lee1980two}{\citeauthoryear {Lee and Schachter}{Lee and Schachter}{1980}}
 \bibcite{lofstead2010managing}{\citeauthoryear {Lofstead, Zheng, Liu, Klasky, Oldfield, Kordenbrock, Schwan, and Wolf}{Lofstead et\nobreakspace  {}al.}{2010}}
-\@writefile{toc}{\contentsline {section}{\numberline {3}\uppercase {Results}}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}I/O Throughput Mean}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}I/O Throughput Variance}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Increasing Dimension}{9}}
-\@writefile{toc}{\contentsline {section}{\numberline {4}\uppercase {Discussion}}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Modeling the System}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Quantifying Variability}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Extending the Analysis}{9}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}\uppercase {Future Work}}{9}}
 \bibcite{moller1993scaled}{\citeauthoryear {M{\o }ller}{M{\o }ller}{1993}}
+\bibcite{iozone}{\citeauthoryear {Norcott}{Norcott}{2017}}
 \bibcite{scikit-learn}{\citeauthoryear {Pedregosa, Varoquaux, Gramfort, Michel, Thirion, Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos, Cournapeau, Brucher, Perrot, and Duchesnay}{Pedregosa et\nobreakspace  {}al.}{2011}}
+\bibcite{rudy2017pyearth}{\citeauthoryear {Rudy, Cherti, et\nobreakspace  {}al.}{Rudy et\nobreakspace  {}al.}{2017}}
+\bibcite{sartipizadeh2016computing}{\citeauthoryear {Sartipizadeh and Vincent}{Sartipizadeh and Vincent}{2016}}
 \bibcite{snavely2002framework}{\citeauthoryear {Snavely, Carrington, Wolter, Labarta, Badia, and Purkayastha}{Snavely et\nobreakspace  {}al.}{2002}}
+\bibcite{thacker2010algorithm}{\citeauthoryear {Thacker, Zhang, Watson, Birch, Iyer, and Berry}{Thacker et\nobreakspace  {}al.}{2010}}
 \bibcite{wang2009simulation}{\citeauthoryear {Wang, Butt, Pandey, and Gupta}{Wang et\nobreakspace  {}al.}{2009}}
 \bibcite{wang2013towards}{\citeauthoryear {Wang, Khasymski, Krish, and Butt}{Wang et\nobreakspace  {}al.}{2013}}
 \bibcite{ye2010analyzing}{\citeauthoryear {Ye, Jiang, Chen, Huang, and Wang}{Ye et\nobreakspace  {}al.}{2010}}

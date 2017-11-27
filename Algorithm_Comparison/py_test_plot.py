@@ -7,17 +7,19 @@ import numpy as np
 from util.plotly import *
 from py_settings import *
 
+from nearest import Linn
+
 # Preparing the data
 normalize_points = True
-random_points = False
-random_perturbation = False
+random_points = True
+random_perturbation = True
 tight_plot = False
 plot_results = True
 perform_test = False
 
 perturbation_multiplier = 1.0
 plot_points = 4000
-num_points = 10
+num_points = 4
 dim = 2
 multiplier = 10
 
@@ -36,11 +38,12 @@ multiplier = 10
 # algorithms = [LinearModel()]
 # algorithms = [Delaunay()]
 # algorithms = [ MLPRegressor() ] 
-algorithms = [ SVR() ] 
+# algorithms = [ SVR() ] 
+algorithms = [ Linn() ]
 
 # algorithms = [NearestPlane()]
 
-np.random.seed(0)
+np.random.seed(2)
 
 # Generate testing points in a grid pattern
 plot_range = [[-0.3,1.3]]*dim # [[0,1]]*dim # 
@@ -114,7 +117,10 @@ if plot_results:
     print("Plotting..")
     print()
     p = Plot()
+    p2 = Plot()
+    p2.add("Input Data", *(points[:,:-1].T))
     p.add("Raw data",*(points.T))
+
     use_gradient = len(algorithms) <= 1
     surf_x = np.meshgrid(*[
         np.linspace(lower,upper,PLOT_POINTS**(1/dim))
@@ -131,12 +137,29 @@ if plot_results:
         print(surf_y.shape)
         total = time.time() - start
         print("  %.2f seconds."%total)
-        p.add(name, *(surf_x.T), surf_y, use_gradient=use_gradient,
-              plot_type='surface',
-              # mode="markers", marker_size=3, marker_line_width=1,
-              **marker_args,
-        )
-    p.plot()
+        # p.add(name, *(surf_x.T), surf_y, use_gradient=use_gradient,
+        #       plot_type='surface', opacity=0.9,
+        #       # mode="markers", marker_size=3, marker_line_width=1,
+        #       **marker_args,
+        # )
+        surf_y = s.weights(surf_x.copy())
+        for i in range(len(points)):
+            print("Adding region for %i.."%i)
+            color = p2.color(i+1)
+            p2.add("p%i"%i, [points[i,0]], [points[i,1]], color=color,
+                   show_in_legend=False, shade=False, group=str(i))
+            p2.add_region("Support for point %i"%i, 
+                          lambda x: s.weights(np.array([x]),i)[0]>0,
+                          plot_points=5000, color=color, group=str(i))
+        # p.add(name+" weights", *(surf_x.T), surf_y, use_gradient=use_gradient,
+        #       plot_type='surface', opacity=0.9,
+        #       # mode="markers", marker_size=3, marker_line_width=1,
+        #       **marker_args,
+        # )
+    points[:,-1] = 0
+    # p.add("Raw Zerod",*(points.T))
+    p2.plot()
+    # p.plot()
 
 if perform_test:
     print()
