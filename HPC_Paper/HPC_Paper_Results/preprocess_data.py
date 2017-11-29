@@ -85,19 +85,30 @@ print("Var max: ","%.2g"%(max(sub_data["Truth"])))
 var_sub_data = sub_data
 
 # Plot settings
-kwargs = dict(layout=dict(font=dict(family="Times New Roman")),
+font = dict(family="Times New Roman", size=12)
+b = l = 40
+r = t = 40
+pad = 0
+margin = dict(l=l,r=r,b=b,t=t,pad=pad)
+kwargs = dict(layout=dict(font=font, titlefont=font, margin=margin,
+                          width=700, height=360),
+              x_axis_settings=dict(titlefont=font),
+              y_axis_settings=dict(titlefont=font),
+              config={"displayModeBar": False},
               # x_axis_settings=dict(type="log", autorange=True), 
 )
 
-# #      Double histogram of raw values     
-# # ========================================
-# p = Plot("", "", "Probability Mass")
-# p.add_histogram("", mean_sub_data["Truth"], show_in_legend=False)
-# p1 = p.plot(y_range=[0,.2], **kwargs, html=False)
-# p = Plot("", "I/O Throughput", "Probability Mass")
-# p.add_histogram("", var_sub_data["Truth"], show_in_legend=False)
-# p2 = p.plot(y_range=[0,.03], **kwargs, html=False)
-# # multiplot([[p1],[p2]], file_name="Raw_Throughput.html", show=False)
+#      Double histogram of raw values     
+# ========================================
+local_kwargs = kwargs.copy()
+local_kwargs["layout"]["height"] = 320
+p = Plot("", "", "Probability Mass")
+p.add_histogram("", mean_sub_data["Truth"], show_in_legend=False)
+p1 = p.plot(y_range=[0,.2], html=False, **local_kwargs)
+p = Plot("", "I/O Throughput", "Probability Mass")
+p.add_histogram("", var_sub_data["Truth"], show_in_legend=False)
+p2 = p.plot(y_range=[0,.03], html=False, **local_kwargs)
+multiplot([[p1],[p2]], file_name="Raw_Throughput.html", show=True)
 
 # #         Making box plot by training percentage     
 # # ======================================================
@@ -119,7 +130,7 @@ kwargs = dict(layout=dict(font=dict(family="Times New Roman")),
 #         # Generate the title and axis labels
 #         min_val = min(set_data["Train_Percentage"])
 #         max_val = max(set_data["Train_Percentage"])
-#         x_axis = "[%.0f - %.0f%%] Training"%(min_val,max_val)
+#         x_axis = "[%.0f-%.0f%%] Training"%(min_val,max_val)
 #         box_values += list(set_data[error_col])
 #         box_locations += [x_axis]*len(set_data)
 #     p.add_box(alg, box_values, box_locations)

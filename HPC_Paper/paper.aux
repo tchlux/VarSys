@@ -46,11 +46,15 @@
 \newlabel{sec:results}{{4}{7}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.1}I/O Throughput Mean}{7}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2}I/O Throughput Variance}{7}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Increasing Dimension}{7}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces These box plots show the prediction error of means with increasing amounts of training data provided to the models. Notice that the response values being predicted span 3 orders of magnitude and hence relative error in that range would not be unexpected. For SVR the top box whisker goes from around 100 to 50 from left to right and is chopped in order to maintain focus on the more performant models.}}{8}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Increasing Dimension and Decreasing Training Data}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces These box plots show the prediction error of mean with increasing amounts of training data provided to the models. Notice that MARS is the only model whose average spread of performance decreases with more training data. Recall that the response values being predicted span three orders of magnitude and hence relative errors should certainly remain within that range. For SVR the top box whisker goes from around 100 to 50 from left to right and is truncated in order to maintain focus on more performant models.}}{8}}
 \newlabel{fig:mean_tt_ratio}{{2}{8}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces These box plots show the prediction error of means with increasing dimension. }}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces These box plots show the prediction error of mean with increasing dimension. The top box whisker for SVR transitions \{40, 80, 90\} for dimensions 2, 3, and 4 respectively. Notice that each model consistently experiences greater magnitude error with increasing dimension.}}{8}}
 \newlabel{fig:mean_dim}{{3}{8}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}\uppercase {Discussion}}{9}}
+\newlabel{sec:discussion}{{5}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Modeling the System}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Extending the Analysis}{9}}
 \bibstyle{scsproc}
 \bibdata{paper}
 \bibcite{amos2014algorithm}{\citeauthoryear {Amos, Easterling, Watson, Thacker, Castle, and Trosset}{Amos et\nobreakspace  {}al.}{2014}}
@@ -60,16 +64,12 @@
 \bibcite{basak2007support}{\citeauthoryear {Basak, Pal, and Patranabis}{Basak et\nobreakspace  {}al.}{2007}}
 \bibcite{beckman2008benchmarking}{\citeauthoryear {Beckman, Iskra, Yoshii, Coghlan, and Nataraj}{Beckman et\nobreakspace  {}al.}{2008}}
 \bibcite{dahl2013improving}{\citeauthoryear {Dahl, Sainath, and Hinton}{Dahl et\nobreakspace  {}al.}{2013}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}\uppercase {Discussion}}{9}}
-\newlabel{sec:discussion}{{5}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Modeling the System}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Extending the Analysis}{9}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}\uppercase {Conclusion}}{9}}
-\newlabel{sec:conclusion}{{6}{9}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Future Work}{9}}
 \bibcite{de2007identifying}{\citeauthoryear {De, Kothari, and Mann}{De et\nobreakspace  {}al.}{2007}}
 \bibcite{friedman1991multivariate}{\citeauthoryear {Friedman}{Friedman}{1991}}
 \bibcite{stanford1993fast}{\citeauthoryear {Friedman and Stanford\nobreakspace  {}University}{Friedman and Stanford\nobreakspace  {}University}{1993}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}\uppercase {Conclusion}}{10}}
+\newlabel{sec:conclusion}{{6}{10}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Future Work}{10}}
 \bibcite{grobelny2007fase}{\citeauthoryear {Grobelny, Bueno, Troxel, George, and Vetter}{Grobelny et\nobreakspace  {}al.}{2007}}
 \bibcite{hornik1989multilayer}{\citeauthoryear {Hornik, Stinchcombe, and White}{Hornik et\nobreakspace  {}al.}{1989}}
 \bibcite{scipy}{\citeauthoryear {Jones, Oliphant, Peterson, et\nobreakspace  {}al.}{Jones, Eric and Oliphant, Travis and Peterson, Pearu and others}{01 }}

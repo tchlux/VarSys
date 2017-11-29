@@ -15,8 +15,10 @@
 \usepackage{amssymb}
 \usepackage{amsbsy}
 \usepackage{amsthm}
-\usepackage{algorithm}     % needed for the algorithm block
-\usepackage{algpseudocode} % algorithmicx psuedo-code styling
+%% \usepackage{color}   % Needed to color text for drafts
+
+%% \usepackage{algorithm}     % needed for the algorithm block
+%% \usepackage{algpseudocode} % algorithmicx psuedo-code styling
 %\usepackage[pdftex,colorlinks=true,urlcolor=blue,citecolor=black,anchorcolor=black,linkcolor=black]{hyperref}
 %% \usepackage[dvips,colorlinks=true,urlcolor=blue,citecolor=black,%
 %% anchorcolor=black,linkcolor=black]{hyperref}
@@ -283,7 +285,7 @@ $$ B_{2s}(x) = B_k(x) [c(x_i-v)]_- ,$$
 
 where $s$ is the iteration number, $B_l(x)$ and $B_k(x)$ are basis
 functions from the previous iteration, $c, v \in \mathbb{R}$, $w_+ =
-\{w, w \geq 0, 0, w < 0\},$ and $w_+ = (-w)_+$. After iteratively
+\{w, w \geq 0;\quad 0, w < 0\},$ and $w_+ = (-w)_+$. After iteratively
 constructing a model, MARS then iteratively removes basis functions
 that do not contribute to goodness of fit. In effect, MARS creates a
 locally component-wise tensor product approximation of the data. The
@@ -439,7 +441,7 @@ modeled can be seen in Figure \ref{fig:raw_throughput}.
 
 \begin{figure}
   \centering
-  \includegraphics[width=\textwidth,trim={0 .5in 0 1in}]{Raw_Throughput.pdf}
+  \includegraphics[width=\textwidth,trim={0 .5in 0 .4in}]{Raw_Throughput.pdf}
   \caption{Histograms of 100-bin reductions of the PMF of I/O
     throughput mean (top) and I/O throughput sample variance
     (bottom). In the mean plot, the first 1\% bin (truncated in plot)
@@ -457,28 +459,31 @@ performance in a variety of real-world situations. Alongside
 randomized splits, two extra components are considered: the amount of
 training data provided, and the dimension of the input data. It is
 important to consider that algorithms that perform well with less
-training input also require less experimentation, although the amount
+training input also require less experimentation. Although, the amount
 of training data required may change as a function of the number of
-input dimensions, and this needs to be studied as well. The framework
+input dimensions and this needs to be studied as well. The framework
 used here will be referred to as a multidimensional analysis (MDA) of
 the IOzone data.
+
+%% \color{red}
 
 \subsubsection{Multidimensional Analysis}
 This procedure combines random selection of training and testing
 splits with changes in the input dimension and the ratio of training
 size to testing size. Given an input data matrix with $n$ rows
-(points) and $d$ columns (features), the multidimensional analysis
-(MDA) is performed as follows:
+(points) and $d$ columns (components), MDA proceeds as follows:
 \begin{enumerate}
-\item for all $k = 1, \ldots, d$ and for all subsets of input features
-  $F = \{ j_1, j_2, \ldots j_k \}$; reduce the input data to unique
-  points $z \in \mathbb{R}^k$ with $f(z) = E[ \{ f(x^{(i)}) \quad
-    \forall i \quad s.t. \quad (x^{(i)}_F = z) \} ]$.
+\item for all $k = 1, \ldots, d$ and for all subsets of input
+  components $F = \{ j_1, j_2, \ldots j_k \}$; reduce the input data
+  to unique points $z \in \mathbb{R}^k$ with $f(z) = E[ \{ f(x^{(i)})
+    \quad \forall i \quad s.t. \quad (x^{(i)}_F = z) \} ]$ where
+  $x^{(i)}_F$ is the $k$-tuple containing only those components of
+  $x^{(i)}$ in $F$.
 \item for all $r$ in $\{5, 10, \ldots, 95\}$; generate $N$ random
   splits $(train, test)$ of the reduced data with $r$ percentage for
   training and $100 - r$ percentage for testing.
-\item when generate each random $(train, test)$ split, ensure that all
-  points from $test$ are on or inside the convex hull of points in
+\item when generating each random $(train, test)$ split, ensure that
+  all points from $test$ are on or inside the convex hull of points in
   $train$; also ensure that the points in $train$ are well spaced.
 \end{enumerate}
 
@@ -487,15 +492,15 @@ of training points, this paper identifies the set of (reduced
 dimension) points that compose the convex hull and forcibly places
 those points in the training set. In order to ensure that training
 points are well spaced, this paper relies on the statistical method
-for picking points from \shortciteN{amos2014algorithm} that procedes
+for picking points from \shortciteN{amos2014algorithm} that proceeds
 as follows:
 \begin{enumerate}
 \item Generate a sequence of all pairs of points sorted by ascending
   pairwise $L_2$ distance between points, ${(x^{(i_1)},x^{(j_1)}),
     (x^{(i_2)},x^{(j_2)}), \ldots}$ such that
   $||x^{(i_k)}-x^{(j_k)}||_2 \leq ||x^{(i_{k+1})}-x^{(j_{k+1})}||_2$
-\item Iteratively remove points from candidacy until only $N$ remain
-  by sequentially selecting one point from the pair $(x^{(i_k)},
+\item Sequentially remove points from candidacy until only $N$ remain
+  by randomly selecting one point from the pair $(x^{(i_k)},
   x^{(j_k)})$ for $k = 1,\ldots$ if both $x^{(i_k)}$ and $x^{(j_k)}$
   are still candidates.
 \end{enumerate}
@@ -503,26 +508,26 @@ as follows:
 Given the large number of constraints, level of reduction, and use of
 randomness in the MDA procedure, occasionally $N$ unique training
 testing splits may not be created or may not exist. In these cases, if
-there are fewer than $N$ possible splits, those deterministically
+there are fewer than $N$ possible splits then deterministically
 generated splits are used. Otherwise after $3*N$ attempts, only the
 unique splits are kept for analysis. The MDA procedure has been
 implemented in python3 while most regression and interpolation methods
 are FORTRAN wrapped with python. All randomness has been seeded for
-reproducability.
+repeatability.
 
-For any input feature subset $F$ (of size $k$) and selected value of
+For any input component subset $F$ (of size $k$) and selected value of
 $r$, MDA will generate up to $N$ predictions that each multivariate
 model has made for each point $z^{(i)} \in \mathbb{R}^k$. There may be
 fewer than $N$ predictions made for any given point. Points in the
-convex hull for the selected subest of features will always be used
+convex hull for the selected subset of components will always be used
 for training, never for testing. Points that do not have any close
 neighbors will often be used for training in order to ensure well
-spacedness. Finally, as mentioned before, some subsets of features do
-not readily generate $N$ unique training and testing splits.
+spacedness. Finally, as mentioned before, some subsets of components
+do not readily generate $N$ unique training and testing splits.
 
 MDA results in a distribution of possible estimates that a given
 multivariate model could make for a point in $\mathbb{R}^k$, $k \leq
-d$ given feature set $F$. The summary results presented in this work
+d$ given component set $F$. The summary results presented in this work
 use the expected value of the distributions at each point as the model
 estimate for error analysis.
 
@@ -549,17 +554,17 @@ estimate for error analysis.
 \section{Results}
 \label{sec:results}
 
-A naive multivariate prediction technique such as nearest neighbor
-could experience relative errors in the range $[0,10^m]$ where $m$ is
-$log_{10}(\text{max}_f - \text{min}_f)$ when modeling a function $f$
-from data. The IOzone mean data response values span 3 orders of
-magnitude (as can be seen in Table \ref{tab:data_type}) while variance
-data response values span 6 orders of magnitude. It is expected
-therefore, that all studied multivariate models perform better than a
-naive approach, achieving relative errors strictly less than $10^3$
-for mean throughput and $10^6$ when for throughput sample
-variance. Ideally, models will yield relative errors significantly
-smaller than 1.
+A na\"{\i}ve multivariate prediction technique such as nearest
+neighbor could experience relative errors in the range $[0,
+  (\text{max}_f - \text{min}_f) / \text{min}_f ]$ when modeling a non
+negative function $f$ from data. The IOzone mean data response values
+span three orders of magnitude (as can be seen in Table
+\ref{tab:data_type}) while variance data response values span six
+orders of magnitude. It is expected therefore, that all studied
+multivariate models perform better than a na\"{\i}ve approach,
+achieving relative errors strictly less than $10^3$ for throughput
+mean and $10^6$ for throughput sample variance. Ideally, models will
+yield relative errors significantly smaller than 1.
 
 \subsection{I/O Throughput Mean}
 
@@ -568,180 +573,180 @@ relative error less than 1 for most system configurations when
 predicting the mean I/O throughput of a system given varying amounts
 of training data. The overall best of the multivariate models,
 Delaunay, consistently makes predictions with relative error less than
-$.05$ (5\% error). In figure \ref{fig:mean_tt_ratio} it can also be
+$.05$ (5\% error). In Figure \ref{fig:mean_tt_ratio} it can also be
 seen that the Delaunay model consistently makes good predictions even
-with as low as 5\% training data (43 system configurations) regardless
-of the dimension of the data.
+with as low as 5\% training data (43 of the 864 system configurations)
+regardless of the dimension of the data.
 
 \begin{figure}
   \centering
-  \includegraphics[width=\textwidth,trim={0 1in 0 1in}]{Mean_TT_Ratio.pdf}
-  \caption{These box plots show the prediction error of means with
+  \includegraphics[width=\textwidth,trim={0 .5in 0 .5in}]{Mean_TT_Ratio.pdf}
+  \caption{These box plots show the prediction error of mean with
     increasing amounts of training data provided to the models. Notice
-    that the response values being predicted span 3 orders of
-    magnitude and hence relative error in that range would not be
-    unexpected. For SVR the top box whisker goes from around 100 to 50
-    from left to right and is chopped in order to maintain focus on
-    the more performant models.}
+    that MARS is the only model whose average spread of performance
+    decreases with more training data. Recall that the response values
+    being predicted span three orders of magnitude and hence relative
+    errors should certainly remain within that range. For SVR the top
+    box whisker goes from around 100 to 50 from left to right and is
+    truncated in order to maintain focus on more performant models.}
   \label{fig:mean_tt_ratio}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\textwidth,trim={0 .5in 0 .5in}]{Mean_Dim.pdf}
+  \caption{These box plots show the prediction error of mean with
+    increasing dimension. The top box whisker for SVR transitions
+    \{40, 80, 90\} for dimensions 2, 3, and 4 respectively. Notice
+    that each model consistently experiences greater magnitude error
+    with increasing dimension.}
+  \label{fig:mean_dim}
 \end{figure}
 
 \subsection{I/O Throughput Variance}
 
-The prediction results for variance resemble that of predicting I/O
-throughput mean, with each of the errors being scaled proportional to
-the change in scale of the response values. Delaunay remains the best
-overall predictor with LSHEP closely competing, but yielding much more
-outliers.
+The prediction results for variance resemble those for predicting
+mean. Delaunay remains the best overall predictor with relative error
+of .6 on average and LSHEP closely competes with Delaunay having an
+average relative error of -2. Outliers in prediction error are much
+larger for all models. Delaunay produces relative errors as large as
+78 and other models achieve relative errors around $10^3$. The
+relative errors for many models scaled proportional to the increased
+orders of magnitude spanned by the variance response compared with
+mean response. All models are more sensitive to the amount of training
+data provided than their counterparts for predicting mean.
 
-\subsection{Increasing Dimension}
+\subsection{Increasing Dimension and Decreasing Training Data}
 
-As can be seen in figure \ref{fig:mean_dim}, all of the models suffer
+As can be seen in Figure \ref{fig:mean_dim}, all of the models suffer
 increasing error rates in higher dimension. This is expected, because
 the number of possible interactions to model grows
 exponentially. However, LSHEP and Delaunay maintain the slowest
-increase in relative error. The particularly slow increase in error
-seen for Delaunay appears to suggest that it is capable of making
-predictions with a range of relative errors approximately spanning
-\rpm $.2*\text{\textit{dim}}$. 
-
-\begin{figure}
-  \centering
-  \includegraphics[width=\textwidth,trim={0 1in 0 2in}]{Mean_Dim.pdf}
-  \caption{These box plots show the prediction error of means with
-    increasing dimension. }
-  \label{fig:mean_dim}
-\end{figure}
+increase in relative error. The increase in error seen for Delaunay
+suggests that it is capable of making predictions with a range of
+relative errors that grows approximately linearly with increasing
+dimension input. This trend suggests that Delaunay would remain a
+viable technique for accurately modeling systems with 10's of
+parameters given only small amounts of training data. All models, with
+the exception of MARS, produce smaller errors given more training
+data. Increasing the amount of training data most notably reduces the
+number of prediction error outliers.
 
 %     Discussion     
 %====================
 \section{Discussion}
 \label{sec:discussion}
 
+The present results demonstrate that a straightforward application of
+multivariate modeling techniques can be used to effectively predict
+HPC system performance. Little effort on the part of a systems
+engineer combined with a minimal amount experimentation can yield a
+model capable of accurately tuning an HPC system to the desired
+performance specification.
+
 \subsection{Modeling the System}
-\begin{enumerate}
-\item Promise of the models, especially Delaunay
-\item Possible reasons for the performance differences between models
-\item The need for as few as 50 experiments to get less than 5\% error
-\item The unfortunate inability of Delaunay to scale to higher dimension
-\end{enumerate}
+
+The modeling techniques generated estimates of drastically different
+quality when predicting I/O throughput mean and sample variance. A few
+notable characteristics include: the SVR has the largest range of
+errors for all selections of dimension and amount of training data;
+MARS and LSHEP produce similar magnitude errors while the former
+consistently underestimates and the latter consistently overestimates
+in predictions; and Delaunay has considerably fewer outliers than all
+other methods. SVR likely experiences the greatest quantity of errors
+because the underlying parametric representation is global and
+oversimplified (a single polynomial), making it unable to capture the
+complex local behaviors of system I/O. It is still unclear however
+what causes the behaviors of LSHEP, MARS, and Delaunay. An exploration
+of this topic is left to future work.
+
+While the Delaunay method appears to be the best predictor in the
+presented IOzone case study, it is important to note its significantly
+higher computational complexity with respect to the dimension of the
+input. The implementation of Delaunay used would experience
+unacceptably large training times beyond seven dimensions of
+input. This leaves much room for other techniques to perform best in
+higher dimension unless a more performant implementation of Delaunay
+can be used.
+
+Finally, the ability of the models to predict variance was
+significantly worse for I/O sample variance. The larger scale in
+variance responses alone do not account for the increase in relative
+errors witnessed. This suggests that system variability has an greater
+underlying functional complexity when compared with the system mean
+and that latent factors are reducing prediction performance
+considerably.
 
 \subsection{Extending the Analysis}
-\begin{enumerate}
-\item Measuring different system characteristics other than I/O
-\item Recording system performance constantly to maintain model accuracy
-\end{enumerate}
+
+System I/O throughput mean and throughput sample variance are simple
+and useful system characteristics to model. The process presented in
+this work is equally applicable to predicting other useful performance
+characteristics of HPC systems such as: computational throughput,
+power consumption, processor idle time, context switches, RAM usage,
+or any other ordinal performance metric. For each of these there is
+the potential to model system variability as well. This work has
+chosen variance as a measure of variability, but the techniques used
+in this paper could be used to predict more precise measures of
+variability such as the percentiles of the performance distribution. A
+thorough exploration of HPC systems applications of multivariate
+modeling is left to future work.
+
+%% \begin{enumerate}
+%% \item Measuring different system characteristics other than I/O
+%% \item Recording system performance constantly to maintain model accuracy
+%% \end{enumerate}
 
 \section{Conclusion}
 \label{sec:conclusion}
-\begin{enumerate}
-\item Delaunay is the best model, capable of predicting the
-  performance of 800 different system configurations accurately after
-  only being trained on a well-spaced set of 50 configurations.
-\item More comparisons of models similar to Delaunay should be done to
-  evaluate what mathematical characteristics of multivariate models are
-  most effective.
-\end{enumerate}
+Multivariate models of HPC systems produce promising results when
+applied to predicting I/O throughput mean and variability. These
+multivariate techniques significantly expand the comprehensiveness and
+portability of statistical models for predicting computer system
+performance over previous works. In the IOzone case study presented,
+the Delaunay method produces the best overall results making
+predictions for 821 system configurations with less than 5\% error
+when trained on only 43 configurations. Analysis also suggests that
+the error in the Delaunay method will remain manageable as the number
+of system parameters being modeled increases. These multivariate
+techniques can and should be applied to HPC systems with more than
+four tunable parameters in order to identify optimal system
+configurations that may not be discoverable via previous methods nor
+by manual performance tuning.
 
 %     Future Work     
 %=====================
 \subsection{Future Work}
-The most severe limitation to the presented work is the present
-inability to model the relationship between categorical system
-parameters. This could be seen as a limitation of the models selected,
-because only MARS is capable of handling non-numeric variables, or as
-a limitation of the MDA framework. Future works could attempt to
-identify the viability of reducing categorical variables to numerical
-ones to expand set of predictable system configurations.
+The most severe limitation to the present work is the restriction to
+modeling strictly ordinal (not categorical) system parameters. This
+could be seen as a limitation of the multivariate models selected,
+because only MARS is capable of handling non numeric components, or as
+a limitation of the MDA framework. Future work could attempt to
+identify the viability of different techniques for making predictions
+across varying categorical system paramters.
 
-\begin{enumerate}
-\item Using models to predict more complex responses, such as functions
-\end{enumerate}
+There remain many other multivariate modeling techniques not included
+in this work that should be evaluated and applied to HPC performance
+tuning. For I/O alone, there are far more than the four tunable
+parameters studied in this work. Alongside experimentation with more
+models, there is room for a theoretical characterisation of the
+combined model and data properties that allow for the greatest
+predictive power.
+
+%% \color{black}
 
 %% \newpage
-%% \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\\
+%% \ \\
 
 %% \vspace{3in}
 
 %% \texttt{\textbf{L}oc\textbf{A}ll\textbf{Y} li\textbf{NE}ar
 %%   \textbf{W}eighted \textbf{A}pproxima\textbf{T}ion\textbf{S}
-%%   \textbf{O}f fu\textbf{N}tions}
-%% %% L  A  Y   NE   W        A        T   S O    N
+%%   \textbf{O}f fu\textbf{N}tions}\\
+%% %% \texttt{L\ \ A\ \ Y \ \ NE\ \ \  W\ \ \ \ \ \ \ \ A\ \ \ \ \ \ \ \ T\ \ \ S O\ \ \ \ N\ \ \ \ \ \ }
 %% \newpage
 
 \bibliographystyle{scsproc}
 \bibliography{paper}
 
 \end{document}
-
-
-%%  ALGORITHM     MEAN ABSOLUTE ERROR    MEAN RELATIVE ERROR
-                                                      
-%% 1 Dimension                                        
-%%  Delaunay         2060267             0.03 
-%%  MARS             2176368             0.03 
-%%  MLPRegressor     2461097             0.06 
-%%  LSHEP            6353148             0.06 
-%%  SVR             19306731             0.96 
-                                                      
-%% 2 Dimensions                                       
-%%  Delaunay         2916224             0.07 
-%%  MARS             6213369             0.61 
-%%  MLPRegressor     8883580             0.81 
-%%  LSHEP           13038882             1.52 
-%%  SVR             78213963             18.49
-                                                      
-%% 3 Dimensions                                       
-%%  Delaunay         3001794             0.09 
-%%  MARS             4024964             0.65 
-%%  LSHEP            5446207             1.13 
-%%  MLPRegressor    11190977             2.03 
-%%  SVR             97761266             31.27
-                                                      
-%% 4 Dimensions                                       
-%%  Delaunay         3134779             0.10 
-%%  MARS             4497414             1.01 
-%%  LSHEP            5133648             1.07 
-%%  MLPRegressor    11831721             2.20 
-%%  SVR            113551300             37.26
-                                                      
-%% [5 - 21%] Training Data               
-%%  Delaunay         5274933             0.11 
-%%  MARS             6543153             0.61 
-%%  LSHEP           13218469             2.53 
-%%  MLPRegressor    17348982             2.58 
-%%  SVR            170906944             49.45
-                                                      
-%% [25 - 46%] Training Data              
-%%  Delaunay         2898330             0.08 
-%%  MARS             4324916             0.80 
-%%  LSHEP            4936381             0.85 
-%%  MLPRegressor    12504957             2.29 
-%%  SVR             99851846             31.28
-                                                      
-%% [50 - 74%] Training Data              
-%%  Delaunay         1518477             0.07 
-%%  LSHEP            2251409             0.26 
-%%  MARS             3115943             0.95 
-%%  MLPRegressor     5292177             1.17 
-%%  SVR             51565405             19.63
-                                                      
-%% [75 - 96%] Training Data              
-%%  Delaunay          886346             0.08 
-%%  LSHEP            1415034             0.15 
-%%  MARS             2591451             0.74 
-%%  MLPRegressor     2996253             1.02 
-%%  SVR             27125130             12.64
-                                                      
-                                                      
-%% ALGORITHM   AVG ABSOLUTE MEAN ERROR   AVG RELATIVE ERROR
-%% Delaunay         2711394              0.08  
-%% MARS             4185947              0.72  
-%% LSHEP            6474147              0.94  
-%% MLPRegressor     9063718              1.48  
-%% SVR             82285323              25.12 
-
-
-
-
-
