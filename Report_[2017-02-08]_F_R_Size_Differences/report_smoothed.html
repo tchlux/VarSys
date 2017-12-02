@@ -1,0 +1,265 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Report on F Size and R Size Variance</title>
+    <!-- Default setup for a webpage with basic bootstrap -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="./bootstrap.min.css">
+    <link rel="stylesheet" href="./analysis.css">
+
+    <script src="./vis.js"></script>
+    <script src="./jquery.min.js"></script>
+    <script src="./bootstrap.min.js"></script>
+    <script src="./pygal-tooltips.min.js"></script>
+    <script src="./3D-Scatter.handler.js"></script>
+
+    <style type="text/css">
+      #Brand { cursor: default; }
+      #Project { float: right; }
+
+      #Project-Name:hover { color: #555; }
+      #Project-Name {
+      float: right;
+      font-size: 16px;
+      padding: 14px 5px;
+      color: #777;
+      text-decoration: none;
+      cursor: default;
+      }
+
+      div.entry {      
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+      background-color: #fdfdfd;
+      width: 90vw;
+      margin: auto;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      }
+      div.entry-title {
+      padding: 5px 0px;
+      font-size: 14px;
+      }
+      div.holder {
+      padding: 10px;
+      }
+      div.entry-text {
+      font-size: 14px;
+      float: left;
+      display: inline-block;
+      padding-top: 15vw;
+      width: 25vw;
+      height: 45vw;
+      }
+      figure {
+      width: 60vw;
+      float: right;
+      display: inline-block;
+      }
+
+    </style>
+  </head>
+
+  <body id="Body">
+    <!-- Nav bar -->
+    <div class="nav">
+	<a id="Brand">Virginia Tech</a>
+	<div id="Project">
+	  <a id="Project-Name">VarSys</a>
+	</div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>Scatter Plot of Variance for 2 Independent 40 Runs</strong>
+      </div>
+      <div id="Variance-Scatter" class="collapse" aria-expanded="false">
+      </div>
+    </div>
+
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 1024 — Record Size 512</strong>
+      </div>
+      <div class="holder collapse in" aria-expanded="true">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Relative Increase from Min to Max</p>
+	  <strong>Mean:</strong> 2.32%
+	  <br>
+	  <strong>Stdev:</strong> 107.05%
+	  <br>
+	  <strong>Variance:</strong> 328.69%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="./Fsize-1024_Rsize-512.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 1024 — Record Size 32</strong>
+      </div>
+      <div class="holder collapse in" aria-expanded="true">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Relative Increase from Min to Max</p>
+	  <strong>Mean:</strong> 16.04%
+	  <br>
+	  <strong>Stdev:</strong> 87.65%
+	  <br>
+	  <strong>Variance:</strong> 252.13%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="./Fsize-1024_Rsize-32.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 1024 — Record Size 128</strong>
+      </div>
+      <div class="holder collapse in" aria-expanded="true">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Relative Increase from Min to Max</p>
+	  <strong>Mean:</strong> 5.43%
+	  <br>
+	  <strong>Stdev:</strong> 79.38%
+	  <br>
+	  <strong>Variance:</strong> 221.78%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="./Fsize-1024_Rsize-128.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 256 — Record Size 128</strong>
+      </div>
+      <div class="holder collapse in" aria-expanded="true">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Relative Increase from Min to Max</p>
+	  <strong>Mean:</strong> 41.16%
+	  <br>
+	  <strong>Stdev:</strong> 25.61%
+	  <br>
+	  <strong>Variance:</strong> 57.77%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="./Fsize-256_Rsize-128.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 256 — Record Size 32</strong>
+      </div>
+      <div class="holder collapse in" aria-expanded="true">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Relative Increase from Min to Max</p>
+	  <strong>Mean:</strong> 18.01%
+	  <br>
+	  <strong>Stdev:</strong> 20.54%
+	  <br>
+	  <strong>Variance:</strong> 45.30%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="./Fsize-256_Rsize-32.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 64 — Record Size 32</strong>
+      </div>
+      <div class="holder collapse in" aria-expanded="true">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Relative Increase from Min to Max</p>
+	  <strong>Mean:</strong> 17.43%
+	  <br>
+	  <strong>Stdev:</strong> 13.84%
+	  <br>
+	  <strong>Variance:</strong> 29.60%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="./Fsize-64_Rsize-32.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+
+    <script>
+      function create_options (x_axis, y_axis, z_axis) {
+      // Generate an "options" object for visualizing the 3D scatter plot
+    	var options = {
+    	    align: 'center',
+    	    width:  '90%',
+    	    height: '60vmin',
+    	    style: "dot",
+    	    backgroundColor: {fill:'transparent', stroke:'transparent', strokWidth:0},
+    	    cameraPosition: {horizontal: 1.0, vertical: 0.5, distance: 2.8},
+            dotSizeRatio: 0.015,
+            keepAspectRatio: false,
+            xValueLabel: function (value) {
+    		return (value.toExponential(1));
+            },
+            yValueLabel: function (value) {
+    		return (value.toExponential(1));
+            },
+            zValueLabel: function (value) {
+    		return (value.toExponential(1));
+            },
+            xLabel: x_axis,
+            yLabel: y_axis,
+            zLabel: z_axis,
+    	    // Option tooltip can be true, false, or a function returning a string with HTML contents
+            tooltip: function (point) {
+    		// parameter point contains properties x, y, z
+    		return ('('+(point.x).toFixed(0)+','+
+    			(point.y).toFixed(0)+'):  '+
+    			(point.z).toExponential(1)) ;
+            }
+    	};
+    	return options;
+      };
+
+      var plot = document.getElementById("Variance-Scatter");
+
+
+      var points = [[1024, 512, 263314324788425.66], [1024, 512, 1128791377949103.8], [1024, 32, 1672000031203014.0], [1024, 32, 5887558787917738.0], [1024, 128, 1230463670361491.5], [1024, 128, 3959442165204835.0], [256, 128, 1875622422517264.8], [256, 128, 1188854188387704.0], [256, 32, 2446211429432401.5], [256, 32, 3554277930536460.0], [64, 32, 913261919884936.0], [64, 32, 1183585947619672.8]];
+      // Set options for viewing the 3D scatter plot
+      var options = create_options("File Size", "Record Size", "Variance");
+      // Create and populate a data set for this visualization.
+      var data = new vis.DataSet();
+      for (var i = 0; i < points.length; i+=1) {
+          data.add({x:points[i][0], y:points[i][1], z:points[i][2]})
+      }   
+      // Create the visualization
+      var graph3d = new vis.Graph3d(plot, data, options);
+
+
+    </script>
+  </body>
+</html>
+

@@ -1,0 +1,83 @@
+# Given a list of functions and their names, plot them together
+def make_plot(funcs, names, title="", x_title="", y_title="",
+               ):
+    # Cycle through the functions to find the min and max of all ranges
+    min_pt = float('inf')
+    max_pt = -float('inf')
+    for i,f in enumerate(funcs):
+        new_lower, new_upper = f(None)
+        min_pt = min(new_lower, min_pt)
+        max_pt = max(new_upper, max_pt)
+
+    # Generate a large set of x-points (for a smooth plot)
+    x_points = np.linspace(min_pt, max_pt, 1000)
+
+    plot_data = []
+    if any("Percentile" in n for n in names): print("Colors: ")
+    # Create all of the series for the plots
+    for cdf,name in zip(funcs,names):
+        color = ""
+        width = 2
+        fill = ""
+        line_color = ""
+        legend_group = "CDFs"
+        mode = "lines"
+        if ("Percentile" in name):
+            legend_group = "Percentiles"
+            num =  abs(0.5 - (int(name[0:name.index("th")]) - 10) / 100)
+            color = center_color*(1 - num) + outer_color*(num)
+            print(name, num, color)
+            color='rgba(%i,%i,%i,%f)'%tuple(color)
+            line_color = "rgba(30,30,30,0.3)"
+            width = .1
+            if (" 0th" not in name):
+                fill = "tonexty"
+        elif ("True" in name):
+            width = 1                
+            line_color = "rgb(0,0,0,100)"
+        elif ("" == name):
+            mode = "markers"
+            line_color = "rgb(31,119,180)"
+                
+        # Build the plot with the data
+        plot_data.append(
+            plotly.graph_objs.Scatter(
+                x = x_points,
+                y = cdf(x_points),
+                line = dict(
+                    width = width,
+                    color = line_color
+                ),
+                mode = mode,
+                fillcolor = color,
+                fill = fill,
+                legendgroup = legend_group,
+                name = name
+            )
+        )
+        
+    print()
+
+    # Create plot layout (global settings)
+    layout = plotly.graph_objs.Layout(
+        title=title,
+        showlegend=any("Percentile" in n for n in names),
+        xaxis=dict(title=x_title, fixedrange=True),
+        yaxis=dict(title=y_title, fixedrange=True)
+    )
+    # Create the plot
+    fig = plotly.graph_objs.Figure( data=plot_data, layout=layout )
+
+
+
+        # # Generate the CDF lines for each data set
+        # for d,n in zip(all_data,names):
+        #     cdf_plot = Plot()
+        #     f = linear_fit_func(np.array(list(range(len(d)))), d)
+        #     plot.add_func(n + " Throughput " + plot_name, )
+        #     funcs = []
+        #     make_plot(funcs, [""], n + " Throughput " + plot_name,
+        #               "Run Number", "Throughput")
+
+
+

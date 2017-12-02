@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Report on F Size and R Size Variance</title>
+    <!-- Default setup for a webpage with basic bootstrap -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/AnalysisClient/bootstrap.min.css">
+    <link rel="stylesheet" href="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/AnalysisClient/analysis.css">
+
+    <script src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/AnalysisClient/vis.js"></script>
+    <script src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/AnalysisClient/jquery.min.js"></script>
+    <script src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/AnalysisClient/bootstrap.min.js"></script>
+    <script src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/AnalysisClient/pygal-tooltips.min.js"></script>
+    <script src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/ViewData/3D-Scatter.handler.js"></script>
+
+    <style type="text/css">
+      #Brand { cursor: default; }
+      #Project { float: right; }
+
+      #Project-Name:hover { color: #555; }
+      #Project-Name {
+      float: right;
+      font-size: 16px;
+      padding: 14px 5px;
+      color: #777;
+      text-decoration: none;
+      cursor: default;
+      }
+
+      div.entry {      
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+      background-color: #fdfdfd;
+      width: 90vw;
+      margin: auto;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      }
+      div.entry-title {
+      padding: 5px 0px;
+      font-size: 14px;
+      }
+      div.holder {
+      padding: 10px;
+      }
+      div.entry-text {
+      font-size: 14px;
+      float: left;
+      display: inline-block;
+      padding-top: 15vw;
+      width: 25vw;
+      height: 45vw;
+      }
+      figure {
+      width: 60vw;
+      float: right;
+      display: inline-block;
+      }
+
+    </style>
+  </head>
+
+  <body id="Body">
+    <!-- Nav bar -->
+    <div class="nav">
+	<a id="Brand">Virginia Tech</a>
+	<div id="Project">
+	  <a id="Project-Name">VarSys</a>
+	</div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>Scatter Plot of Variance for 2 Independent 40 Runs</strong>
+      </div>
+      <div id="Variance-Scatter" class="collapse in" aria-expanded="true">
+      </div>
+    </div>
+       
+
+    <script>
+      function create_options (x_axis, y_axis, z_axis) {
+      // Generate an "options" object for visualizing the 3D scatter plot
+    	var options = {
+    	    align: 'center',
+    	    width:  '90%',
+    	    height: '60vmin',
+    	    style: "dot",
+    	    backgroundColor: {fill:'transparent', stroke:'transparent', strokWidth:0},
+    	    cameraPosition: {horizontal: 1.0, vertical: 0.5, distance: 2.3},
+            dotSizeRatio: 0.015,
+            keepAspectRatio: false,
+            // verticalAspectRatio: 0.8,
+    	    // showShadow: false,
+            xValueLabel: function (value) {
+    		return (value.toExponential(1));
+            },
+            yValueLabel: function (value) {
+    		return (value.toExponential(1));
+            },
+            zValueLabel: function (value) {
+    		return (value.toExponential(1));
+            },
+            xLabel: x_axis,
+            yLabel: y_axis,
+            zLabel: z_axis,
+    	    // Option tooltip can be true, false, or a function returning a string with HTML contents
+            tooltip: function (point) {
+    		// parameter point contains properties x, y, z
+    		return ('('+(point.x).toFixed(0)+','+
+    			(point.y).toFixed(0)+'):  '+
+    			(point.z).toExponential(1)) ;
+            }
+    	};
+    	return options;
+      };
+
+      var plot = document.getElementById("Variance-Scatter");
+      var points = [[1024, 512, 263314324788425.66], [1024, 512, 1128791377949103.8], [1024, 32, 1672000031203014.0], [1024, 32, 5887558787917738.0], [1024, 128, 1230463670361491.5], [1024, 128, 3959442165204835.0], [256, 128, 1875622422517264.8], [256, 128, 1188854188387704.0], [256, 32, 2446211429432401.5], [256, 32, 3554277930536460.0], [64, 32, 913261919884936.0], [64, 32, 1183585947619672.8]];
+
+      // Set options for viewing the 3D scatter plot
+      var options = create_options("File Size", "Record Size", "Variance");
+      // Create and populate a data set for this visualization.
+      var data = new vis.DataSet();
+      for (var i = 0; i < points.length; i+=1) {
+          data.add({x:points[i][0], y:points[i][1], z:points[i][2]})
+      }
+      // Create the visualization
+      var graph3d = new vis.Graph3d(plot, data, options);
+    </script>
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 1024 — Record Size 512</strong>
+      </div>
+      <div class="holder collapse" aria-expanded="false">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Statistical Differences</p>
+	  <strong>Mean:</strong> 2.29%
+	  <br>
+	  <strong>Stdev:</strong> 69.73%
+	  <br>
+	  <strong>Variance:</strong> 124.34%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/Fsize-1024_Rsize-512.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 1024 — Record Size 32</strong>
+      </div>
+      <div class="holder collapse" aria-expanded="false">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Statistical Differences</p>
+	  <strong>Mean:</strong> 14.85%
+	  <br>
+	  <strong>Stdev:</strong> 60.94%
+	  <br>
+	  <strong>Variance:</strong> 111.53%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/Fsize-1024_Rsize-32.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 1024 — Record Size 128</strong>
+      </div>
+      <div class="holder collapse" aria-expanded="false">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Statistical Differences</p>
+	  <strong>Mean:</strong> 5.28%
+	  <br>
+	  <strong>Stdev:</strong> 56.83%
+	  <br>
+	  <strong>Variance:</strong> 105.16%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/Fsize-1024_Rsize-128.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 256 — Record Size 128</strong>
+      </div>
+      <div class="holder collapse" aria-expanded="false">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Statistical Differences</p>
+	  <strong>Mean:</strong> 34.13%
+	  <br>
+	  <strong>Stdev:</strong> 22.70%
+	  <br>
+	  <strong>Variance:</strong> 44.82%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/Fsize-256_Rsize-128.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 256 — Record Size 32</strong>
+      </div>
+      <div class="holder collapse" aria-expanded="false">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Statistical Differences</p>
+	  <strong>Mean:</strong> 16.52%
+	  <br>
+	  <strong>Stdev:</strong> 18.63%
+	  <br>
+	  <strong>Variance:</strong> 36.93%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/Fsize-256_Rsize-32.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+
+    <div class="entry">
+      <div class="entry-title" onclick="$(this.parentNode.children[1]).collapse('toggle')">
+	<strong>File Size 64 — Record Size 32</strong>
+      </div>
+      <div class="holder collapse" aria-expanded="false">
+	<div class="entry-text">
+	  <p style="text-decoration: underline; font-size: 16px; color: #333;">Statistical Differences</p>
+	  <strong>Mean:</strong> 16.03%
+	  <br>
+	  <strong>Stdev:</strong> 12.95%
+	  <br>
+	  <strong>Variance:</strong> 25.78%
+	</div>
+	<figure>
+	  <embed type="image/svg+xml" src="file:///home/tchlux/Git_Analytics/Analytics-Vis/Code/Fsize-64_Rsize-32.svg"> </embed>
+	</figure>
+        <br style="clear: both">
+      </div>      
+    </div>
+
+  </body>
+</html>

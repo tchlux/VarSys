@@ -1,0 +1,114 @@
+Compilation started at Mon Mar 20 16:39:09
+
+python3 code.py 
+
+Confidence(alpha) with alpha = 0.01: 1.62762363072
+
+
+System Setting #1: Fsize-64 Rsize-32
+
+Sample sizes:
+ First:  40
+ Second: 40
+ True:   420
+
+KS-Differences:
+ First 40 -- Second 40: 0.24159670908
+ First  40 -- True 420: 0.394448330453
+ Second 40 -- True 420: 0.252433511507
+
+KS-Differences Pass at alpha 0.01 (significantly different):
+ First 40 -- Second 40: False
+ First  40 -- True 420: True
+ Second 40 -- True 420: False
+
+Smallest possible alpha for passing KS-Difference:
+ First 40 -- Second 40: 0.193667673315
+ First  40 -- True 420: 0.0000231932327502
+ Second 40 -- True 420: 0.0190368473241
+
+Largest possible confidence in KS-Difference:
+ First 40 -- Second 40: 80.6332326685
+ First  40 -- True 420: 99.9976806767
+ Second 40 -- True 420: 98.0963152676
+
+Testing Convergence..
+ testing 0
+ ...
+ testing 99
+
+
+
+
+System Setting #2: Fsize-1024 Rsize-32
+
+Sample sizes:
+ First:  40
+ Second: 40
+ True:   420
+
+KS-Differences:
+ First 40 -- Second 40: 0.371933453633
+ First  40 -- True 420: 0.205926682043
+ Second 40 -- True 420: 0.370749326887
+
+KS-Differences Pass at alpha 0.01 (significantly different):
+ First 40 -- Second 40: True
+ First  40 -- True 420: False
+ Second 40 -- True 420: True
+
+Largest possible confidence in KS-Difference:
+ First 40 -- Second 40: 99.2094784731
+ First  40 -- True 420: 90.9673087745
+ Second 40 -- True 420: 99.9912777545
+
+Smallest possible alpha for passing KS-Difference:
+ First 40 -- Second 40: 0.00790521526884
+ First  40 -- True 420: 0.0903269122553
+ Second 40 -- True 420: 0.0000872224545596
+
+Testing Convergence..
+ testing 0
+ ...
+ testing 99
+
+
+
+
+
+System Setting #3: Fsize-1024 Rsize-512
+
+Sample sizes:
+ First:  40
+ Second: 40
+ True:   420
+
+KS-Differences:
+ First 40 -- Second 40: 0.353720251532
+ First  40 -- True 420: 0.0750468034196
+ Second 40 -- True 420: 0.308694222499
+
+KS-Differences Pass at alpha 0.01 (significantly different):
+ First 40 -- Second 40: False
+ First  40 -- True 420: False
+ Second 40 -- True 420: True
+
+Largest possible confidence in KS-Difference:
+ First 40 -- Second 40: 98.6587571115
+ First  40 -- True 420: -32.5466738195
+ Second 40 -- True 420: 99.8102695216
+
+Smallest possible alpha for passing KS-Difference:
+ First 40 -- Second 40: 0.013412428885
+ First  40 -- True 420: 1.3254667382
+ Second 40 -- True 420: 0.00189730478413
+
+Testing Convergence..
+ testing 0
+ ...
+ testing 99
+
+
+
+
+Compilation finished at Mon Mar 20 16:59:31
