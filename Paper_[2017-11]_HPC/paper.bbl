@@ -52,8 +52,8 @@ Beckman, P., K.~Iskra, K.~Yoshii, S.~Coghlan, and A.~Nataraj. 2008.
 Dahl, G.~E., T.~N. Sainath, and G.~E. Hinton. 2013.
 \newblock ``Improving deep neural networks for LVCSR using rectified linear
   units and dropout''.
-\newblock In {\em Acoustics, Speech and Signal Processing (ICASSP), 2013 IEEE
-  International Conference on}, pp.  8609--8613.
+\newblock In {\em IEEE International Conference on Acoustics, Speech and Signal
+  Processing (ICASSP), 2013}, pp.  8609--8613.
 \newblock IEEE.
 
 \bibitem[\protect\citeauthoryear{De, Kothari, and Mann}{De
@@ -61,19 +61,21 @@ Dahl, G.~E., T.~N. Sainath, and G.~E. Hinton. 2013.
 De, P., R.~Kothari, and V.~Mann. 2007.
 \newblock ``Identifying sources of operating system jitter through fine-grained
   kernel instrumentation''.
-\newblock In {\em Cluster Computing, 2007 IEEE International Conference on},
-  pp.  331--340.
+\newblock In {\em IEEE International Conference on Cluster Computing}, pp.
+  331--340.
 \newblock IEEE.
 
 \bibitem[\protect\citeauthoryear{Friedman}{Friedman}{1991}]{friedman1991multivariate}
 Friedman, J.~H. 1991.
 \newblock ``Multivariate adaptive regression splines''.
-\newblock {\em The annals of statistics\/}, pp. 1--67.
+\newblock {\em The Annals of Statistics\/}, pp. 1--67.
 
 
-\bibitem[\protect\citeauthoryear{Friedman and Stanford~University}{Friedman and
-  Stanford~University}{1993}]{stanford1993fast}
-Friedman, J.~H., and C.~S. L.~o. Stanford~University. 1993.
+\bibitem[\protect\citeauthoryear{Friedman and the Computational Statistics
+  Laboritory~of Stanford~University}{Friedman and the Computational Statistics
+  Laboritory~of Stanford~University}{1993}]{stanford1993fast}
+Friedman, J.~H., and the Computational Statistics Laboritory~of
+  Stanford~University. 1993.
 \newblock {\em Fast MARS.}
 
 
@@ -92,11 +94,11 @@ Hornik, K., M.~Stinchcombe, and H.~White. 1989.
 \newblock {\em Neural networks\/}~vol. 2 (5), pp. 359--366.
 
 
-\bibitem[\protect\citeauthoryear{Jones, Oliphant, Peterson, et~al.}{Jones, Eric
-  and Oliphant, Travis and Peterson, Pearu and others}{01  }]{scipy}
-Jones, Eric and Oliphant, Travis and Peterson, Pearu and others 2001--.
+\bibitem[\protect\citeauthoryear{Jones, Oliphant, and Peterson}{Jones
+  et~al.}{2017}]{scipy}
+Jones, E. and Oliphant, T. and Peterson, P. 2017.
 \newblock ``{SciPy}: Open source scientific tools for {Python}''.
-\newblock [Online; accessed 2017-06-23].
+\newblock http://www.scipy.org/ [Online; accessed 2017-06-23].
 
 \bibitem[\protect\citeauthoryear{Lee and Schachter}{Lee and
   Schachter}{1980}]{lee1980two}
@@ -112,8 +114,8 @@ Lofstead, J., F.~Zheng, Q.~Liu, S.~Klasky, R.~Oldfield, T.~Kordenbrock,
   K.~Schwan, and M.~Wolf. 2010.
 \newblock ``Managing variability in the IO performance of petascale storage
   systems''.
-\newblock In {\em High Performance Computing, Networking, Storage and Analysis
-  (SC), 2010 International Conference for}, pp.  1--12.
+\newblock In {\em International Conference on High Performance Computing,
+  Networking, Storage and Analysis (SC), 2010}, pp.  1--12.
 \newblock IEEE.
 
 \bibitem[\protect\citeauthoryear{M{\o}ller}{M{\o}ller}{1993}]{moller1993scaled}
@@ -124,8 +126,9 @@ M{\o}ller, M.~F. 1993.
 
 
 \bibitem[\protect\citeauthoryear{Norcott}{Norcott}{2017}]{iozone}
-Norcott, William D. 2017.
+Norcott, W. D. 2017.
 \newblock ``IOzone Filesystem Benchmark''.
+\newblock http://www.iozone.org [Online; accessed 2017-11-12].
 
 \bibitem[\protect\citeauthoryear{Pedregosa, Varoquaux, Gramfort, Michel,
   Thirion, Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos,
@@ -138,11 +141,13 @@ Pedregosa, F., G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
 \newblock {\em Journal of Machine Learning Research\/}~vol. 12, pp. 2825--2830.
 
 
-\bibitem[\protect\citeauthoryear{Rudy, Cherti, et~al.}{Rudy
-  et~al.}{2017}]{rudy2017pyearth}
-Rudy, Jason and Cherti, Mehdi and others 2017.
+\bibitem[\protect\citeauthoryear{Rudy and Cherti}{Rudy and
+  Cherti}{2017}]{rudy2017pyearth}
+Rudy, J. and Cherti, M. 2017.
 \newblock ``Py-Earth: A Python Implementation of Multivariate Adaptive
   Regression Splines''.
+\newblock https://github.com/scikit-learn-contrib/py-earth [Online; accessed
+  2017-07-09].
 
 \bibitem[\protect\citeauthoryear{Sartipizadeh and Vincent}{Sartipizadeh and
   Vincent}{2016}]{sartipizadeh2016computing}
@@ -156,7 +161,7 @@ Sartipizadeh, H., and T.~L. Vincent. 2016.
 Snavely, A., L.~Carrington, N.~Wolter, J.~Labarta, R.~Badia, and
   A.~Purkayastha. 2002.
 \newblock ``A framework for performance modeling and prediction''.
-\newblock In {\em Supercomputing, ACM/IEEE 2002 Conference}, pp.  21--21.
+\newblock In {\em Supercomputing, ACM/IEEE Conference}, pp.  21--21.
 \newblock IEEE.
 
 \bibitem[\protect\citeauthoryear{Thacker, Zhang, Watson, Birch, Iyer, and
@@ -174,9 +179,9 @@ Thacker, W.~I., J.~Zhang, L.~T. Watson, J.~B. Birch, M.~A. Iyer, and M.~W.
 Wang, G., A.~R. Butt, P.~Pandey, and K.~Gupta. 2009.
 \newblock ``A simulation approach to evaluating design decisions in mapreduce
   setups''.
-\newblock In {\em Modeling, Analysis \& Simulation of Computer and
-  Telecommunication Systems, 2009. MASCOTS'09. IEEE International Symposium
-  on}, pp.  1--11.
+\newblock In {\em IEEE International Symposium on Modeling, Analysis \&
+  Simulation of Computer and Telecommunication Systems (MASCOTS'09)}, pp.
+  1--11.
 \newblock IEEE.
 
 \bibitem[\protect\citeauthoryear{Wang, Khasymski, Krish, and Butt}{Wang
@@ -184,8 +189,8 @@ Wang, G., A.~R. Butt, P.~Pandey, and K.~Gupta. 2009.
 Wang, G., A.~Khasymski, K.~R. Krish, and A.~R. Butt. 2013.
 \newblock ``Towards improving mapreduce task scheduling using online simulation
   based predictions''.
-\newblock In {\em Parallel and Distributed Systems (ICPADS), 2013 International
-  Conference on}, pp.  299--306.
+\newblock In {\em International Conference on Parallel and Distributed Systems
+  (ICPADS), 2013}, pp.  299--306.
 \newblock IEEE.
 
 \bibitem[\protect\citeauthoryear{Ye, Jiang, Chen, Huang, and Wang}{Ye
@@ -193,8 +198,8 @@ Wang, G., A.~Khasymski, K.~R. Krish, and A.~R. Butt. 2013.
 Ye, K., X.~Jiang, S.~Chen, D.~Huang, and B.~Wang. 2010.
 \newblock ``Analyzing and modeling the performance in xen-based virtual cluster
   environment''.
-\newblock In {\em High Performance Computing and Communications (HPCC), 2010
-  12th IEEE International Conference on}, pp.  273--280.
+\newblock In {\em 12th IEEE International Conference on High Performance
+  Computing and Communications (HPCC)}, pp.  273--280.
 \newblock IEEE.
 
 \end{thebibliography}

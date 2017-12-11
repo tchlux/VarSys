@@ -16,7 +16,7 @@ CLEAN_NUMBER_STRING = lambda number: str(number).rstrip("0").rstrip(".") \
 SMALL_NUMBER = 0.00001
 # Arguments for algorithms that need to be controlled
 FBM_NUM_BOXES = MARS_MAX_BASES = 200
-NEAREST_NEIGHBOR_NUM_NEIGHBORS = 3
+NEAREST_NEIGHBOR_NUM_NEIGHBORS = 1
 BAYES_NUM_TREES = 100
 EXTRA_ARGS = {
     "FitBoxMesh": [FBM_NUM_BOXES],

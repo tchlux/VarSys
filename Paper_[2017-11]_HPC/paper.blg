@@ -4,46 +4,76 @@ The top-level auxiliary file: paper.aux
 The style file: scsproc.bst
 Database file #1: paper.bib
 Warning--entry type for "rudy2017pyearth" isn't style-file defined
---line 292 of file paper.bib
+--line 297 of file paper.bib
+Warning--entry type for "scipy" isn't style-file defined
+--line 307 of file paper.bib
 Warning--entry type for "iozone" isn't style-file defined
---line 309 of file paper.bib
+--line 315 of file paper.bib
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3161 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3161 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3161 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3161 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3249 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3249 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3249 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3249 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3249 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3249 of file scsproc.bst
 Warning--no journal in amos2014algorithm
 Warning--no number and no volume in amos2014algorithm
 Warning--page numbers missing in amos2014algorithm
 Warning--page numbers missing in barker2009using
 Warning--no number and no volume in friedman1991multivariate
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3321 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3321 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3321 of file scsproc.bst
+Name 2 in "Friedman, Jerome H. and the Computational Statistics Laboritory of Stanford University," has a comma at the end for entry stanford1993fast
+while executing---line 3321 of file scsproc.bst
 Warning--empty publisher in stanford1993fast
 Warning--page numbers missing in sartipizadeh2016computing
 You've used 25 entries,
             2956 wiz_defined-function locations,
-            777 strings with 10224 characters,
-and the built_in function-call counts, 22144 in all, are:
-= -- 1771
-> -- 2034
+            778 strings with 10307 characters,
+and the built_in function-call counts, 22130 in all, are:
+= -- 1779
+> -- 2018
 < -- 8
-+ -- 646
-- -- 666
-* -- 2185
-:= -- 3940
-add.period$ -- 79
++ -- 640
+- -- 664
+* -- 2177
+:= -- 3938
+add.period$ -- 81
 call.type$ -- 25
 change.case$ -- 203
 chr.to.int$ -- 25
 cite$ -- 32
 duplicate$ -- 528
 empty$ -- 1149
-format.name$ -- 750
-if$ -- 4218
+format.name$ -- 752
+if$ -- 4212
 int.to.chr$ -- 1
 int.to.str$ -- 0
 missing$ -- 23
-newline$ -- 146
-num.names$ -- 243
-pop$ -- 212
+newline$ -- 148
+num.names$ -- 247
+pop$ -- 210
 preamble$ -- 1
 purify$ -- 378
 quote$ -- 0
-skip$ -- 541
+skip$ -- 543
 stack$ -- 0
 substring$ -- 957
 swap$ -- 196
@@ -52,7 +82,7 @@ text.prefix$ -- 0
 top$ -- 0
 type$ -- 586
 warning$ -- 7
-while$ -- 218
+while$ -- 222
 width$ -- 0
-write$ -- 368
-(There were 9 warnings)
+write$ -- 372
+(There were 14 error messages)

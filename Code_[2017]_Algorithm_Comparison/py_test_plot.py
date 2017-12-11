@@ -7,49 +7,48 @@ import numpy as np
 from util.plotly import *
 from py_settings import *
 
-from nearest import Linn
-
 # Preparing the data
 normalize_points = True
 random_points = True
-random_perturbation = True
+random_perturbation = False
 tight_plot = False
 plot_results = True
+autoshow_plot = True
 perform_test = False
 
 perturbation_multiplier = 1.0
 plot_points = 4000
-num_points = 4
+num_points = 10
 dim = 2
 multiplier = 10
+rand_seed = 6 # 2
 
 # from sklearn.linear_model import RANSACRegressor as sklearn_alg
 # class Alg(sklearn_alg):
 #     def __call__(self,x):
 #         return self.predict(x)
 
-# algorithms = [Alg()]
-# algorithms = [BSB()]
-# algorithms = [FitBoxMesh()]
-# algorithms = [MaxBoxMesh()]
-# algorithms = [SplineMesh()]
-# algorithms = [NearestNeighbor()]
-# algorithms = [LSHEP()]
-# algorithms = [LinearModel()]
-# algorithms = [Delaunay()]
-# algorithms = [ MLPRegressor() ] 
-# algorithms = [ SVR() ] 
-algorithms = [ Linn() ]
+algorithms = []
+# algorithms += [ Alg() ]
+algorithms += [ SVR() ] 
+algorithms += [ MARS() ]
+algorithms += [ LSHEP() ]
+algorithms += [ Delaunay() ]
+# algorithms += [ FitBoxMesh() ]
+algorithms += [ MaxBoxMesh() ]
+# algorithms += [ LinearModel() ]
+algorithms += [ VoronoiMesh() ]
+algorithms += [ MLPRegressor() ] 
+# algorithms += [ NearestPlane() ]
+algorithms += [ NearestNeighbor() ]
 
-# algorithms = [NearestPlane()]
-
-np.random.seed(2)
+np.random.seed(rand_seed)
 
 # Generate testing points in a grid pattern
 plot_range = [[-0.3,1.3]]*dim # [[0,1]]*dim # 
 if random_points:
     # Generate testing points randomly spaced
-    points = np.random.random(size=(num_points**dim,dim)) * (num_points-1)*num_points
+    points = np.random.random(size=(num_points**dim,dim)) * num_points
 else:
     points = np.meshgrid(*[np.linspace(0,num_points-1,num_points) for i in range(dim)])
     points = np.array([p.flatten() for p in points]).T * num_points
@@ -76,7 +75,7 @@ print()
 print("Points:   %s"%(str(points[:,:-1].shape)))#,points[:10,:-1])
 print("Response: %s"%(str(points[:, -1].shape)))#,points[:10,-1])
 
-if normalize_points:
+if (normalize_points and (len(points) > 1)):
     # Normalize the points themselves
     max_val = float(np.max(points[:,:-1]))
     min_val = float(np.min(points[:,:-1]))
@@ -98,80 +97,40 @@ if tight_plot:
 
 
 print("Beginning to fit the data...")
-for s in algorithms:
-    name = (str(s.__class__).split("'")[1]).split(".")[1]
-    start = time.time()
-    s.fit(points[:,:-1].copy(), points[:,-1].copy(), *EXTRA_ARGS.get(name,[]))
-    total = time.time()-start
-    print("%s: %s seconds"%(name,total))
-
-
-# surf = algorithms[0]
-# print(surf.boxes.T)
-# print(surf.box_widths.T)
-# exit()
-
 if plot_results:
+    p = Plot()
     # Plotting the results
     print()
     print("Plotting..")
     print()
-    p = Plot()
-    p2 = Plot()
-    p2.add("Input Data", *(points[:,:-1].T))
     p.add("Raw data",*(points.T))
 
-    use_gradient = len(algorithms) <= 1
-    surf_x = np.meshgrid(*[
-        np.linspace(lower,upper,PLOT_POINTS**(1/dim))
-        for (lower,upper) in plot_range])
-    surf_x = np.array([x.flatten() for x in surf_x]).T
-    marker_args = {"marker_size":3, "marker_line_width":1, "opacity":0.8}
-    if len(algorithms) <= 1: marker_args = {}
-    for s in algorithms:
-        name = (str(s.__class__).split("'")[1]).split(".")[1]
-        print("Adding '%s'..."%(name))
+for s in algorithms:
+    name = (str(s.__class__).split("'")[1]).split(".")[-1]
+    start = time.time()
+    s.fit(points[:,:-1].copy(), points[:,-1].copy(), *EXTRA_ARGS.get(name,[]))
+    total = time.time()-start
+    print("%s:"%name)
+    print(" ","%.2e second fit"%total)
+
+    if plot_results:
+        use_gradient = len(algorithms) <= 1
+        surf_x = np.meshgrid(*[
+            np.linspace(lower,upper,plot_points**(1/dim))
+            for (lower,upper) in plot_range])
+        surf_x = np.array([x.flatten() for x in surf_x]).T
+        plot_kwargs = {"marker_size":3, "marker_line_width":1,
+                       "opacity":0.8, "plot_type":"surface",
+                       "use_gradient":use_gradient, }
+        if len(algorithms) <= 1: plot_kwargs.update({"opacity":1.0})
+        if len(algorithms) >= 3: plot_kwargs.update({"plot_type":"scatter3d",
+                                                     "marker_size":2})
         start = time.time()
         surf_y = s(surf_x.copy())
-        print(surf_x.shape)
-        print(surf_y.shape)
         total = time.time() - start
-        print("  %.2f seconds."%total)
-        # p.add(name, *(surf_x.T), surf_y, use_gradient=use_gradient,
-        #       plot_type='surface', opacity=0.9,
-        #       # mode="markers", marker_size=3, marker_line_width=1,
-        #       **marker_args,
-        # )
-        surf_y = s.weights(surf_x.copy())
-        for i in range(len(points)):
-            print("Adding region for %i.."%i)
-            color = p2.color(i+1)
-            p2.add("p%i"%i, [points[i,0]], [points[i,1]], color=color,
-                   show_in_legend=False, shade=False, group=str(i))
-            p2.add_region("Support for point %i"%i, 
-                          lambda x: s.weights(np.array([x]),i)[0]>0,
-                          plot_points=5000, color=color, group=str(i))
-        # p.add(name+" weights", *(surf_x.T), surf_y, use_gradient=use_gradient,
-        #       plot_type='surface', opacity=0.9,
-        #       # mode="markers", marker_size=3, marker_line_width=1,
-        #       **marker_args,
-        # )
-    points[:,-1] = 0
-    # p.add("Raw Zerod",*(points.T))
-    p2.plot()
-    # p.plot()
+        print(" ","%.2e second prediction at %i points"%(total,len(surf_y)))
+        print(" "," ","%.2e second per point"%(total/len(surf_y)))
+        p.add(name, *(surf_x.T), surf_y,  **plot_kwargs, )
+        print()
 
-if perform_test:
-    print()
-    print("Input points:")
-    print(points[:,:-1])
-    print()
-    tester = Delaunay()
-    tester.fit(points[:,:-1], points[:,-1])
-    points = np.array([
-        [0.5,1.0],
-        [0.6, 1.2],
-        [.6455161290322581902, 1.354483870967742032],
-    ])
-
-    tester.find_simplex(points)
+if plot_results: p.plot(show=autoshow_plot)
