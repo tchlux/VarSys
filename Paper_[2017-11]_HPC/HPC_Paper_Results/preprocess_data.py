@@ -163,7 +163,7 @@ kwargs = dict(layout=dict(font=font, titlefont=font, margin=margin,
 
 # VARIANCE PLOT
 print("Collecting Var_TT_Ratio data..")
-brief_title = "Predicting I/O Throughput Sample Variance"
+brief_title = "Predicting I/O Throughput Variance"
 error_col = "Relative_Mean_Error"
 training_ranges = [(0,20),(20,40),(40,60),(60,80),(80,100)]
 # Initialize thep lot

@@ -369,8 +369,8 @@ technique for producing an interpolant \shortcite{lee1980two}. The
 Delaunay triangulation of a set of data points into simplices is such
 that the sphere defined by the vertices of each simplex contains no
 data points in the sphere's interior. For a $d$-simplex S with
-vertices $v^{(0)}, v^{(1)}, \ldots, v^{(d)}$, $x \in S$, and data
-values $f(v^{(i)})$, $i=0$,$\ldots$,$d$, $x$ is a unique convex
+vertices $v^{(0)}$, $v^{(1)}$, $\ldots$, $v^{(d)}$, $x \in S$, and
+data values $f(v^{(i)})$, $i=0$, $\ldots$, $d$, $x$ is a unique convex
 combination of the vertices,
 
 $$ x = \sum_{i=0}^{d} w_i v^{(i)}, \quad \sum_{i=0}^{d} w_i = 1, \quad
@@ -496,9 +496,10 @@ size to testing size. Given an input data matrix with $n$ rows
 \begin{enumerate}
 \item For all $k = 1$, $\ldots$, $d$ and for all nonempty subsets $F
   \subset \{1, 2, \ldots, d\}$, reduce the input data to points $(z,
-  f_F(z))$ with $z \in \mathbb{R}^k$ and $f_F(z) = E[ \{ f(x^{(i)})
-    \mid (x^{(i)}_F = z) \} ]$, where $E[\cdot]$ denotes the mean and
-  $x^{(i)}_F$ is the subvector of $x^{(i)}$ indexed by $F$.
+  f_F(z))$ with $z \in \mathbb{R}^k$ and $f_F(z) = E\bigl[ \bigl\{
+    f\bigl(x^{(i)}\bigr) \bigm| \bigl(x^{(i)}_F = z\bigr) \bigr\}
+    \bigr]$, where $E[\cdot]$ denotes the mean and $x^{(i)}_F$ is the
+  subvector of $x^{(i)}$ indexed by $F$.
 \item For all $r$ in $\{5, 10, \ldots, 95\}$, generate $N$ random
   splits $(train, test)$ of the reduced data with $r$ percentage for
   training and $100 - r$ percentage for testing.
@@ -515,24 +516,25 @@ ensure that training points are well spaced, a statistical method for
 picking points from \shortciteN{amos2014algorithm} is used:
 \begin{enumerate}
 \item Generate a sequence of all pairs of points
-  ${(z^{(i_1)},z^{(j_1)}), (z^{(i_2)},z^{(j_2)}), \ldots}$ sorted by
-  ascending pairwise Euclidean distance between points, so that
-  $||z^{(i_k)}-z^{(j_k)}||_2 \leq ||z^{(i_{k+1})}-z^{(j_{k+1})}||_2$.
+  $\bigl(z^{(i_1)},z^{(j_1)}\bigr), \bigl(z^{(i_2)},z^{(j_2)}\bigr),
+  \ldots$ sorted by ascending pairwise Euclidean distance between
+  points, so that $\bigl|\bigl|z^{(i_k)}-z^{(j_k)}\bigr|\bigr|_2 \leq
+  \bigl|\bigl|z^{(i_{k+1})}-z^{(j_{k+1})}\bigr|\bigr|_2$.
 \item Sequentially remove points from candidacy until only $|train|$
-  remain by randomly selecting one point from the pair $(z^{(i_m)},
-  z^{(j_m)})$ for $m = 1,\ldots$ if both $z^{(i_m)}$ and $z^{(j_m)}$
-  are still candidates for removal.
+  remain by randomly selecting one point from the pair
+  $\bigl(z^{(i_m)}, z^{(j_m)}\bigr)$ for $m = 1,\ldots$ if both
+  $z^{(i_m)}$ and $z^{(j_m)}$ are still candidates for removal.
 \end{enumerate}
 
 Given the large number of constraints, level of reduction, and use of
-randomness in the MDA procedure, occasionally $N$ unique training /
-testing splits may not be created or may not exist. In these cases, if
-there are fewer than $N$ possible splits, then deterministically
-generated splits are used. Otherwise after $3N$ attempts, only the
-unique splits are kept for analysis. The MDA procedure has been
-implemented in Python\#3 while most regression and interpolation
-methods are Fortran wrapped with Python. All randomness has been
-seeded for repeatability.
+randomness in the MDA procedure, occasionally $N$ unique
+training/testing splits may not be created or may not exist. In these
+cases, if there are fewer than $N$ possible splits, then
+deterministically generated splits are used. Otherwise after $3N$
+attempts, only the unique splits are kept for analysis. The MDA
+procedure has been implemented in Python\#3 while most regression and
+interpolation methods are Fortran wrapped with Python. All randomness
+has been seeded for repeatability.
 
 For any index subset $F$ (of size $k$) and selected value of $r$, MDA
 will generate up to $N$ multivariate models $f_F(z)$ and predictions
@@ -579,7 +581,7 @@ values span three orders of magnitude (as can be seen in Table
 orders of magnitude. It is expected therefore, that all studied
 multivariate models perform better than a na\"{\i}ve approach,
 achieving relative errors strictly less than $10^3$ for throughput
-mean and $10^6$ for throughput sample variance. Ideally, models will
+mean and $10^6$ for throughput variance. Ideally, models will
 yield relative errors significantly smaller than 1.
 
 \vspace{-10pt}
@@ -676,7 +678,7 @@ number of prediction error outliers.
 The present results demonstrate that a straightforward application of
 multivariate modeling techniques can be used to effectively predict
 HPC system performance. Some modeling effort on the part of a systems
-engineer combined with a significant amount of experimentation (weeks
+engineer combined with a significant amount of experimentation (days
 of CPU time for the IOzone data used here) can yield a model capable
 of accurately tuning an HPC system to the desired performance
 specification, although qualitatively correct predictions can be
