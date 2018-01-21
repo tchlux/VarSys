@@ -1,0 +1,2 @@
+Validation KS statistics were estimated to be \{.14, .18, .11\} for Delaunay, Max Box, and Voronoi meshes. Actual KS statistics were \{.27, .13, .11\}
+
