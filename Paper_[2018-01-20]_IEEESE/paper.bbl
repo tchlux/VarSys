@@ -86,27 +86,27 @@ D.-T. Lee and B.~J. Schachter, ``Two algorithms for constructing a delaunay
   Sciences}, vol.~9, no.~3, pp. 219--242, 1980.
 
 \bibitem{de2013box}
-C.~De~Boor, K.~H{\"o}llig, and S.~Riemenschneider, \emph{Box splines}.\hskip
+C.~De~Boor, K.~H{\"o}llig, and S.~Riemenschneider, \emph{Box Splines}.\hskip
   1em plus 0.5em minus 0.4em\relax Springer Science \& Business Media, 2013,
   vol.~98.
 
 \bibitem{cover1967nearest}
 T.~Cover and P.~Hart, ``Nearest neighbor pattern classification,'' \emph{IEEE
-  transactions on information theory}, vol.~13, no.~1, pp. 21--27, 1967.
+  Transactions on Information Theory}, vol.~13, no.~1, pp. 21--27, 1967.
 
 \bibitem{dirichlet1850reduction}
 G.~L. Dirichlet, ``{\"U}ber die reduction der positiven quadratischen formen
-  mit drei unbestimmten ganzen zahlen.'' \emph{Journal f{\"u}r die reine und
-  angewandte Mathematik}, vol.~40, pp. 209--227, 1850.
+  mit drei unbestimmten ganzen zahlen.'' \emph{Journal f{\"u}r die Reine und
+  Angewandte Mathematik}, vol.~40, pp. 209--227, 1850.
 
 \bibitem{guyon2003introduction}
 I.~Guyon and A.~Elisseeff, ``An introduction to variable and feature
-  selection,'' \emph{Journal of machine learning research}, vol.~3, no. Mar,
+  selection,'' \emph{Journal of Machine Learning Research}, vol.~3, no. Mar,
   pp. 1157--1182, 2003.
 
 \bibitem{pudil1994floating}
 P.~Pudil, J.~Novovi{\v{c}}ov{\'a}, and J.~Kittler, ``Floating search methods in
-  feature selection,'' \emph{Pattern recognition letters}, vol.~15, no.~11, pp.
+  feature selection,'' \emph{Pattern Recognition Letters}, vol.~15, no.~11, pp.
   1119--1125, 1994.
 
 \bibitem{ferri1994comparative}
@@ -114,21 +114,14 @@ F.~Ferri, P.~Pudil, M.~Hatef, and J.~Kittler, ``Comparative study of techniques
   for large-scale feature selection,'' \emph{Pattern Recognition in Practice
   IV}, vol. 1994, pp. 403--413, 1994.
 
-\bibitem{lux2016convergence}
-T.~Lux, ``Convergence rate evaluation of derivative-free optimization
-  techniques,'' in \emph{International Workshop on Machine Learning,
-  Optimization and Big Data}.\hskip 1em plus 0.5em minus 0.4em\relax Springer,
-  2016, pp. 246--256.
-
 \bibitem{lilliefors1967kolmogorov}
 H.~W. Lilliefors, ``On the kolmogorov-smirnov test for normality with mean and
-  variance unknown,'' \emph{Journal of the American statistical Association},
+  variance unknown,'' \emph{Journal of the American Statistical Association},
   vol.~62, no. 318, pp. 399--402, 1967.
 
 \bibitem{iozone}
 \BIBentryALTinterwordspacing
-W.~D. Norcott. (2017) Iozone filesystem benchmark. Http://www.iozone.org
-  [Online; accessed 2017-11-12]. [Online]. Available:
+W.~D. Norcott. (2017) Iozone filesystem benchmark. [Online]. Available:
   \url{http://www.iozone.org}
 \BIBentrySTDinterwordspacing
 

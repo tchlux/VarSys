@@ -26,56 +26,12 @@ test_len = max(map(len, tests))
 # Extract a subset of data, only the "readers" test
 # data = data[data["Test"] == "readers"]
 
-# ============================================================
-
-count = 0
-failures = 0
-slow_configs = []
-throughput_threshold = 40000
-total_threshold = 80
-
-p = Plot("Low throughput configurations", "Sample number", "Throughput")
-for row in data:
-    total = sum(1 for h in h_values if row[h] < throughput_threshold)
-    if total > 0:
-        slow_configs.append((tuple(row[h] for h in h_config), total))
-        if total >= total_threshold:
-            raw_values = np.array([row[h] for h in h_values])
-            name = str(slow_configs[-1][0] + (row["Test"],))
-            p.add("",np.arange(len(raw_values)), raw_values, 
-                  frame=name, group="")
-    if (row["File Size"] == 4 and row["Record Size"] == 4): 
-        count += 1
-        if total > 0:
-            failures += total
-slow_configs = sorted(slow_configs,key=lambda r: r[1])[-16:]
-for (c,t) in slow_configs:
-    print(c,t)
-
-p.plot(show_slider_labels=False, frame_label="System Configuration: ",
-       data_easing=True, show_legend=False, bounce=True)
-
-print()
-print("Number of slow runs: ", failures)
-print("Number of (4,4) runs:", count*150)
-print("Total number of runs:", len(data)*150)
-print()
-all_throughputs = (np.vstack([data[h] for h in h_values]).T).flatten()
-
-print("Total tests:        ",len(all_throughputs))
-print("Smallest throughput:",min(all_throughputs))
-print("Throughputs <=%s: "%throughput_threshold,
-      sum(np.where(all_throughputs <= 10000, 1, 0)))
-
-exit()
-
-
 # Generate the sorted list of indices (sorted by min value, then by range)
 indices = np.arange(len(data))
 
-PLOT_RAW_THROUGHPUT = True
+PLOT_RAW_THROUGHPUT = False
 SORT_BY_RANGE = True
-SORT_BY_CONFIG = False
+SORT_BY_CONFIG = not SORT_BY_RANGE
 
 if SORT_BY_RANGE:
     sorted_by = "Range"
@@ -106,10 +62,10 @@ if PLOT_RAW_THROUGHPUT:
              "<br>Move slider by clicking and dragging to manually explore. (below system configuration text)</i>",
              "Sample Number", "Throughput")
 else:
-    p = Plot("CDFs of 300 System Configurations ('Readers' Test) Sorted by %s"%sorted_by+
-             "<br><i style='font-size:80%;'>Use 'Autoscale' to zoom in on a CDF. Use 'Home' to reset to full range. (top right button panel)"+
+    p = Plot("PMFs of 300 System Configurations ('Readers' Test) Sorted by %s"%sorted_by+
+             "<br><i style='font-size:80%;'>Use 'Autoscale' to zoom in on a PMF. Use 'Home' to reset to full range. (top right button panel)"+
              "<br>Move slider by clicking and dragging to manually explore. (below system configuration text)</i>",
-             "Throughput", "CDF Value (P[Trial Throughput < Throughput])")
+             "Throughput", "PMF Value (P[Trial Throughput < Throughput])")
 color = p.color()
 global_min_max = [float("inf"), -float("inf")]
 for i in indices:
@@ -127,6 +83,25 @@ for i in indices:
         p.add_func("", cdf_fit_func(values), min_max, group="",
                    plot_points=500, frame=name,
                    show_in_legend=False)
+        # if all(v in c for (c,v) in zip(tuple(config),("3200000","256","64","24"))):
+        #     config = [h+" "+str(row[h])+""+s for (h,s) in zip(
+        #         h_config,("Hz","KB","KB",""))]
+        #     name = (("&nbsp;"*3).join(config))
+        #     p = Plot("Histogram of 150 IOzone 'reader' Tests<br>"+name,
+        #              "I/O Read Throughput (KB/sec)", "Count")
+        #     p.add_histogram("", values, group="", show_in_legend=False)
+        #     p.plot(show_legend=False, file_name="[2018-01-24]_Sample_Histogram(1).html")
+        #     exit()
+        # if all(v in c for (c,v) in zip(tuple(config),("3500000","4096","8","24"))):
+        #     config = [h+" "+str(row[h])+""+s for (h,s) in zip(
+        #         h_config,("Hz","KB","KB",""))]
+        #     name = (("&nbsp;"*3).join(config))
+        #     p = Plot("Histogram of 150 IOzone 'reader' Tests<br>"+name,
+        #              "I/O Read Throughput (KB/sec)", "Count")
+        #     p.add_histogram("", values, group="", show_in_legend=False)
+        #     p.plot(show_legend=False, file_name="[2018-01-24]_Sample_Histogram(2).html")
+        #     exit()
+
 
 if PLOT_RAW_THROUGHPUT:
     p.plot(show_legend=False, frame_label="<b>Throughput Range:</b> ",

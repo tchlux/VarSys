@@ -1,0 +1,211 @@
+%%% -*-BibTeX-*-
+%%% Do NOT edit. File created by BibTeX with style
+%%% ACM-Reference-Format-Journals [18-Jan-2012].
+
+\begin{thebibliography}{14}
+
+%%% ====================================================================
+%%% NOTE TO THE USER: you can override these defaults by providing
+%%% customized versions of any of these macros before the \bibliography
+%%% command.  Each of them MUST provide its own final punctuation,
+%%% except for \shownote{}, \showDOI{}, and \showURL{}.  The latter two
+%%% do not use final punctuation, in order to avoid confusing it with
+%%% the Web address.
+%%%
+%%% To suppress output of a particular field, define its macro to expand
+%%% to an empty string, or better, \unskip, like this:
+%%%
+%%% \newcommand{\showDOI}[1]{\unskip}   % LaTeX syntax
+%%%
+%%% \def \showDOI #1{\unskip}           % plain TeX syntax
+%%%
+%%% ====================================================================
+
+\ifx \showCODEN    \undefined \def \showCODEN     #1{\unskip}     \fi
+\ifx \showDOI      \undefined \def \showDOI       #1{#1}\fi
+\ifx \showISBNx    \undefined \def \showISBNx     #1{\unskip}     \fi
+\ifx \showISBNxiii \undefined \def \showISBNxiii  #1{\unskip}     \fi
+\ifx \showISSN     \undefined \def \showISSN      #1{\unskip}     \fi
+\ifx \showLCCN     \undefined \def \showLCCN      #1{\unskip}     \fi
+\ifx \shownote     \undefined \def \shownote      #1{#1}          \fi
+\ifx \showarticletitle \undefined \def \showarticletitle #1{#1}   \fi
+\ifx \showURL      \undefined \def \showURL       {\relax}        \fi
+% The following commands are used for tagged output and should be
+% invisible to TeX
+\providecommand\bibfield[2]{#2}
+\providecommand\bibinfo[2]{#2}
+\providecommand\natexlab[1]{#1}
+\providecommand\showeprint[2][]{arXiv:#2}
+
+\bibitem[\protect\citeauthoryear{Amos, Easterling, Watson, Thacker, Castle, and
+  Trosset}{Amos et~al\mbox{.}}{2014}]%
+        {amos2014algorithm}
+\bibfield{author}{\bibinfo{person}{Brandon~D. Amos}, \bibinfo{person}{David~R.
+  Easterling}, \bibinfo{person}{Layne~T. Watson}, \bibinfo{person}{William~I.
+  Thacker}, \bibinfo{person}{Brent~S. Castle}, {and}
+  \bibinfo{person}{Michael~W. Trosset}.} \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Algorithm XXX: QNSTOP—quasi-Newton algorithm for
+  stochastic optimization}.
+\newblock \bibinfo{journal}{{\em Technical Report 14-02, Dept. of Computer
+  Science, VPI\&SU, Blacksburg, VA\/}} (\bibinfo{year}{2014}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Cheney and Light}{Cheney and Light}{2009}]%
+        {cheney2009course}
+\bibfield{author}{\bibinfo{person}{Elliott~Ward Cheney} {and}
+  \bibinfo{person}{William~Allan Light}.} \bibinfo{year}{2009}\natexlab{}.
+\newblock \bibinfo{booktitle}{{\em A course in approximation theory}}.
+  Vol.~\bibinfo{volume}{101}.
+\newblock \bibinfo{publisher}{American Mathematical Soc.}
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Cortez and Morais}{Cortez and Morais}{2007}]%
+        {cortez2007data}
+\bibfield{author}{\bibinfo{person}{Paulo Cortez} {and}
+  \bibinfo{person}{An{\'\i}bal de Jesus~Raimundo Morais}.}
+  \bibinfo{year}{2007}\natexlab{}.
+\newblock \showarticletitle{A data mining approach to predict forest fires
+  using meteorological data}.
+\newblock  (\bibinfo{year}{2007}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Cortez and Silva}{Cortez and Silva}{2008}]%
+        {cortez2008using}
+\bibfield{author}{\bibinfo{person}{Paulo Cortez} {and} \bibinfo{person}{Alice
+  Maria~Gon{\c{c}}alves Silva}.} \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{Using data mining to predict secondary school
+  student performance}.
+\newblock  (\bibinfo{year}{2008}).
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Cover and Hart}{Cover and Hart}{1967}]%
+        {cover1967nearest}
+\bibfield{author}{\bibinfo{person}{Thomas Cover} {and} \bibinfo{person}{Peter
+  Hart}.} \bibinfo{year}{1967}\natexlab{}.
+\newblock \showarticletitle{Nearest neighbor pattern classification}.
+\newblock \bibinfo{journal}{{\em IEEE transactions on information theory\/}}
+  \bibinfo{volume}{13}, \bibinfo{number}{1} (\bibinfo{year}{1967}),
+  \bibinfo{pages}{21--27}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{De~Boor, De~Boor, Math{\'e}maticien, De~Boor,
+  and De~Boor}{De~Boor et~al\mbox{.}}{1978}]%
+        {de1978practical}
+\bibfield{author}{\bibinfo{person}{Carl De~Boor}, \bibinfo{person}{Carl
+  De~Boor}, \bibinfo{person}{Etats-Unis Math{\'e}maticien},
+  \bibinfo{person}{Carl De~Boor}, {and} \bibinfo{person}{Carl De~Boor}.}
+  \bibinfo{year}{1978}\natexlab{}.
+\newblock \bibinfo{booktitle}{{\em A practical guide to splines}}.
+  Vol.~\bibinfo{volume}{27}.
+\newblock \bibinfo{publisher}{Springer-Verlag New York}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{De~Boor, H{\"o}llig, and
+  Riemenschneider}{De~Boor et~al\mbox{.}}{2013}]%
+        {de2013box}
+\bibfield{author}{\bibinfo{person}{Carl De~Boor}, \bibinfo{person}{Klaus
+  H{\"o}llig}, {and} \bibinfo{person}{Sherman Riemenschneider}.}
+  \bibinfo{year}{2013}\natexlab{}.
+\newblock \bibinfo{booktitle}{{\em Box splines}}. Vol.~\bibinfo{volume}{98}.
+\newblock \bibinfo{publisher}{Springer Science \& Business Media}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{De~Vito, Massera, Piga, Martinotto, and
+  Di~Francia}{De~Vito et~al\mbox{.}}{2008}]%
+        {de2008field}
+\bibfield{author}{\bibinfo{person}{S De~Vito}, \bibinfo{person}{E Massera},
+  \bibinfo{person}{M Piga}, \bibinfo{person}{L Martinotto}, {and}
+  \bibinfo{person}{G Di~Francia}.} \bibinfo{year}{2008}\natexlab{}.
+\newblock \showarticletitle{On field calibration of an electronic nose for
+  benzene estimation in an urban pollution monitoring scenario}.
+\newblock \bibinfo{journal}{{\em Sensors and Actuators B: Chemical\/}}
+  \bibinfo{volume}{129}, \bibinfo{number}{2} (\bibinfo{year}{2008}),
+  \bibinfo{pages}{750--757}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Dirichlet}{Dirichlet}{1850}]%
+        {dirichlet1850reduction}
+\bibfield{author}{\bibinfo{person}{G~Lejeune Dirichlet}.}
+  \bibinfo{year}{1850}\natexlab{}.
+\newblock \showarticletitle{{\"U}ber die Reduction der positiven quadratischen
+  Formen mit drei unbestimmten ganzen Zahlen.}
+\newblock \bibinfo{journal}{{\em Journal f{\"u}r die reine und angewandte
+  Mathematik\/}}  \bibinfo{volume}{40} (\bibinfo{year}{1850}),
+  \bibinfo{pages}{209--227}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Dutour~Sikiri{\'c}, Sch{\"u}rmann, and
+  Vallentin}{Dutour~Sikiri{\'c} et~al\mbox{.}}{2009}]%
+        {dutour2009complexity}
+\bibfield{author}{\bibinfo{person}{Mathieu Dutour~Sikiri{\'c}},
+  \bibinfo{person}{Achill Sch{\"u}rmann}, {and} \bibinfo{person}{Frank
+  Vallentin}.} \bibinfo{year}{2009}\natexlab{}.
+\newblock \showarticletitle{Complexity and algorithms for computing Voronoi
+  cells of lattices}.
+\newblock \bibinfo{journal}{{\em Mathematics of computation\/}}
+  \bibinfo{volume}{78}, \bibinfo{number}{267} (\bibinfo{year}{2009}),
+  \bibinfo{pages}{1713--1731}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Lazos, Sproul, and Kay}{Lazos
+  et~al\mbox{.}}{2014}]%
+        {lazos2014optimisation}
+\bibfield{author}{\bibinfo{person}{Dimitris Lazos}, \bibinfo{person}{Alistair~B
+  Sproul}, {and} \bibinfo{person}{Merlinde Kay}.}
+  \bibinfo{year}{2014}\natexlab{}.
+\newblock \showarticletitle{Optimisation of energy management in commercial
+  buildings with weather forecasting inputs: A review}.
+\newblock \bibinfo{journal}{{\em Renewable and Sustainable Energy Reviews\/}}
+  \bibinfo{volume}{39} (\bibinfo{year}{2014}), \bibinfo{pages}{587--603}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{Norcott}{Norcott}{2017}]%
+        {iozone}
+\bibfield{author}{\bibinfo{person}{W.~D. Norcott}.}
+  \bibinfo{year}{2017}\natexlab{}.
+\newblock \bibinfo{title}{IOzone Filesystem Benchmark}.
+\newblock   (\bibinfo{year}{2017}).
+\newblock
+\showURL{%
+\url{http://www.iozone.org}}
+\newblock
+\shownote{http://www.iozone.org [Online; accessed 2017-11-12].}
+
+
+\bibitem[\protect\citeauthoryear{Tsanas, Little, McSharry, and Ramig}{Tsanas
+  et~al\mbox{.}}{2010}]%
+        {tsanas2010accurate}
+\bibfield{author}{\bibinfo{person}{Athanasios Tsanas}, \bibinfo{person}{Max~A
+  Little}, \bibinfo{person}{Patrick~E McSharry}, {and}
+  \bibinfo{person}{Lorraine~O Ramig}.} \bibinfo{year}{2010}\natexlab{}.
+\newblock \showarticletitle{Accurate telemonitoring of Parkinson's disease
+  progression by noninvasive speech tests}.
+\newblock \bibinfo{journal}{{\em IEEE transactions on Biomedical
+  Engineering\/}} \bibinfo{volume}{57}, \bibinfo{number}{4}
+  (\bibinfo{year}{2010}), \bibinfo{pages}{884--893}.
+\newblock
+
+
+\bibitem[\protect\citeauthoryear{unther Greiner and Hormann}{unther Greiner and
+  Hormann}{1996}]%
+        {unther1996interpolating}
+\bibfield{author}{\bibinfo{person}{G unther Greiner} {and} \bibinfo{person}{Kai
+  Hormann}.} \bibinfo{year}{1996}\natexlab{}.
+\newblock \showarticletitle{Interpolating and approximating scattered 3D-data
+  with hierarchical tensor product B-splines}. In \bibinfo{booktitle}{{\em
+  Proceedings of Chamonix}}. \bibinfo{pages}{1}.
+\newblock
+
+
+\end{thebibliography}

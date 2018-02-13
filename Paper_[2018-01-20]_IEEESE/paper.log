@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  20 JAN 2018 13:39
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2016.5.22)  1 FEB 2018 10:45
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -586,13 +586,13 @@ File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 
 
 ]
-<plot-delaunay-example-prediction.pdf, id=15, 345.29pt x 260.975pt>
+<plot-delaunay-example-prediction.pdf, id=15, 361.35pt x 275.0275pt>
 File: plot-delaunay-example-prediction.pdf Graphic file (type pdf)
 
 <use plot-delaunay-example-prediction.pdf>
 Package pdftex.def Info: plot-delaunay-example-prediction.pdf used on input lin
 e 89.
-(pdftex.def)             Requested size: 202.3529pt x 152.94254pt.
+(pdftex.def)             Requested size: 202.3529pt x 154.01434pt.
 LaTeX Font Info:    Try loading font information for OMS+ptm on input line 95.
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/omsptm.fd
@@ -600,63 +600,55 @@ File: omsptm.fd
 )
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <8> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 95.
-
-Underfull \hbox (badness 1454) in paragraph at lines 99--100
-\OT1/ptm/m/n/10 lau-nay (for the im-ple-men-ta-tion used) is ap-prox-i-mately
- []
-
-[2 <./plot-delaunay-example-prediction.pdf>]
-<plot-histogram-throughput.pdf, id=51, 361.35pt x 126.4725pt>
+ [2 <./plot-delaunay-example-prediction.pdf>]
+<plot-histogram-throughput.pdf, id=54, 361.35pt x 126.4725pt>
 File: plot-histogram-throughput.pdf Graphic file (type pdf)
 
 <use plot-histogram-throughput.pdf>
-Package pdftex.def Info: plot-histogram-throughput.pdf used on input line 170.
+Package pdftex.def Info: plot-histogram-throughput.pdf used on input line 166.
 (pdftex.def)             Requested size: 252.94499pt x 88.53014pt.
 
-Overfull \hbox (7.22688pt too wide) in paragraph at lines 170--172
+Overfull \hbox (7.22688pt too wide) in paragraph at lines 166--168
+[][] 
+ []
+
+<plot-histogram-80_20-KS.pdf, id=55, 345.29pt x 301.125pt>
+File: plot-histogram-80_20-KS.pdf Graphic file (type pdf)
+
+<use plot-histogram-80_20-KS.pdf>
+Package pdftex.def Info: plot-histogram-80_20-KS.pdf used on input line 180.
+(pdftex.def)             Requested size: 252.94499pt x 251.70267pt.
+
+Overfull \hbox (29.44159pt too wide) in paragraph at lines 183--185
 [][] 
  []
 
 [3 <./plot-histogram-throughput.pdf>]
-<plot-histogram-80_20-KS.pdf, id=84, 345.29pt x 301.125pt>
-File: plot-histogram-80_20-KS.pdf Graphic file (type pdf)
+Underfull \vbox (badness 1596) has occurred while \output is active []
 
-<use plot-histogram-80_20-KS.pdf>
-Package pdftex.def Info: plot-histogram-80_20-KS.pdf used on input line 184.
-(pdftex.def)             Requested size: 252.94499pt x 251.70267pt.
 
-Overfull \hbox (29.44159pt too wide) in paragraph at lines 187--189
-[][] 
- []
-
-<plot-KS-Failure-by-Training.pdf, id=85, 361.35pt x 272.01625pt>
+<plot-KS-Failure-by-Training.pdf, id=88, 361.35pt x 272.01625pt>
 File: plot-KS-Failure-by-Training.pdf Graphic file (type pdf)
 
 <use plot-KS-Failure-by-Training.pdf>
-Package pdftex.def Info: plot-KS-Failure-by-Training.pdf used on input line 225
+Package pdftex.def Info: plot-KS-Failure-by-Training.pdf used on input line 223
 .
 (pdftex.def)             Requested size: 202.3529pt x 152.32805pt.
  [4 <./plot-histogram-80_20-KS.pdf>]
-LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 236.
-LaTeX Font Info:    Try loading font information for OML+ptm on input line 272.
+Overfull \hbox (7.01805pt too wide) in paragraph at lines 238--252
+ [][] 
+ []
 
-
-(/usr/local/texlive/2016/texmf-dist/tex/latex/psnfss/omlptm.fd
-File: omlptm.fd 
-)
-LaTeX Font Info:    Font shape `OML/ptm/m/n' in size <10> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 272.
 
 Underfull \vbox (badness 2762) has occurred while \output is active []
 
  [5 <./plot-KS-Failure-by-Training.pdf>]
-<plot-KS-failure-by-training-and-test.pdf, id=124, 260.975pt x 328.22626pt>
+<plot-KS-failure-by-training-and-test.pdf, id=127, 260.975pt x 328.22626pt>
 File: plot-KS-failure-by-training-and-test.pdf Graphic file (type pdf)
 
 <use plot-KS-failure-by-training-and-test.pdf>
 Package pdftex.def Info: plot-KS-failure-by-training-and-test.pdf used on input
- line 279.
+ line 275.
 (pdftex.def)             Requested size: 202.3529pt x 254.50293pt.
  (./paper.bbl [6 <./plot-KS-failure-by-training-and-test.pdf>])
 
@@ -674,36 +666,37 @@ Before submitting the final camera ready copy, remember to:
 
 ] (./paper.aux) ) 
 Here is how much of TeX's memory you used:
- 13048 strings out of 493014
- 258642 string characters out of 6133351
- 301983 words of memory out of 5000000
- 16324 multiletter control sequences out of 15000+600000
+ 13030 strings out of 493014
+ 258324 string characters out of 6133351
+ 300940 words of memory out of 5000000
+ 16309 multiletter control sequences out of 15000+600000
  45875 words of font info for 102 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 55i,14n,54p,1571b,634s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 55i,14n,54p,1542b,634s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2016/texmf-dist/fonts/enc/dvips/base/8r.en
 c}</usr/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
 ></usr/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb>
 </usr/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></
 usr/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></us
-r/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/
-local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/loc
-al/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/
-texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/tex
-live/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texliv
-e/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive
-/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2
-016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/201
-6/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive
-/2016/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2016/te
-xmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2016/texmf-dist/f
-onts/type1/urw/times/utmbi8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type
-1/urw/times/utmr8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/urw/time
-s/utmri8a.pfb>
-Output written on paper.pdf (7 pages, 307586 bytes).
+r/local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/
+local/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/lo
+cal/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local
+/texlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/te
+xlive/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texli
+ve/2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/
+2016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2
+016/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/201
+6/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2016/
+texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2
+016/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2016/texm
+f-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2016/texmf-dist/fon
+ts/type1/urw/times/utmbi8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/
+urw/times/utmr8a.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/urw/times/
+utmri8a.pfb>
+Output written on paper.pdf (7 pages, 311769 bytes).
 PDF statistics:
- 220 PDF objects out of 1000 (max. 8388607)
- 156 compressed objects within 2 object streams
+ 226 PDF objects out of 1000 (max. 8388607)
+ 161 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  38 words of extra memory for PDF output out of 10000 (max. 10000000)
 

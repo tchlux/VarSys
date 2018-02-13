@@ -8,7 +8,7 @@ from util.algorithms import VoronoiMesh, MaxBoxMesh, Delaunay, \
 CLEAN_DATA_CSV = "clean_data.csv"
 CLEAN_DATA_CSV_PKL = "clean_data.csv.pkl"
 DATA_OUTPUT_FILE = "results.csv"
-EXAMPLE_PREDICITON_FILE = "Delaunay_Example_Prediction.csv"
+EXAMPLE_PREDICTION_FILE = "Delaunay_Example_Prediction.csv"
 
 ALGORITHMS = Delaunay, MaxBoxMesh, VoronoiMesh
 TRAINING_PERCS = np.linspace(95,5,19)
@@ -378,7 +378,7 @@ if DELAUNAY_EXAMPLE_PREDICTION:
     normalized_configs[:,:len(h_config)] *= scale
     normalized_configs[:,:len(h_config)] += shift
     median_values = np.array(sorted(median_row[len(h_config):]))
-    with open(EXAMPLE_PREDICITON_FILE,"w") as f:
+    with open(EXAMPLE_PREDICTION_FILE,"w") as f:
         print("true",0,*median_row, sep=",", file=f)
         guesses = []
         for i,(p,w) in enumerate(zip(pts[0],wts[0])):
@@ -387,7 +387,7 @@ if DELAUNAY_EXAMPLE_PREDICTION:
             fit = cdf_fit_func(normalized_configs[p,len(h_config):])
             guesses.append(w * fit(median_values))
         guesses = np.sum(np.array(guesses), axis=0)
-        print("guess",1,*guesses,sep=",",file=f)
+        print("guess",1,*(median_row[:len(h_config)]), *guesses,sep=",",file=f)
     true_fit = cdf_fit_func(median_values)
     error = guesses - true_fit(median_values)
     worst_idx = np.argmax(abs(error))

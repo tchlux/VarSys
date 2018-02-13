@@ -20,7 +20,7 @@
 \newlabel{sec:variability_modeling}{{II}{2}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {II-A}Delaunay}{2}}
 \newlabel{sec:delaunay}{{II-A}{2}}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces In this example, the general methodology for predicting a CDF and evaluating error can be seen. The Delaunay method chose three source system configurations (dotted lines) and assigned weights \{.3, .4, .3\} (top to bottom). The weighted sum of the three known CDFs produces the predicted CDF (dashed line). The KS Statistic (red arrow) computed between the true CDF (solid line) and predicted CDF (dashed line) is 0.2 for this example. This prediction is deemed a failure by p-values 0.05 and 0.01, however it is not a failure according to p-values 0.001 and 1.0e-6. \vspace  {-.1cm}}}{2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces In this example, the general methodology for predicting a CDF and evaluating error can be seen. The Delaunay method chose three source system configurations (dotted lines) and assigned weights \{.3, .4, .3\} (top to bottom). The weighted sum of the three known CDFs produces the predicted CDF (dashed line). The KS Statistic (red arrow) computed between the true CDF (solid line) and predicted CDF (dashed line) is 0.2 for this example. The KS test null hypothesis is rejected by $p$-value 0.01, however it is not rejected by $p$-value 0.001. \vspace  {-.1cm}}}{2}}
 \newlabel{fig:prediction_example}{{1}{2}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {II-B}Max Box Mesh}{2}}
 \newlabel{sec:max_box_mesh}{{II-B}{2}}
@@ -29,31 +29,30 @@
 \citation{guyon2003introduction}
 \citation{pudil1994floating}
 \citation{ferri1994comparative}
-\citation{lux2016convergence}
 \citation{lilliefors1967kolmogorov}
 \citation{iozone}
 \@writefile{toc}{\contentsline {subsection}{\numberline {II-D}Feature Weighting}{3}}
 \newlabel{sec:feature_weighting}{{II-D}{3}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {II-E}Measuring Error}{3}}
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces A description of system parameters considered for IOzone. Record size must be less than file size during execution. \vspace  {-.5cm}}}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {III}DATA}{3}}
+\newlabel{sec:data}{{III}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces A description of system parameters considered for IOzone. Record size must be $\leq $ file size during execution. \vspace  {-.5cm}}}{3}}
 \newlabel{tab:data_description}{{I}{3}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Histogram of the raw throughput values recorded during all IOzone tests across all system configurations. The distribution is skewed right, with few tests having significantly higher throughput than most others. \vspace  {-.5cm}}}{3}}
 \newlabel{fig:throughput_histogram}{{2}{3}}
-\@writefile{toc}{\contentsline {section}{\numberline {III}DATA}{3}}
-\newlabel{sec:data}{{III}{3}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Histograms of the prediction error averaged over 10 folds for each modeling algorithm when trained with 80\% of the data. The distributions show the KS statistics for the predicted throughput distribution versus the actual throughput distribution. The four vertical red lines represent commonly used p-values \{0.05, 0.01, 0.001, 1.0e-6\} respectively. All predictions to the right of a red line represent failed predictions that are significantly different (by respective p-value) from the actual distribution according to the KS test. \vspace  {-.1cm}}}{4}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}RESULTS}{3}}
+\newlabel{sec:results}{{IV}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Histograms of the prediction error for each modeling algorithm from ten random splits when trained with 80\% of the data. The distributions show the KS statistics for the predicted throughput distribution versus the actual throughput distribution. The four vertical red lines represent commonly used $p$-values \{0.05, 0.01, 0.001, 1.0e-6\} respectively. All predictions to the right of a red line represent CDF predictions that are significantly different (by respective $p$-value) from the actual distribution according to the KS test. \vspace  {-.1cm}}}{4}}
 \newlabel{fig:ks_histogram_80_20}{{3}{4}}
-\@writefile{toc}{\contentsline {section}{\numberline {IV}RESULTS}{4}}
-\newlabel{sec:results}{{IV}{4}}
-\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces The prediction failure rate by the KS-test when provided different selections of p-values. These accompany the results from Figure 3\hbox {}. \vspace  {-.5cm}}}{4}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Percent of null hypothesis rejections rate by the KS-test when provided different selections of $p$-values. These accompany the percent of null hypothesis rejection results from Figure 3\hbox {}. \vspace  {-.5cm}}}{4}}
 \newlabel{tab:p_value_failure_rate}{{II}{4}}
 \citation{patel2009service}
 \citation{ali2015security}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces The performance of each algorithm with increasing amounts of training data estimated using 10-fold cross validation and the KS test with p=0.001. The KS statistic for any given training percentage is achieved by averaging over the KS statistic for all tests and system configurations. The training percentages range from 5\% to 95\% by increments of 5\%. Delaunay is the best performer until 95\% of data is used for training, at which Max Box mesh becomes the best performer by a fraction of a percent. \vspace  {-.1cm}}}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces The performance of each algorithm on the KS test ($p=0.001$) with increasing amounts of training data averaged over all IOzone test types and ten random splits of the data. The training percentages range from 5\% to 95\% in increments of 5\%. Delaunay is the best performer until 95\% of data is used for training, at which Max Box mesh becomes the best performer by a fraction of a percent. \vspace  {-.1cm}}}{5}}
 \newlabel{fig:ks_failure_by_training}{{4}{5}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}DISCUSSION}{5}}
 \newlabel{sec:discussion}{{V}{5}}
-\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces The prediction failure rates by various p-values for the KS-test. These results are strictly for the ``readers'' IOzone test and show unweighted results as well as the results with weights optimized for minimum error (KS statistic) by 300 iterations of modified simulated annealing. Notice that the weights identified for the Delaunay model cause overfitting and reduction in apparent performance. MaxBoxMesh performance is improved by a negligible amount. VoronoiMesh predictions are notably improved. \vspace  {-.5cm}}}{5}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces The null hypothesis rejection rates for various $p$-values with the KS-test. These results are strictly for the ``readers'' IOzone test type and show unweighted results as well as the results with weights tuned for minimum error (KS statistic) by 300 iterations of modified simulated annealing. Notice that the weights identified for the Delaunay model cause data dependent tuning, reducing performance. MaxBoxMesh performance is improved by a negligible amount. VoronoiMesh performance is notably improved. \vspace  {-.5cm}}}{5}}
 \newlabel{tab:optimized_p_value_failure_rate}{{III}{5}}
 \bibstyle{IEEEtran}
 \bibdata{paper}
@@ -66,11 +65,6 @@
 \bibcite{ye2010analyzing}{7}
 \bibcite{beckman2008benchmarking}{8}
 \bibcite{de2007identifying}{9}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces The performance of each algorithm on different IOzone tests with increasing amounts of training data measured using 10-fold cross validation and the KS test with p=0.001. The KS statistic for any given training percentage is achieved by averaging over the KS statistic for all tests and system configurations. The training percentages range from 5\% to 95\% by increments of 5\%. The ``readers'' tests tend to allow lower failure rates than the ``writers'' tests. \vspace  {-.1cm}}}{6}}
-\newlabel{fig:ks_failure_by_training_and_test}{{5}{6}}
-\@writefile{toc}{\contentsline {section}{\numberline {VI}CONCLUSION}{6}}
-\newlabel{sec:conclusion}{{VI}{6}}
-\@writefile{toc}{\contentsline {section}{References}{6}}
 \bibcite{lofstead2010managing}{10}
 \bibcite{lee1980two}{11}
 \bibcite{de2013box}{12}
@@ -79,8 +73,12 @@
 \bibcite{guyon2003introduction}{15}
 \bibcite{pudil1994floating}{16}
 \bibcite{ferri1994comparative}{17}
-\bibcite{lux2016convergence}{18}
-\bibcite{lilliefors1967kolmogorov}{19}
-\bibcite{iozone}{20}
-\bibcite{patel2009service}{21}
-\bibcite{ali2015security}{22}
+\bibcite{lilliefors1967kolmogorov}{18}
+\bibcite{iozone}{19}
+\bibcite{patel2009service}{20}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces The percentage of null hypothesis rejections for predictions made by each algorithm on the KS test ($p=0.001$) over different IOzone test types with increasing amounts of training data. Each percentage of null hypothesis rejections is an average over ten random splits of the data. The training percentages range from 5\% to 95\% in increments of 5\%. The read test types tend to allow lower rejection rates than the write test types. \vspace  {-.1cm}}}{6}}
+\newlabel{fig:ks_failure_by_training_and_test}{{5}{6}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}CONCLUSION}{6}}
+\newlabel{sec:conclusion}{{VI}{6}}
+\@writefile{toc}{\contentsline {section}{References}{6}}
+\bibcite{ali2015security}{21}

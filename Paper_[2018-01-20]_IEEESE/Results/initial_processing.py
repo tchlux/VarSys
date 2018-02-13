@@ -10,10 +10,11 @@ DIST_PREDICTION_FILE = "dist_prediction.html"
 TEST_HIST_FILE = "tests_by_machine_(aggregated).html"
 CLEAN_DATA_CSV = "clean_data.csv"
 
+PATH_TO_CLEAN_DATA = os.path.join("/Users","thomaslux","Git","LargeFiles")
 INITIAL_DATA_READ = not os.path.exists(DATA_FILE_PKL)
 PLOT_AGGREGATE_HISTOGRAMS = False
-VALUES_SUMMARY = False
-SHOW_COUNT_SUMMARY = False
+VALUES_SUMMARY = True
+SHOW_COUNT_SUMMARY = True
 SAMPLE_FUNCTION_PREDICTION = False
 SAVE_CLEAN_DATA_CSV = False
 
@@ -22,11 +23,11 @@ SAVE_CLEAN_DATA_CSV = False
 #      Read in new data     
 if INITIAL_DATA_READ:
     print("Reading data 1...")
-    data1 = read_struct("2018-1.csv")
+    data1 = read_struct(os.path.join(PATH_TO_CLEAN_DATA,"2018-1.csv"))
     print("Reading data 2...")
-    data2 = read_struct("2018-2.csv")
+    data2 = read_struct(os.path.join(PATH_TO_CLEAN_DATA,"2018-2.csv"))
     print("Reading data 3...")
-    data3 = read_struct("2018-3.csv")
+    data3 = read_struct(os.path.join(PATH_TO_CLEAN_DATA,"2018-3.csv"))
     print("Saving all 3 to file...")    
     with open(DATA_FILE_PKL, "wb") as f:
         pickle.dump( (data1, data2, data3), f )
@@ -58,6 +59,17 @@ else:
     print("Loading '%s'..."%(COUNTS_FILE_PKL))
     with open(COUNTS_FILE_PKL, "rb") as f:
         counts = pickle.load(f)
+
+print("="*70)
+print(sorted(set(list(map(len, [v for v in counts.values()])))))
+exit()
+with open("output.txt", "w") as f:
+    for config in sorted(counts):
+        print("%30s,"%(str(config)[1:-1]),len(counts[config]), file=f)
+
+        # if len(counts[config]) == 2:
+        #     print()
+exit()
 
 # ====================================================================
 # Generate the cleaned data (for prediction and analysis)
@@ -145,10 +157,6 @@ if SHOW_COUNT_SUMMARY:
             if (num_printed >= 3): 
                 print("         sample concluded (there are more)",)
                 break
-
-    for config in counts:
-        if len(counts[config]) == 2:
-            print()
 
 if SAMPLE_FUNCTION_PREDICTION:
     # Test predictability with Delaunay, leave one out, predict
