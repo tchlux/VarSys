@@ -1,0 +1,19 @@
+Frequency,File Size,Record Size,Num Threads,Test
+1200000,4,4,1,initial_writers
+1200000,4,4,1,random_readers
+1200000,4,4,1,random_writers
+1200000,4,4,1,re-readers
+1200000,4,4,1,readers
+1200000,4,4,1,rewriters
+1200000,4,4,8,initial_writers
+1200000,4,4,8,random_readers
+1200000,4,4,8,random_writers
+1200000,4,4,8,re-readers
+1200000,4,4,8,readers
+1200000,4,4,8,rewriters
+1200000,4,4,16,initial_writers
+1200000,4,4,16,random_readers
+1200000,4,4,16,random_writers
+1200000,4,4,16,re-readers
+1200000,4,4,16,readers
+1200000,4,4,16,rewriters
