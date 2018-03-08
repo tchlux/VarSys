@@ -1,3 +1,5 @@
+A box $b^y$ is the upper \textit{boundary} of box $b^x$ along dimension $r$ if and only if $u^x_r = (y_r - x_r)$. A box $b^y$ is the lower \textit{boundary} of box $b^x$ along dimension $r$ if and only if $l^x_r = (x_r - y_r)$.
+
 
 
 \begin{theorem}

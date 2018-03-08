@@ -2,85 +2,109 @@
 \documentclass[sigconf]{acmart}
 %%%% As of March 2017, [siggraph] is no longer used. Please use sigconf (above) for SIGGRAPH conferences.
 
-%%%% Proceedings format for SIGPLAN conferences 
-% \documentclass[sigplan, anonymous, review]{acmart}
-
-%%%% Proceedings format for SIGCHI conferences
-% \documentclass[sigchi, review]{acmart}
-
-%%%% To use the SIGCHI extended abstract template, please visit
-% https://www.overleaf.com/read/zzzfqvkmrfzn
-
 \usepackage{booktabs} % For formal tables
 \usepackage{tikz}     % For drawing example boxes
 \usepackage{graphicx}
 \usetikzlibrary{positioning}
 
+\begin{document}
+
+%%%% Proceedings format for SIGPLAN conferences 
+% \documentclass[sigplan, anonymous, review]{acmart}
+%%%% Proceedings format for SIGCHI conferences
+% \documentclass[sigchi, review]{acmart}
+%%%% To use the SIGCHI extended abstract template, please visit
+% https://www.overleaf.com/read/zzzfqvkmrfzn
 % Copyright
-\setcopyright{none}
-%% \setcopyright{acmcopyright}
+%% \setcopyright{none}
+% \setcopyright{acmcopyright}
 %\setcopyright{acmlicensed}
 %%\setcopyright{rightsretained}
 %\setcopyright{usgov}
 %\setcopyright{usgovmixed}
 %\setcopyright{cagov}
 %\setcopyright{cagovmixed}
-
-
 % DOI
 % \acmDOI{}
-
 % ISBN
 % \acmISBN{}
-
 %Conference
-% \acmConference[WOODSTOCK'97]{ACM Woodstock conference}{July 1997}{El Paso, Texas USA} 
-% \acmConference[ACMSE 2018]{ACM Southeastern conference}{March 2018}{Richmond, Kentucky USA} 
+% \acmConference[WOODSTOCK'97]{ACM Woodstock conference}{July 1997}{El Paso, Texas USA} % \acmConference[ACMSE 2018]{ACM Southeastern conference}{March 2018}{Richmond, Kentucky USA} 
 % \acmYear{2018}
 % \copyrightyear{2018}
-
 % \acmArticle{4}
 % \acmPrice{0.00}
-
 % These commands are optional
 %\acmBooktitle{Transactions of the ACM Woodstock conference}
 %\editor{Jennifer B. Sartor}
 
 
-\begin{document}
+\copyrightyear{2018} 
+\acmYear{2018} 
+\setcopyright{acmlicensed}
+\acmConference[ACM SE '18]{ACM SE '18: Southeast Conference}{March 29--31, 2018}{Richmond, KY, USA}
+\acmBooktitle{ACM SE '18: ACM SE '18: Southeast Conference, March 29--31, 2018, Richmond, KY, USA}
+\acmPrice{15.00}
+\acmDOI{10.1145/3190645.3190687}
+\acmISBN{978-1-4503-5696-1/18/03}
+
 \title{Novel Meshes for Multivariate Interpolation and Approximation}
 %\titlenote{Produces the permission block, and copyright information}
 %\subtitle{Extended Abstract}
 %\subtitlenote{The full version of the author's guide is available as \texttt{acmart.pdf} document}
 
-%% \author{Thomas C. H. Lux}
-%% %\authornote{Dr.~Trovato insisted his name be first.}
-%% %\orcid{1234-5678-9012}
-%% \affiliation{%
-%%   \institution{Virginia Polytechnic and State University}
-%% %  \streetaddress{P.O. Box 1212}
-%%   \city{Blacksburg} 
-%%   \state{Virginia} 
-%%   \postcode{24060}
-%% }
-%% \email{tchlux@vt.edu}
+\author{Thomas C. H. Lux}
+%\authornote{Dr.~Trovato insisted his name be first.}
+%\orcid{1234-5678-9012}
+\affiliation{%
+  \department{Dept. of Computer Science}
+  \institution{Virginia Polytechnic Institute and State University}
+  \city{Blacksburg} 
+  \state{Virginia} 
+  \postcode{24060}
+}
+\email{tchlux@vt.edu}
 
-%% \author{Layne Watson}
-%% %\authornote{Dr.~Trovato insisted his name be first.}
-%% %\orcid{1234-5678-9012}
-%% \affiliation{%
-%%   \institution{Virginia Polytechnic and State University}
-%% }
+\author{Layne T. Watson}
+%\authornote{Dr.~Trovato insisted his name be first.}
+%\orcid{1234-5678-9012}
+\affiliation{%
+  \department{Depts. of Computer Science, Mathematics, and Aerospace \& Ocean Engineering}
+  \institution{Virginia Polytechnic Institute and State University}
+}
 
-%% \author{Tyler H. Chang}
-%% %\authornote{Dr.~Trovato insisted his name be first.}
-%% %\orcid{1234-5678-9012}
-%% \affiliation{%
-%%   \institution{Virginia Polytechnic and State University}
-%% }
+\author{Tyler H. Chang}
+\author{Jon Bernard}
+\author{Bo Li}
+\author{Xiaodong Yu}
+\affiliation{%
+  \department{Dept. of Computer Science}
+  \institution{Virginia Polytechnic Institute and State University}
+}
 
-%% % The default list of authors is too long for headers.
-%% \renewcommand{\shortauthors}{T. Lux et al.}
+\author{Li Xu}
+\affiliation{%
+  \department{Dept. of Statistics}
+  \institution{Virginia Polytechnic Institute and State University}
+}
+
+\author{Godmar Back}
+\author{Ali R. Butt}
+\author{Kirk W. Cameron}
+\author{Danfeng Yao}
+\affiliation{%
+  \department{Dept. of Computer Science}
+  \institution{Virginia Polytechnic Institute and State University}
+}
+
+\author{Yili Hong}
+\affiliation{%
+  \department{Dept. of Statistics}
+  \institution{Virginia Polytechnic Institute and State University}
+}
+
+% The default list of authors is too long for headers.
+\renewcommand{\shortauthors}{T. Lux et al.}
 
 
 \begin{abstract}
@@ -127,10 +151,3 @@ A rapid increase in the quantity of data available is allowing all fields of sci
 \keywords{Interpolation, Approximation, Splines, Multivariate, Regression}
 
 \maketitle
-
-\input{paper}
-
-\bibliographystyle{ACM-Reference-Format}
-\bibliography{paper}
-
-\end{document}

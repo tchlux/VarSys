@@ -417,20 +417,26 @@ Fortran\#95 implementation of LSHEP in SHEPPACK
 \label{sec:methodology}
 \subsection{Data}
 \vspace{-10pt}
+
 In order to evaluate the viability of multivariate models for
 predicting system performance, this paper presents a case study of a
 four-dimensional dataset produced by executing the IOzone benchmark
-from \shortciteN{iozone} on a homogeneous cluster of computers. The
-system performance data was collected by executing IOzone 40 times for
-each of a select set of system configurations. A single IOzone
-execution reports the max I/O throughput seen for the selected
-test. The 40 executions for each system configuration are converted
-into the mean and variance, both values in $\mathbb{R}$ capable of
-being modeled individually by the multivariate approximation
-techniques presented in Section \ref{sec:multivariate}. The summary of
-data used in the experiments for this paper can be seen in Table
-\ref{tab:data_type}.  Distributions of raw throughput values being
-modeled can be seen in Figure \ref{fig:raw_throughput}.
+from \shortciteN{iozone} on a homogeneous cluster of computers. All
+experiments were performed on parallel shared-memory nodes common to
+HPC systems. Each system had a lone guest Linux operating system
+(Ubuntu 14.04 LTS//XEN 4.0) on a dedicated 2TB HDD on a 2 socket, 4
+core (2 hyperthreads per core) Intel Xeon E5-2623 v3 (Haswell)
+platform with 32 GB DDR4. The system performance data was collected by
+executing IOzone 40 times for each of a select set of system
+configurations. A single IOzone execution reports the max I/O
+throughput seen for the selected test in kilobytes per second. The 40
+executions for each system configuration are converted into the mean
+and variance, both values in $\mathbb{R}$ capable of being modeled
+individually by the multivariate approximation techniques presented in
+Section \ref{sec:multivariate}. The summary of data used in the
+experiments for this paper can be seen in Table \ref{tab:data_type}.
+Distributions of raw throughput values being modeled can be seen in
+Figure \ref{fig:raw_throughput}.
 
 \begin{table}
   \centering
@@ -581,8 +587,13 @@ values span three orders of magnitude (as can be seen in Table
 orders of magnitude. It is expected therefore, that all studied
 multivariate models perform better than a na\"{\i}ve approach,
 achieving relative errors strictly less than $10^3$ for throughput
-mean and $10^6$ for throughput variance. Ideally, models will
-yield relative errors significantly smaller than 1.
+mean and $10^6$ for throughput variance. Ideally, models will yield
+relative errors significantly smaller than 1. The time required to
+compute thousands of models involved in processing the IOzone data
+through MDA was approximately five hours on a CentOS workstation with
+an Intel i7-3770 CPU at 3.40GHz. In four dimensions for example, each
+of the models could be constructed and evaluated over hundreds of
+points in less than a few seconds.
 
 \vspace{-10pt}
 \subsection{I/O Throughput Mean}
@@ -682,7 +693,7 @@ engineer combined with a significant amount of experimentation (days
 of CPU time for the IOzone data used here) can yield a model capable
 of accurately tuning an HPC system to the desired performance
 specification, although qualitatively correct predictions can be
-achieved with mush less (10\%, say) effort.
+achieved with much less (10\%, say) effort.
 
 \vspace{-10pt}
 \subsection{Modeling the System}
@@ -759,12 +770,11 @@ via previous methods nor by manual performance tuning.
 \subsection{Future Work}
 \vspace{-10pt}
 The most severe limitation to the present work is the restriction to
-modeling strictly ordinal (not categorical) system
-parameters. Existing statistical approaches for including categorical
-variables are inadequate for nonlinear interactions in high
-dimensions. Future work could attempt to identify the viability of
-different techniques for making predictions including categorical
-system parameters.
+modeling strictly ordinal (not categorical) system parameters.
+Existing statistical approaches for including categorical variables
+are inadequate for nonlinear interactions in high dimensions. Future
+work could attempt to identify the viability of different techniques
+for making predictions including categorical system parameters.
 
 There remain many other multivariate modeling techniques not included
 in this work that should be evaluated and applied to HPC performance
@@ -789,5 +799,42 @@ predictive power.
 
 \bibliographystyle{scsproc}
 \bibliography{paper}
+
+%     Author Biography Block     
+%================================
+\section*{Author Biographies}
+
+\textbf{\uppercase{Thomas C. H. Lux}} is a Ph.D. student at Virginia Tech
+studying computer science under Dr. Layne Watson.
+
+\textbf{\uppercase{Layne T. Watson}} (Ph.D., Michigan, 1974) has interests
+in numerical analysis, mathematical programming, bioinformatics, and data
+science.
+He has been involved with the organization of HPCS since 2000.
+
+\textbf{\uppercase{Tyler H. Chang}} is a Ph.D. student at Virginia Tech
+studying computer science under Dr. Layne Watson.
+
+\textbf{\uppercase{Jon Bernard}} is a Ph.D. student at Virginia Tech
+studying computer science under Dr. Kirk Cameron.
+
+\textbf{\uppercase{Bo Li}} is a senior Ph.D. student at Virginia Tech
+studying computer science under Dr. Kirk Cameron.
+
+\textbf{\uppercase{Li Xu}} is a Ph.D. student at Virginia Tech studying
+statistics under Dr. Yili Hong.
+
+\textbf{\uppercase{Godmar Back}} (Ph.D., University of Utah, 2002) has
+broad interests in computer systems, with a focus on performance and
+reliability aspects of operating systems and virtual machines.
+
+\textbf{\uppercase{Ali R. Butt}} (Ph.D., Purdue, 2006) has interests in cloud computing, distributed computing, and operating system induced variability.
+
+\textbf{\uppercase{Kirk W. Cameron}} (Ph.D., Louisiana State, 2000) has
+interests in computer systems design, performance analysis, and power and
+energy efficiency.
+
+\textbf{\uppercase{Yili Hong}} (Ph.D., Iowa State, 2009) has interests in
+engineering statistics, statistical modeling, and data analysis.
 
 \end{document}
