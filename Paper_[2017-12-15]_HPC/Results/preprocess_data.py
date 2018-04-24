@@ -161,39 +161,39 @@ kwargs = dict(layout=dict(font=font, titlefont=font, margin=margin,
 # p.plot(y_range=[-10,10], file_name="Mean_TT_Ratio.html", **local_kwargs)
 # print("Done")
 
-# VARIANCE PLOT
-print("Collecting Var_TT_Ratio data..")
-brief_title = "Predicting I/O Throughput Variance"
-error_col = "Relative_Mean_Error"
-training_ranges = [(0,20),(20,40),(40,60),(60,80),(80,100)]
-# Initialize thep lot
-y_axis = "Signed Relative Error in Predicted System Throughput"
-p = Plot(brief_title, "", y_axis)
-for alg in algorithms:
-    alg_data = var_data[(var_data["Algorithm"] == alg)]
-    box_values = []
-    box_locations = []
-    for (min_train,max_train) in training_ranges:
-        # Reduce to a local set of data
-        set_data = alg_data[(min_train <= alg_data["Train_Percentage"])]
-        set_data = set_data[(set_data["Train_Percentage"] < max_train)]
-        # Generate the title and axis labels
-        min_val = min(set_data["Train_Percentage"])
-        max_val = max(set_data["Train_Percentage"])
-        x_axis = "[%.0f-%.0f%%] Training"%(min_val,max_val)
-        # Fix the bounds to be mathematically correct
-        if ((min_train, max_train) != training_ranges[-1]):
-            x_axis = x_axis.replace("]",")")
-        box_values += list(set_data[error_col])
-        box_locations += [x_axis]*len(set_data)
-    p.add_box(alg, box_values, box_locations)
-layout = kwargs.get("layout",{})
-layout.update(dict(boxmode="group"))
-local_kwargs = kwargs.copy()
-local_kwargs["layout"] = layout
-print("Generating Var_TT_Ratio plot..")
-p.plot(y_range=[-80,80], file_name="Var_TT_Ratio.html", **local_kwargs)
-print("Done")
+# # VARIANCE PLOT
+# print("Collecting Var_TT_Ratio data..")
+# brief_title = "Predicting I/O Throughput Variance"
+# error_col = "Relative_Mean_Error"
+# training_ranges = [(0,20),(20,40),(40,60),(60,80),(80,100)]
+# # Initialize thep lot
+# y_axis = "Signed Relative Error in Predicted System Throughput"
+# p = Plot(brief_title, "", y_axis)
+# for alg in algorithms:
+#     alg_data = var_data[(var_data["Algorithm"] == alg)]
+#     box_values = []
+#     box_locations = []
+#     for (min_train,max_train) in training_ranges:
+#         # Reduce to a local set of data
+#         set_data = alg_data[(min_train <= alg_data["Train_Percentage"])]
+#         set_data = set_data[(set_data["Train_Percentage"] < max_train)]
+#         # Generate the title and axis labels
+#         min_val = min(set_data["Train_Percentage"])
+#         max_val = max(set_data["Train_Percentage"])
+#         x_axis = "[%.0f-%.0f%%] Training"%(min_val,max_val)
+#         # Fix the bounds to be mathematically correct
+#         if ((min_train, max_train) != training_ranges[-1]):
+#             x_axis = x_axis.replace("]",")")
+#         box_values += list(set_data[error_col])
+#         box_locations += [x_axis]*len(set_data)
+#     p.add_box(alg, box_values, box_locations)
+# layout = kwargs.get("layout",{})
+# layout.update(dict(boxmode="group"))
+# local_kwargs = kwargs.copy()
+# local_kwargs["layout"] = layout
+# print("Generating Var_TT_Ratio plot..")
+# p.plot(y_range=[-80,80], file_name="Var_TT_Ratio.html", **local_kwargs)
+# print("Done")
 
 # #      Making Box Plots by Dimension     
 # # =======================================
@@ -223,30 +223,30 @@ print("Done")
 # p.plot(y_range=[-5,5], file_name="Mean_Dim.html", **local_kwargs)
 # print("Done")
 
-# # VARIANCE PLOT
-# print("Collecting Var_Dim data..")
-# brief_title = "Predicting I/O Throughput Var"
-# error_col = "Relative_Mean_Error"
-# dimensions = [1,2,3,4]
-# # Initialize thep lot
-# y_axis = "Signed Relative Error in Predicted System Throughput"
-# p = Plot(brief_title, "", y_axis)
-# for alg in algorithms:
-#     alg_data = var_data[(var_data["Algorithm"] == alg)]
-#     box_values = []
-#     box_locations = []
-#     for (dim) in dimensions:
-#         # Reduce to a local set of data
-#         set_data = alg_data[(dim == alg_data["Dimension"])]
-#         x_axis = "%i Dimension"%(dim) + ("s" if dim > 1 else "")
-#         box_values += list(set_data[error_col])
-#         box_locations += [x_axis]*len(set_data)
-#     p.add_box(alg, box_values, box_locations)
-# layout = kwargs.get("layout",{})
-# layout.update(dict(boxmode="group"))
-# local_kwargs = kwargs.copy()
-# local_kwargs["layout"] = layout
-# print("Generating Var_Dim plot..")
-# p.plot(y_range=[-5,5], file_name="Var_Dim.html", **local_kwargs)
-# print("Done")
+# VARIANCE PLOT
+print("Collecting Var_Dim data..")
+brief_title = "Predicting I/O Throughput Var"
+error_col = "Relative_Mean_Error"
+dimensions = [1,2,3,4]
+# Initialize thep lot
+y_axis = "Signed Relative Error in Predicted System Throughput"
+p = Plot(brief_title, "", y_axis)
+for alg in algorithms:
+    alg_data = var_data[(var_data["Algorithm"] == alg)]
+    box_values = []
+    box_locations = []
+    for (dim) in dimensions:
+        # Reduce to a local set of data
+        set_data = alg_data[(dim == alg_data["Dimension"])]
+        x_axis = "%i Dimension"%(dim) + ("s" if dim > 1 else "")
+        box_values += list(set_data[error_col])
+        box_locations += [x_axis]*len(set_data)
+    p.add_box(alg, box_values, box_locations)
+layout = kwargs.get("layout",{})
+layout.update(dict(boxmode="group"))
+local_kwargs = kwargs.copy()
+local_kwargs["layout"] = layout
+print("Generating Var_Dim plot..")
+p.plot(y_range=[-5,5], file_name="Var_Dim.html", **local_kwargs)
+print("Done")
 

@@ -1,3 +1,30 @@
+The methodology presented here is applied to the domain of computer system I/O throughput in order to demonstrate the effectiveness of multivariate models in capturing complex relationships between system parameters.  work presents an application of multivariate interpolation to the domain of computer system I/O throughput in an attempt to demonstrate a more comprehensive methodology for creating statistical models.
+
+The models are used to predict the cumulative distribution function of the expected I/O throughput for a system at previously unseen configurations. The techniques in this paper can tractably model tens of interacting system parameters with tens of thousands of unique configurations. The primary contribution of this work is a modeling framework that uses three multivariate interpolation techniques to capture precise characteristics (via cumulative distribution functions) of an arbitrary performance measure on an arbitrary system. 
+
+
+
+System variability in general has become a problem of increasing interest to the cloud and HPC systems communities, however most existing work has focused on operating system (OS) induced variability \cite{beckman2008benchmarking,de2007identifying}. 
+
+Among the models presented in prior works, \cite{bailey2005performance} mentions that it is difficult for statistical models to capture variability introduced by I/O. 
+
+The prior work in modeling I/O variability has been limited to models of at most two system parameters.
+
+
+are purely mathematical and 
+
+ application level understandings
+
+Many of the aforementioned statistical modeling techniques claim to generalize, while simultaneously requiring 
+
+
+
+This claim is historically accurate, because a large portion of predictive statistical models rely on simplifying the machine to one or two parameters
+
+Validation KS statistics were estimated to be \{.14, .18, .11\} for Delaunay, Max Box, and Voronoi meshes. Actual KS statistics were \{.27, .13, .11\}
+
+
+
 print("Loading results...")
 # results = read_struct()
 # print(results.shape)
