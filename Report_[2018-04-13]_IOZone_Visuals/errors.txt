@@ -1,0 +1,8 @@
+Known Errors in Data
+
+
+| <100> | <300> | <150> | <300> |
+| **File Name** | **Line Numbers** | **Column Name** | **Error Description** |
+| <100> | <300> | <150> | <300> |
+| 2018-1.csv | <font size=2> 265796, 531477, 797268, 1165593, <br> 1165594, 1165595, 1533376, 1533377, <br> 1533378, 1901415, 1901416, 2174605, <br> 2174606, 2447627, 2447628, 2721001, <br> 2721002, 2721003 </font> | Runtime | Value "*complete.*" does not match expected type *integer*. |
+

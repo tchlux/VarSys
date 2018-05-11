@@ -1,0 +1,42 @@
+Compilation started at Fri May 11 13:58:22
+python3 run.py 
+
+Loading performance data..
+Loading training points..
+(800, 4)
+(200, 4)
+
+Fitting IterativeBoxMesh..
+Using 316 control points..
+Evaluating IterativeBoxMesh for LS..
+Updating coefficients..
+Evaluating IterativeBoxMesh for Lagrangian..
+                     LS Fit       Lagrange
+    0th percentile:  3.2768e+11   3.2768e+11
+   25th percentile:  3.1756e+12   3.1756e+12
+   50th percentile:  8.9908e+12   8.9908e+12
+   75th percentile:  1.8670e+13   1.8670e+13
+  100th percentile:  9.0967e+13   1.3733e+14
+
+Fitting VoronoiMesh..
+Using 307 control points..
+Evaluating VoronoiMesh for LS..
+Updating coefficients..
+Evaluating VoronoiMesh for Lagrangian..
+                     LS Fit       Lagrange
+    0th percentile:  5.9075e+10   5.9075e+10
+   25th percentile:  3.1677e+12   3.1677e+12
+   50th percentile:  1.0048e+13   1.0048e+13
+   75th percentile:  1.9762e+13   1.9762e+13
+  100th percentile:  9.0546e+13   9.0573e+13
+
+Fitting Delaunay..
+Evaluating Delaunay..
+                     Lagrange
+    0th percentile:  2.0354e+07
+   25th percentile:  1.0151e+12
+   50th percentile:  5.8086e+12
+   75th percentile:  1.4035e+13
+  100th percentile:  3.9782e+13
+
+Compilation finished at Fri May 11 13:58:29

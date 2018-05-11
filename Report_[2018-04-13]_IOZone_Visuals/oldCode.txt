@@ -1,0 +1,59 @@
+brights = {1200000:0.5,
+           1600000:0.625,
+           2000000:0.75,
+           2300000:0.875,
+           2800000:1.0
+}
+
+
+# data = Struct().load("prediction_results.csv")
+
+# data.summarize(15)
+# strange_data = data[ data[data.names[-1]] == 0 ]
+# print()
+# strange_data.summarize()
+# print(strange_data)
+
+
+                    if len(square_data) != 8:
+                        print("Error:", freqs, files, recs, thrds)
+                        print("      ", middle, total_error)
+                        print()
+                        print(square_data)
+                        exit()
+
+
+nums = Struct().load("data_readers_[numeric].pkl.gz")
+num_data = nums[nums["File Size"] == 1048576]
+
+counts = {}
+for row in num_data:
+    setting = tuple(row[:-1])
+    counts[setting] = counts.get(setting, []) + [row[-1]]
+
+print("Unique configs: ", len(counts))
+print("Unique num runs:", sorted(set(len(counts[s]) for s in counts)))
+print("Less than 150:  ", sum(1 for s in counts if len(counts[s]) < 150))
+# Remove configurations with too little data
+for s in list(counts):
+    if len(counts[s]) < 150: 
+        print("Too little data:", s)
+        counts.pop(s)
+
+# Process raw data into CDF functions.
+print()
+print("Generating CDFs for each configuration.")
+dist_struct = Struct(names=(num_data.names[:-1] + ["Throughput CDF"]))
+for s in sorted(counts)[:10]:
+    print(s, sorted(counts[s]))
+
+
+from util.plotly import Plot
+p = Plot("CDF Functions")
+for i,row in enumerate(dist_struct):
+    min_max = row[-1]()
+    p.add_func(str(row[:-1]), row[-1], min_max)
+    if i > 10: break
+p.show()
+
+
