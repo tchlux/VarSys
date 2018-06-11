@@ -1,0 +1,161 @@
+             PRINT *, "A"
+
+
+             PRINT *, "B"
+
+
+                PRINT *, "C"
+
+
+                PRINT *, "D"
+
+
+          PRINT *, "B1: ", B
+
+
+          PRINT *, "B2: ", B
+
+
+          PRINT *, "Q: ", Q
+
+
+       WRITE (*,"(' B:  'F12.10)") B
+       PRINT *, ''
+       READ *, ERROR
+
+
+          WRITE (*,"(I2, F10.5)") I, B
+
+
+    PRINT *, 'n:'
+    DO ERROR=1,SIZE(N,1)
+       PRINT *, N(ERROR,1)
+    END DO
+    PRINT *, 'm:'
+    PRINT *, '', M
+    PRINT *, 'Y:'
+    DO ERROR=1,SIZE(Y,1)
+       PRINT *, '', Y(ERROR,:)
+    END DO
+    PRINT *, 't:'
+    DO ERROR=1,SIZE(T,1)
+       PRINT *, '   ', T(ERROR,:)
+    END DO
+    PRINT *, ''
+    ERROR = 0
+
+
+  PRINT *, "B: ", B
+
+
+  PRINT *, ''
+  PRINT *, 'BOXEV_N:'
+  PRINT *, "SHAPE(BOXEV_N): ", SHAPE(BOXEV_N)
+  DO ERROR=1, SIZE(BOXEV_N,1)
+     PRINT *, BOXEV_N(ERROR,:)
+  END DO
+  PRINT *, "SHAPE(P): ", SHAPE(P)
+  DO ERROR=1,SIZE(P,1)
+     PRINT *, "   ", P(ERROR,:)
+  END DO
+  PRINT *, "SHAPE(Y): ", SHAPE(Y)
+  DO ERROR=1,SIZE(Y,1)
+     PRINT *, "   ", Y(ERROR,:)
+  END DO
+  PRINT *, ''
+
+
+    ! PRINT *, ''
+    ! PRINT *, "SHAPE(N): ", SHAPE(N)
+    ! PRINT *, "N: ", N
+    ! PRINT *, "SHAPE(M): ", SHAPE(M)
+    ! PRINT *, "M: ", M
+    ! PRINT *, "SHAPE(Y): ", SHAPE(Y)
+    ! DO ERROR=1,SIZE(Y,1)
+    !    PRINT *, "   ", Y(ERROR,:)
+    ! END DO
+    ! PRINT *, "SHAPE(T): ", SHAPE(T)
+    ! DO ERROR=1,SIZE(T,1)
+    !    PRINT *, "   ", T(ERROR,:)
+    ! END DO
+    ! PRINT *, ''
+
+
+
+          PRINT *, "SHAPE(BOXEV_P): ", SHAPE(BOXEV_P)          
+          PRINT *, "SHAPE(BOXEV_J): ", SHAPE(BOXEV_J)
+          PRINT *, "SHAPE(M):       ", SHAPE(M)
+          PRINT *, "SHAPE(BOXEV_I): ", SHAPE(BOXEV_I)
+          PRINT *, "V(I):           ", V(I)
+          PRINT *, "SHAPE(BOXEV_X): ", SHAPE(BOXEV_X)
+          PRINT *, "SHAPE(TEMP_NN): ", SHAPE(TEMP_NN)
+          ! SHAPE(BOXEV_P):            5           2
+          ! SHAPE(BOXEV_J):            5           1
+          ! SHAPE(M):                  1           3
+          ! SHAPE(BOXEV_I):            3           3
+          ! V(I):              2.0000000000000000     
+          ! SHAPE(BOXEV_X):            3           2
+          ! SHAPE(TEMP_NN):            2           1
+
+          PRINT *, "SHAPE(TEMP_NN): ", SHAPE(TEMP_NN)
+          PRINT *, "TEMP_NN:        ", TEMP_NN
+          PRINT *, "V(I): ", V(I)
+          PRINT *, "BOXEV_X(INT(V(I)),:): ", BOXEV_X(INT(V(I)),:)
+
+
+          ! size(z):
+          !    5   2
+          ! v(i):
+          !  2
+          ! size(n):
+          !    3   1
+          ! size(BoxEv_u):
+          !    1   3
+          ! size(BoxEv_N):
+          !    2   8
+          PRINT *, "SHAPE(Z): ", SHAPE(Z)
+          PRINT *, "V(I): ", V(I)          
+          PRINT *, "SHAPE(N): ", SHAPE(N)
+          PRINT *, "SHAPE(BOXEV_U): ", SHAPE(BOXEV_U)
+          PRINT *, "SHAPE(BOXEV_N): ", SHAPE(BOXEV_N)
+
+  SUBROUTINE AX_B(A, B, X, ERROR)
+    ! Inputs and outputs
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: A
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: B
+    INTEGER, OPTIONAL, INTENT(INOUT)               :: ERROR
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(B,1),SIZE(B,2)) :: X
+    ! Local variables
+    INTEGER :: DGELS_DIM
+    INTEGER :: ERROR_CODE
+    REAL(KIND=REAL64), DIMENSION(1) :: WORK_ARRAY_SIZE
+    REAL(KIND=REAL64), ALLOCATABLE, DIMENSION(:) :: DGELS_WORK_ARRAY
+    ! Initialize error code
+    ERROR_CODE = 0
+    ! Get the size of the work array necessary
+    CALL DGELS('N', SIZE(A,1), SIZE(A,2), SIZE(B,2), A, SIZE(A,1),&
+         WORK_ARRAY_SIZE, -1, ERROR_CODE)
+    allocate_dgels_array : IF (ERROR_CODE .EQ. 0) THEN
+       DGELS_DIM = WORK_ARRAY_SIZE(1)
+       ALLOCATE( DGELS_WORK_ARRAY(1:DGELS_DIM) )
+    ELSE
+       IF (PRESENT(ERROR)) ERROR = ERROR_CODE
+       RETURN
+    END IF allocate_dgels_array
+    ! Call DGELS
+    X = B
+    CALL DGELS('N', SIZE(A,1), SIZE(A,2), SIZE(B,2), A, SIZE(A,1),&
+         X, SIZE(X,1), DGELS_WORK_ARRAY, DGELS_DIM, ERROR_CODE)
+    !   'N'              -- No transpose of A is necessary
+    !   SIZE(A,1)        -- number of rows in A
+    !   SIZE(A,2)        -- number of columns in A
+    !   SIZE(B,2)        -- Number of right hand sides
+    !   A                -- A
+    !   SIZE(A,1)        -- Leading dimension of A (number of rows)
+    !   B                -- B (will be overwritten to hold X after call)
+    !   SIZE(B,1)        -- Leading dimension of B (number of rows)
+    !   DGELS_WORK_ARRAY -- Workspace array for DGELS
+    !   DGELS_DIM        -- Size of dgels_work_array
+    !   INFO             -- For verifying successful execution
+  END SUBROUTINE AX_B
+

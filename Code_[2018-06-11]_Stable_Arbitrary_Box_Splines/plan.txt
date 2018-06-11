@@ -1,0 +1,9 @@
+
+
+Two papers saved in folder, understand stable evaluation. Use the downloaded matlab code to generate a fortran version. Find the problem in this webpage:
+
+https://en.wikipedia.org/wiki/B-spline
+
+Here's the matlab source in case you delete it off your computer for some strange reason.
+
+http://www.netlib.org/numeralgo/

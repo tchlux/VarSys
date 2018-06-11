@@ -1,0 +1,16 @@
+  disp('n:'); disp(n)
+  disp('m:'); disp(m)
+  disp('Y:'); disp(Y)
+  disp('t:'); disp(t)
+  disp('')
+
+
+
+      disp('size(BoxEv_p):'); disp(size(BoxEv_p))
+      disp('size(BoxEv_J):'); disp(size(BoxEv_J))
+      disp('size(m):      '); disp(size(m))
+      disp('size(BoxEv_I):'); disp(size(BoxEv_I))
+      disp('v(e):         '); disp(v(i))
+      disp('size(BoxEv_X):'); disp(size(BoxEv_X))
+      disp('size(NN):     '); disp(size(NN))
+
