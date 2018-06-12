@@ -1,3 +1,19 @@
+    fprintf(' B:  %12.10f\n\n', b)
+    pause
+
+
+      fprintf('%2d%10.5f\n',i, b)
+
+
+      fprintf(' Q:    %f', q)
+
+
+      fprintf(' B2:   %.20f\n', b)
+
+
+      ## fprintf(' B1:   %.20f\n', b)
+
+
   disp('n:'); disp(n)
   disp('m:'); disp(m)
   disp('Y:'); disp(Y)

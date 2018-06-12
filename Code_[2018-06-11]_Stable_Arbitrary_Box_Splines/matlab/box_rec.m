@@ -38,9 +38,9 @@ function b = box_rec(n,m,Y,t)
 
       %% Recursive calls
       if (n(i)>1)
-	fprintf(' A\n')
+	## fprintf(' A\n')
         b = b+      t(:,j) .*box_rec(nn,m ,Y,t                         );
-	fprintf(' B\n')
+	## fprintf(' B\n')
         b = b+(n(i)-t(:,j)).*box_rec(nn,mm,Y,t-BoxEv_J*(BoxEv_X(i,:)*Y));
         j = j+1;
       elseif (n(i)>0)
@@ -49,9 +49,9 @@ function b = box_rec(n,m,Y,t)
         Z = BoxEv_X(find(nn),:);
         if (rank(Z) == BoxEv_s)
           Z = (Z'*Z)\Z';
-	  fprintf(' C\n')
+	  ## fprintf(' C\n')
           b = b+      t(:,j) .*box_rec(nn,m ,Z,(BoxEv_p-BoxEv_J*(m *BoxEv_X))*Z);
-	  fprintf(' D\n')
+	  ## fprintf(' D\n')
           b = b+(n(i)-t(:,j)).*box_rec(nn,mm,Z,(BoxEv_p-BoxEv_J*(mm*BoxEv_X))*Z);
         end
         j = j+1;
@@ -71,23 +71,17 @@ function b = box_rec(n,m,Y,t)
 
     %% Check against all hyperplanes
     for i = 1:BoxEv_s
-      fprintf(' B1:   %.20f\n', b)
       %% Lookup normal vector to current hyperplane
       NN = BoxEv_N(:,1+BoxEv_u*(n-BoxEv_I(:,v(i))));
       %% Box is half-open!!!
       p  = BoxEv_X(v(i),:)*NN;
       q  = z*NN;
       b  = min(b,1-((p>0&q<0)|(p<0&q>=0)));
-      fprintf(' B2:   %.20f\n', b)
       q  = (BoxEv_p-BoxEv_J*((m+BoxEv_I(v(i),:))*BoxEv_X))*NN;
-      fprintf(' Q:    %f', q)
       b  = min(b,1-((p>0&q>=0)|(p<0&q<0)));
-      fprintf('%2d%10.5f\n',i, b)
     end
 
     %% Normalization
     b = b/abs(det(BoxEv_X(v(1:BoxEv_s),:)));
-    fprintf(' B:  %12.10f\n\n', b)
-    pause
   end
 

@@ -175,7 +175,7 @@ CONTAINS
                 B = B + (N(I,1)-T(:,J)) * BOX_REC(NN,MM,Z,MATMUL((BOXEV_P-&
                      MATMUL(BOXEV_J,MATMUL(MM,BOXEV_X))),Z), ERROR)
              END IF
-             J = J+1;
+             J = J+1
           END IF
        END DO
        ! Normalization

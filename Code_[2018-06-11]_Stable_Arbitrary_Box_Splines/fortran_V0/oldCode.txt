@@ -1,3 +1,91 @@
+    ! PRINT *, "VALUE: ", B
+    ! PRINT *, ""
+
+
+       ! PRINT *, "BASE CASE"
+
+
+                ! PRINT *, "   D"
+
+
+                ! PRINT *, " CD "
+                ! PRINT *, "    ", (BOXEV_P-MATMUL(BOXEV_J,MATMUL(MM,BOXEV_X)))
+                ! PRINT *, "    ", Z
+
+
+                ! PRINT *, "C"
+
+
+             ! PRINT *, "   B"
+
+
+             ! PRINT *, " AB "
+
+
+             ! PRINT *, "A"
+
+
+    ! PRINT *, N
+    ! PRINT *, M
+    ! PRINT *, Y
+    ! PRINT *, T
+
+
+       ! PRINT *, "I: ", I
+       ! PRINT *, "B: ", B
+       ! PRINT *, ""
+
+
+          ! PRINT *, "B            (2): ", B
+
+
+          ! PRINT *, "Q (LOCATIONS):    ", Q
+
+
+          ! PRINT *, "B            (1): ", B
+
+
+          ! PRINT *, "Q (LOCATIONS):    ", Q
+
+
+          ! PRINT *, "P (POSITION):     ", P
+
+
+          ! PRINT *, "I: ", I
+          ! PRINT *, "B            (0): ", B
+          ! PRINT *, ""
+
+
+                ! PRINT *, ""
+                ! PRINT *, 'PAUSING..'
+                ! READ *, ERROR
+
+
+             ! PRINT *, "2ND ARG      : ", N(I,1)
+             ! PRINT *, "SUBTRACTED   : ", T(:,J)
+             ! PRINT *, "N        : ", N
+             ! PRINT *, "M        : ", M
+             ! PRINT *, "Y        : ", Y
+             ! PRINT *, "T        : ", T
+             ! PRINT *, "B->", M
+             ! PRINT *, "J:             ", J
+             ! PRINT *, "POST B VALUE : ", B
+
+
+    ! PRINT *, "SHAPE(M) : ", SHAPE(M)
+    ! PRINT *, "M        : ", M
+    ! PRINT *, "SHAPE(Y) : ", SHAPE(Y)
+    ! PRINT *, "Y        : ", Y
+    ! PRINT *, "SHAPE(T) : ", SHAPE(T)
+    ! PRINT *, "T        : ", T
+    ! PRINT *, ''
+
+
+    ! PRINT *, ''
+    ! PRINT *, "SHAPE(N) : ", SHAPE(N)
+    ! PRINT *, "N        : ", N
+
+
              PRINT *, "A"
 
 

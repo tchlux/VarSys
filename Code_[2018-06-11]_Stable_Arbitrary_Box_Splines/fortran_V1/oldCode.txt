@@ -1,0 +1,93 @@
+    ! PRINT *, MULTS
+    ! PRINT *, LOC
+    ! PRINT *, SUB_DVECS
+    ! PRINT *, SHIFTED_EVAL_PTS
+
+
+
+    PRINT *, "VALUE: ", EVALS_AT_PTS
+    PRINT *, ""
+    ! IF (SUM(EVALS_AT_PTS) .LT. 0) THEN
+    !    PRINT *, "MULTS            : ", MULTS
+    !    PRINT *, "LOC              : ", LOC
+    !    PRINT *, "SHAPE(SUB_DVECS) : ", SHAPE(SUB_DVECS)
+    !    PRINT *, "SUB_DVECS        : ", SUB_DVECS
+    !    PRINT *, "SHIFTED_EVAL_PTS : ", SHIFTED_EVAL_PTS
+    !    PRINT *, "VALUE            : ", EVALS_AT_PTS
+    !    READ *, ERROR
+    ! END IF
+
+
+       PRINT *, "BASE CASE"
+
+
+             PRINT *, "A"
+
+
+             PRINT *, " AB "
+
+
+             PRINT *, "   B"
+
+
+                PRINT *, "   D"
+
+
+                ! PRINT *, "    ", TEMP_EVAL_PTS
+                ! PRINT *, "    ", NEXT_DVECS
+
+
+                PRINT *, " CD "
+
+
+                PRINT *, "C"
+
+
+       ! PRINT *, "IDX_1        : ", IDX_1
+       ! PRINT *, "EVALS_AT_PTS : ", EVALS_AT_PTS
+       ! PRINT *, ""
+
+
+          ! PRINT *, "EVALS_AT_PTS (2): ", EVALS_AT_PTS
+
+
+          PRINT *, "LOCATIONS (Q):    ", LOCATIONS
+
+
+          ! PRINT *, "EVALS_AT_PTS (1): ", EVALS_AT_PTS
+
+
+          ! PRINT *, "LOCATIONS (Q):    ", LOCATIONS
+
+
+          ! PRINT *, "POSITION (P):     ", POSITION
+
+
+          ! PRINT *, "IDX_1           : ", IDX_1
+          ! PRINT *, "EVALS_AT_PTS (0): ", EVALS_AT_PTS
+          ! PRINT *, ""
+
+
+             ! READ *, ERROR
+
+
+             ! PRINT *, "->B", LOC
+
+
+    ! PRINT *, ""
+    ! PRINT *, "SHAPE(MULTS)            : ", SHAPE(MULTS)
+    ! PRINT *, "MULTS                   : ", MULTS
+    ! PRINT *, "SHAPE(LOC)              : ", SHAPE(LOC)
+    ! PRINT *, "LOC                     : ", LOC
+    ! PRINT *, "SHAPE(SUB_DVECS)        : ", SHAPE(SUB_DVECS)
+    ! PRINT *, "SUB_DVECS               : ", SUB_DVECS
+    ! PRINT *, "SHAPE(SHIFTED_EVAL_PTS) : ", SHAPE(SHIFTED_EVAL_PTS)
+    ! PRINT *, "SHIFTED_EVAL_PTS        : ", SHIFTED_EVAL_PTS
+    ! PRINT *, ""
+
+
+                ! PRINT *, ""
+                ! PRINT *, 'PAUSING..'
+                ! READ *, ERROR
+
+
