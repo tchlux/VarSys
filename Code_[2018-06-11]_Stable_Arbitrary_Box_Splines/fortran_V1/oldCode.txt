@@ -1,3 +1,61 @@
+  ! PRINT *, ""
+  ! PRINT *, "======================================================================"
+  ! PRINT *, "IDENTITY:       "
+  ! WRITE (CHARS,"(I2)") SIZE(IDENTITY,2)
+  ! DO INFO = 1, SIZE(IDENTITY,1)
+  !    PRINT "("//CHARS//"I5)", IDENTITY(INFO,:)
+  ! END DO
+  ! PRINT *, ""
+  ! ! 
+  ! PRINT *, "NORMAL_VECTORS: ", SHAPE(NORMAL_VECTORS)
+  ! WRITE (CHARS,"(I2)") SIZE(NORMAL_VECTORS,2)
+  ! DO INFO = 1, SIZE(NORMAL_VECTORS,1)
+  !    PRINT "("//CHARS//"F10.5)", NORMAL_VECTORS(INFO,:)
+  ! END DO
+  ! PRINT *, ""
+  ! ! 
+  ! PRINT *, "DVEC_MULTS: ", SHAPE(DVEC_MULTS)
+  ! WRITE (CHARS,"(I2)") SIZE(DVEC_MULTS)
+  ! PRINT "("//CHARS//"I5)", DVEC_MULTS
+  ! PRINT *, ""
+  ! ! 
+  ! PRINT *, "DVECS: ", SHAPE(DVECS)
+  ! WRITE (CHARS,"(I2)") SIZE(DVECS,2)
+  ! DO INFO = 1, SIZE(DVECS,1)
+  !    PRINT "("//CHARS//"F10.5)", DVECS(INFO,:)
+  ! END DO
+  ! PRINT *, ""
+  ! ! 
+  ! PRINT *, "EVAL_PTS:", SHAPE(EVAL_PTS)
+  ! WRITE (CHARS,"(I2)") SIZE(EVAL_PTS,2)
+  ! DO INFO = 1, SIZE(EVAL_PTS,1)
+  !    PRINT "("//CHARS//"F10.5)", EVAL_PTS(INFO,:)
+  ! END DO
+  ! INFO = 0
+  ! PRINT *, "======================================================================"
+  ! PRINT *, ""
+
+
+    ! PRINT "(' LOC              : '4I5)", LOC
+    ! PRINT "(' MULTS            : '4I5)", MULTS
+    ! PRINT "(' SUB_DVECS        :     ('I2','I2')')", SHAPE(SUB_DVECS)
+    ! WRITE (CHARS,"(I2)") SIZE(SUB_DVECS,2)
+    ! DO INFO = 1, SIZE(SUB_DVECS,1)
+    !    PRINT "("//CHARS//"F10.5)", SUB_DVECS(INFO,:)
+    ! END DO
+    ! PRINT *, "SHIFTED_EVAL_PTS :"
+    ! WRITE (CHARS,"(I2)") SIZE(SHIFTED_EVAL_PTS,2)
+    ! DO INFO = 1, SIZE(SHIFTED_EVAL_PTS,1)
+    !    PRINT "("//CHARS//"F10.5)", SHIFTED_EVAL_PTS(INFO,:)
+    ! END DO
+    ! PRINT *, ""
+    ! INFO = 0
+
+       ! PRINT *, "^^^^^^^^^^^^^^^ BASE CASE!!! ^^^^^^^^^^^^^^^"
+       ! PRINT *, ""
+       ! PRINT *, ""
+
+
        PRINT *, ""
        PRINT *, "========================================================"
        PRINT *, "DIM           : ", DIM

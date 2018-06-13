@@ -23,17 +23,16 @@ function b = box_rec(n,m,Y,t)
   global BoxEv_p   % Vector of points where the spline is to be evaluated
   global BoxEv_X   % Matrix of distinct directions (rows) defining the box-spline
 
-  format('short')
-  fprintf(" LOC              :     %.0f    %.0f    %.0f    %.0f\n", m)
-  fprintf(" MULTS            :     %.0f    %.0f    %.0f    %.0f\n", n)
-  fprintf(" SUB_DVECS        :     ( %d, %d)\n", size(Y))
-  fprintf("%10.5f", Y(1,:))
-  fprintf("\n")
-  fprintf("%10.5f", Y(2,:))
-  fprintf("\n")  
-  fprintf(" SHIFTED_EVAL_PTS :\n")
-  fprintf("%10.5f", t)
-  fprintf("\n\n")
+  ## fprintf(" LOC              :     %.0f    %.0f    %.0f    %.0f\n", m)
+  ## fprintf(" MULTS            :     %.0f    %.0f    %.0f    %.0f\n", n)
+  ## fprintf(" SUB_DVECS        :     ( %d, %d)\n", size(Y))
+  ## fprintf("%10.5f", Y(1,:))
+  ## fprintf("\n")
+  ## fprintf("%10.5f", Y(2,:))
+  ## fprintf("\n")  
+  ## fprintf(" SHIFTED_EVAL_PTS :\n")
+  ## fprintf("%10.5f", t)
+  ## fprintf("\n\n")
 
   if (sum(n)>BoxEv_s)
 
@@ -95,6 +94,6 @@ function b = box_rec(n,m,Y,t)
 
     %% Normalization
     b = b/abs(det(BoxEv_X(v(1:BoxEv_s),:)));
-    fprintf("^^^^^^^^^^^^^^^ BASE CASE!!! ^^^^^^^^^^^^^^^\n\n\n")
+    ## fprintf("^^^^^^^^^^^^^^^ BASE CASE!!! ^^^^^^^^^^^^^^^\n\n\n")
   end
 

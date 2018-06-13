@@ -47,15 +47,15 @@ function b = box_eval(X,nu,p)
 %% Compute hash table of normal vectors
 
   BoxEv_N = box_norm(BoxEv_s-1,BoxEv_k,zeros(1,BoxEv_k));
-  disp('')
-  disp('BoxEv_N:'); disp(BoxEv_N)
+  ## disp('')
+  ## disp('BoxEv_N:'); disp(BoxEv_N)
 
 %% Do recursion ...
 
   b = box_rec(nu,zeros(1,BoxEv_k),Y,p*Y);
 
-  disp('')
-  disp('b:      '); disp(b)
+  ## disp('')
+  ## disp('b:      '); disp(b)
 
 %% Garbage Collection
 

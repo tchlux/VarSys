@@ -1,25 +1,85 @@
+! This file (boxspline.f90) contains the subroutine BOXSPLEV that can
+! be used to evaluate a box spline defined by its associated
+! direction vector set at provided evaluation points.
+! 
+! The BOXSPLEV subroutine utilizes the following LAPACK routines:
+! 
+!     DGELS   -- Computing a minimum norm representation with LS.
+!     DGESVD  -- Computing SVD to find matrix rank / an orthogonal vector.
+!     DGETRF  -- Computing the determinant of matrix.
+! 
+! The implementation uses the numerically consistent algorithm for
+! evaluating box splines originally presented in [1]. Most notably,
+! the evaluation of the box spline near the boundaries of polynomial
+! pieces does *not* exhibit the random behavior that is seen in the
+! naive recursive implementation. Furthermore, the computational
+! complexity for direction vector sets with repeated direction
+! vectors.
+! 
+! [1] Kobbelt, Leif. "Stable evaluation of box‐splines." 
+!     Numerical Algorithms 14.4 (1997): 377-382.
+! 
 ! ====================================================================
-SUBROUTINE BOX_EVAL(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
-  ! Evaluate a box spline given direction vector set and
-  ! multiplicity of direction vectors (output stored in B)
+SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
+  ! Subroutine for evaluating a box spline defined by a direction
+  ! vector set at provided evaluation points.
   ! 
-  ! This subroutine utilizes the following LAPACK routines:
-  !     DGELS   -- Computing a minimum norm representation with LS.
-  !     DGESVD  -- Computing SVD to find orthogonal vector.
-  !     DGETRF  -- Computing the determinant of matrix with QR.
+  ! Inputs:
+  !   DVECS      -- Double precision real column vectors providing the
+  !                 *unique* direction vectors that define this box spline.
+  !   DVEC_MULTS -- Integer array containing the multiplicity
+  !                 of each corresponding direction vector, of length
+  !                 SIZE(DVECS,2).
+  !   EVAL_PTS   -- Double precision real row vectors providing the
+  !                 points at which the box spline is evaluated. 
+  !                 SIZE(EVAL_PTS,2) = SIZE(DVECS,1)
+  ! 
+  ! Outputs:
+  !   BOX_EVALS -- Double precision real array of box spline
+  !                evaluations at each corresponding evaluation point.
+  !                SIZE(BOX_EVALS) = SIZE(EVAL_PTS,1)
+  !   ERROR     -- Integer error flag with corresponding meanings
+  !                listed under "Error flags" section. Any error at or
+  !                above 10 is likely caused by hardware limitations.
+  !   INFO      -- For all ** error codes relating to LAPACK, this
+  !                integer contains the associated "INFO" provided by
+  !                LAPACK subroutine evaluation.
+  ! 
+  ! Error flags (asterisks represent nonzero digits):
+  ! 
+  !       00 -> Successful execution.
+  !       0* -> Improper usage.
+  !       1* -> Error computing normal vectors.
+  !       2* -> Error computing box spline.
+  !       3* -> Error computing a orthogonal vector.
+  !       4* -> Error computing a minimum norm representation.
+  !       5* -> Error computing a matrix rank.
+  !       6* -> Error computing a matrix determinant.
+  !       7* -> Error finding nonzero entries in an array.
+  ! 
+  !       Least significant digit meanings for errors "0*":
+  !         01 - Mismatched dimension, SIZE(EVAL_PTS,2) /= SIZE(DVECS,1).
+  !         02 - One of the multiplicity values provided was < 1.
+  !         03 - At least 1 non-unique direction vector was provided.
+  ! 
+  !       Least significant digit meanings for errors "**":
+  !         *1 - Memory allocation error (failed allocation).
+  !         *2 - DGELS allocation error, see 'INFO' for details.
+  !         *3 - DGELS computatoin error, see 'INFO' for details.
+  !         *4 - DGESVD allocation error, see 'INFO' for details.
+  !         *5 - DGESVD computation error, see 'INFO' for details.
+  !         *6 - DGETRF computation error, see 'INFO' for details.
   ! 
   USE ISO_FORTRAN_ENV, ONLY: REAL64
   IMPLICIT NONE
-  ! Direction column vector matrix (k x s)
+  ! Inputs and outputs
   REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)              :: DVECS
   INTEGER,           INTENT(IN),  DIMENSION(SIZE(DVECS,2))    :: DVEC_MULTS
   REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)              :: EVAL_PTS
   REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(EVAL_PTS,1)) :: BOX_EVALS
   INTEGER,           INTENT(OUT)                              :: ERROR, INFO
-
   ! Local variables
-  INTEGER :: DIM, NUM_DVECS, IDX
-  CHARACTER(LEN=5) :: CHARS
+  INTEGER :: DIM, NUM_DVECS, IDX_1, IDX_2
   INTEGER, DIMENSION(SIZE(DVECS,2))                            :: LOCATION
   REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,2))                  :: LOOKUP
   INTEGER,           DIMENSION(SIZE(DVECS,2),SIZE(DVECS,2))    :: IDENTITY
@@ -29,21 +89,34 @@ SUBROUTINE BOX_EVAL(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
   ! Initialize error flag and info flag
   INFO = 0
   ERROR = 0
+  ! Store 'global' constants for box spline evaluation.
   DIM = SIZE(DVECS, 1)
   NUM_DVECS = SIZE(DVECS, 2)
   ! Create an identity matrix (for easy matrix-vector multiplication)
-  ! and compute the index lookup indices (for binary style hashing)
+  ! and compute the index lookup indices (for binary style hashing).
   IDENTITY = 0
-  init_ident_lookup : DO IDX = 1, NUM_DVECS
-     IDENTITY(IDX,IDX) = 1
-     LOOKUP(IDX) = 2**(IDX-1)
+  init_ident_lookup : DO IDX_1 = 1, NUM_DVECS
+     IDENTITY(IDX_1,IDX_1) = 1
+     LOOKUP(IDX_1) = 2**(IDX_1-1)
   END DO init_ident_lookup
   ! Error checking
-  bad_multiplicity_check : IF (MINVAL(DVEC_MULTS) .LT. 1) THEN
+  mismatched_dim_check : IF (SIZE(DVECS,1) .NE. SIZE(EVAL_PTS,2)) THEN
      ERROR = 1
      RETURN
+  END IF mismatched_dim_check
+  bad_multiplicity_check : IF (MINVAL(DVEC_MULTS) .LT. 1) THEN
+     ERROR = 2
+     RETURN
   END IF bad_multiplicity_check
-
+  nonunique_dvec_check : DO IDX_1 = 1, NUM_DVECS
+     DO IDX_2 = IDX_1+1, NUM_DVECS
+        IF (SUM(ABS(DVECS(:,IDX_1) - DVECS(:,IDX_2))) .LT. &
+             SQRT(EPSILON(DVECS(1,1)))) THEN
+           ERROR = 3
+           RETURN
+        END IF
+     END DO
+  END DO nonunique_dvec_check
   ! Get the minimum norm representation of the direction vectors
   MIN_NORM_DVECS = MINIMUM_NORM_REPR(DVECS)
   ! Error checking
@@ -61,10 +134,6 @@ SUBROUTINE BOX_EVAL(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
   failed_norm_check : IF (ERROR .NE. 0) THEN
      RETURN
   END IF failed_norm_check
-
-  ! C-x C-k e -- Edit currently defined keyboard macro.
-  ! C-x C-k n -- Give name to the most recently defined keyboard macro (session).
-  ! C-x C-k b -- Bind most recent keyboard macro to a key (session).
 
   ! Recursive evaluation of box spline
   LOCATION = 0.
@@ -86,7 +155,6 @@ CONTAINS
     !   vector set. (O(2^"NUM") calls in recursive subtree).
     ! 
     ! INPUTS
-
 
     ! Inputs and output
     INTEGER,           INTENT(IN)                    :: DIM, NUM
@@ -144,7 +212,7 @@ CONTAINS
     INTEGER,           DIMENSION(:),   ALLOCATABLE :: REMAINING_DVECS
     ! Constants (integers are for indexing)
     REAL(KIND=REAL64) :: POSITION
-    INTEGER :: IDX, IDX_1, IDX_2, NV_IDX
+    INTEGER :: IDX_1, IDX_2, IDX_3
 
     ! Recursion case ...
     IF (SUM(MULTS) > DIM) THEN
@@ -157,17 +225,17 @@ CONTAINS
           NEXT_LOC   = LOC   + IDENTITY(:, IDX_1) ! Track recursion position
           ! Recursive calls
           IF (MULTS(IDX_1) .GT. 1) THEN
-             ! Left recursion
+             ! Recursion with only reduced multiplicity
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, SUB_DVECS, &
                   SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
              EVALS_AT_PTS = EVALS_AT_PTS + TEMP_EVALS_AT_PTS * &
                   SHIFTED_EVAL_PTS(:,IDX_2)
-             ! Right recursion
-             compute_shift_1 : DO IDX = 1, SIZE(SUB_DVECS,2)
-                PT_SHIFT(IDX) = SUM(DVECS(:,IDX_1) * SUB_DVECS(:,IDX))
+             ! Recursion with different set of direction vectors
+             compute_shift_1 : DO IDX_3 = 1, SIZE(SUB_DVECS,2)
+                PT_SHIFT(IDX_3) = SUM(DVECS(:,IDX_1) * SUB_DVECS(:,IDX_3))
              END DO compute_shift_1
-             shift_pts_1 : DO IDX = 1, SIZE(EVAL_PTS,1)
-                TEMP_SHIFTED_EVAL_PTS(IDX,:) = SHIFTED_EVAL_PTS(IDX,:) - &
+             shift_pts_1 : DO IDX_3 = 1, SIZE(EVAL_PTS,1)
+                TEMP_SHIFTED_EVAL_PTS(IDX_3,:) = SHIFTED_EVAL_PTS(IDX_3,:) - &
                      PT_SHIFT(:SIZE(SUB_DVECS,2))
              END DO shift_pts_1
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, SUB_DVECS, &
@@ -181,23 +249,23 @@ CONTAINS
              IF (MATRIX_RANK(TRANSPOSE(NEXT_DVECS)) .EQ. DIM) THEN
                 ! Update Least norm representation
                 NEXT_DVECS = MINIMUM_NORM_REPR(NEXT_DVECS)
-                ! Left recursion
-                compute_shift_2 : DO IDX = 1, DIM
-                   PT_SHIFT(IDX) = SUM(LOC * DVECS(IDX,:))
+                ! Recursion with only reduced multiplicity
+                compute_shift_2 : DO IDX_3 = 1, DIM
+                   PT_SHIFT(IDX_3) = SUM(LOC * DVECS(IDX_3,:))
                 END DO compute_shift_2
-                shift_pts_2 : DO IDX = 1, SIZE(EVAL_PTS,1)
-                   TEMP_EVAL_PTS(IDX,:) = EVAL_PTS(IDX,:) - PT_SHIFT(:DIM)
+                shift_pts_2 : DO IDX_3 = 1, SIZE(EVAL_PTS,1)
+                   TEMP_EVAL_PTS(IDX_3,:) = EVAL_PTS(IDX_3,:) - PT_SHIFT(:DIM)
                 END DO shift_pts_2
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
                 EVALS_AT_PTS = EVALS_AT_PTS + TEMP_EVALS_AT_PTS * &
                      SHIFTED_EVAL_PTS(:,IDX_2)
-                ! Right recursion
-                compute_shift_3 : DO IDX = 1, DIM
-                   PT_SHIFT(IDX) = SUM(NEXT_LOC * DVECS(IDX,:))
+                ! Recursion with different set of direction vectors
+                compute_shift_3 : DO IDX_3 = 1, DIM
+                   PT_SHIFT(IDX_3) = SUM(NEXT_LOC * DVECS(IDX_3,:))
                 END DO compute_shift_3
-                shift_pts_3 : DO IDX = 1, SIZE(EVAL_PTS,1)
-                   TEMP_EVAL_PTS(IDX,:) = EVAL_PTS(IDX,:) - PT_SHIFT(:DIM)
+                shift_pts_3 : DO IDX_3 = 1, SIZE(EVAL_PTS,1)
+                   TEMP_EVAL_PTS(IDX_3,:) = EVAL_PTS(IDX_3,:) - PT_SHIFT(:DIM)
                 END DO shift_pts_3
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
@@ -207,29 +275,29 @@ CONTAINS
              IDX_2 = IDX_2 + 1
           END IF
        END DO
-       ! Normalization
+       ! Normalization by number of direction vectors.
        EVALS_AT_PTS = EVALS_AT_PTS / (SUM(MULTS) - DIM)
     ELSE
        ! Base case ... compute characteristic function
        EVALS_AT_PTS = 1.
        ! Delayed translations (this is what makes the algorithm more stable)
        REMAINING_DVECS = FIND(REAL(MULTS,REAL64))
-       compute_shift_4 : DO IDX = 1, DIM
-          PT_SHIFT(IDX) = SUM(LOC * DVECS(IDX,:))
+       compute_shift_4 : DO IDX_1 = 1, DIM
+          PT_SHIFT(IDX_1) = SUM(LOC * DVECS(IDX_1,:))
        END DO compute_shift_4
-       shift_pts_4 : DO IDX = 1, SIZE(EVAL_PTS,1)
-          TEMP_EVAL_PTS(IDX,:) = EVAL_PTS(IDX,:) - PT_SHIFT(:DIM)
+       shift_pts_4 : DO IDX_1 = 1, SIZE(EVAL_PTS,1)
+          TEMP_EVAL_PTS(IDX_1,:) = EVAL_PTS(IDX_1,:) - PT_SHIFT(:DIM)
        END DO shift_pts_4
        ! Check against all hyperplanes
        DO IDX_1 = 1, DIM
           ! Lookup normal vector to current hyperplane
-          NV_IDX = 1 + SUM(LOOKUP * ( &
+          IDX_3 = 1 + SUM(LOOKUP * ( &
                MULTS - IDENTITY(:,REMAINING_DVECS(IDX_1)) ))
-          ! Compute position
-          POSITION = SUM(DVECS(:,REMAINING_DVECS(IDX_1)) * NORMAL_VECTORS(:,NV_IDX))
-          ! Compute shifted locations = (NUM_PTS, DIM) x (DIM, 1)
-          compute_shifted_point_1 : DO IDX = 1, SIZE(EVAL_PTS,1)
-             LOCATIONS(IDX) = SUM(TEMP_EVAL_PTS(IDX,:) * NORMAL_VECTORS(:,NV_IDX))
+          ! Compute shifted position (relative to normal ector)
+          POSITION = SUM(DVECS(:,REMAINING_DVECS(IDX_1)) * NORMAL_VECTORS(:,IDX_3))
+          ! Compute shifted evaluation locations = (NUM_PTS, DIM) x (DIM, 1)
+          compute_shifted_point_1 : DO IDX_2 = 1, SIZE(EVAL_PTS,1)
+             LOCATIONS(IDX_2) = SUM(TEMP_EVAL_PTS(IDX_2,:) * NORMAL_VECTORS(:,IDX_3))
           END DO compute_shifted_point_1
           ! Identify those points that are outside of this box
           IF (POSITION .GT. 0) THEN
@@ -239,12 +307,12 @@ CONTAINS
           END IF
           ! Recompute shifted locations
           NEXT_LOC = LOC + IDENTITY(:,REMAINING_DVECS(IDX_1))
-          compute_shift_5 : DO IDX = 1, DIM
-             PT_SHIFT(IDX) = SUM(NEXT_LOC * DVECS(IDX,:))
+          compute_shift_5 : DO IDX_2 = 1, DIM
+             PT_SHIFT(IDX_2) = SUM(NEXT_LOC * DVECS(IDX_2,:))
           END DO compute_shift_5
-          compute_shifted_point_2 : DO IDX = 1, SIZE(EVAL_PTS,1)
-             LOCATIONS(IDX) = SUM((EVAL_PTS(IDX,:) - PT_SHIFT(:DIM)) * &
-                  NORMAL_VECTORS(:,NV_IDX))
+          compute_shifted_point_2 : DO IDX_2 = 1, SIZE(EVAL_PTS,1)
+             LOCATIONS(IDX_2) = SUM((EVAL_PTS(IDX_2,:) - PT_SHIFT(:DIM)) * &
+                  NORMAL_VECTORS(:,IDX_3))
           END DO compute_shifted_point_2
           ! Identify those points that are outside of this box
           IF (POSITION .GT. 0) THEN
@@ -253,7 +321,7 @@ CONTAINS
              WHERE (LOCATIONS .LT. 0) EVALS_AT_PTS = 0.
           END IF
        END DO
-       ! Normalization of evaluations
+       ! Normalization of evaluations by determinant of box.
        EVALS_AT_PTS = EVALS_AT_PTS / ABS( &
             DET(TRANSPOSE(DVECS(:,REMAINING_DVECS(1:DIM)))) )
     END IF
@@ -380,7 +448,9 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION MATRIX_RANK(MATRIX)
-    ! Get the rank of the provided matrix.
+    ! 5) MATRIX_RANK
+    ! 
+    !   Get the rank of the provided matrix.
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: MATRIX
     ! Local variables for computing the orthogonal vector
     REAL(KIND=REAL64), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2)) :: A
@@ -429,7 +499,10 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION DET(M) RESULT(D)
-    ! Compute the determinant of a matrix without modifying it.
+    ! 6) DET
+    ! 
+    !   Compute the determinant of a matrix without modifying it.
+    ! 
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:) :: M
     REAL(KIND=REAL64) :: D
     ! Local variable
@@ -450,6 +523,8 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION FIND(ARRAY) RESULT(NE_ZERO)
+    ! 7) FIND
+    ! 
     ! Return a new array of the indices of 'ARRAY' that contain
     ! nonzero elements. Print error and return array with 0 of ARRAY=0.
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: ARRAY
@@ -478,17 +553,4 @@ CONTAINS
     END IF usage_check
   END FUNCTION FIND
 
-END SUBROUTINE BOX_EVAL
-
-
-! ====================================================================
-!       Matlab output
-! -------------------------
-! 
-! BoxEv_N:
-!    0.00000   0.00000  -1.00000   0.00000   0.70711   0.00000   0.00000   0.00000  -0.70711   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000
-!    0.00000   1.00000   0.00000   0.00000   0.70711   0.00000   0.00000   0.00000   0.70711   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000
-! 
-! b:      
-!  0.25005
-! ====================================================================
+END SUBROUTINE BOXSPLEV

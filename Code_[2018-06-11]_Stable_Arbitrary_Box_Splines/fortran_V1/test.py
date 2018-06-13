@@ -14,14 +14,14 @@ nu = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 1
 # ====================================================================
 # ====================================================================
 
-# # p = np.array(p[:5,:], order='F')
-# p = np.array([[2.,2.]], order='F')
-p = np.array([[1.0001, 1.]], order='F')
-b, error, info = box_eval.box_eval(X, nu, p)
-print("b: ")
-print("  ", b)
-print(error, info)
-exit()
+# # # p = np.array(p[:5,:], order='F')
+# # p = np.array([[2.,2.]], order='F')
+# p = np.array([[1.0001, 1.]], order='F')
+# b, error, info = box_eval.box_eval(X, nu, p)
+# print("b: ")
+# print("  ", b)
+# print(error, info)
+# exit()
 
 # ====================================================================
 # ====================================================================
@@ -43,23 +43,22 @@ exit()
 # ====================================================================
 # ====================================================================
 
+def f(x):
+    p = np.asarray(x, order='F')
+    b, e, i = box_eval.box_eval(X, nu, p)
+    return b
 
-# def f(x):
-#     p = np.asarray(x, order='F')
-#     b, e, i = box_eval.box_eval(X, nu, p)
-#     return b
-
-# from util.plotly import Plot
-# p = Plot()                             
-# padding = .02
-# # Get the x min and max
-# x_min_max = [sum(np.where(nu*X[0,:] < 0, nu*X[0,:], 0)), sum(np.where(nu*X[0,:] > 0, nu*X[0,:], 0))]
-# x_min_max[0] -= (x_min_max[1] - x_min_max[0]) * padding
-# x_min_max[1] += (x_min_max[1] - x_min_max[0]) * padding
-# # Get the y min and max
-# y_min_max = [sum(np.where(nu*X[1,:] < 0, nu*X[1,:], 0)), sum(np.where(nu*X[1,:] > 0, nu*X[1,:], 0))]
-# y_min_max[0] -= (y_min_max[1] - y_min_max[0]) * padding
-# y_min_max[1] += (y_min_max[1] - y_min_max[0]) * padding
-# # Create the plot
-# p.add_func("Box Spline", f, x_min_max, y_min_max, vectorized=True)
-# p.show(file_name="result.html")
+from util.plotly import Plot
+p = Plot()                             
+padding = .02
+# Get the x min and max
+x_min_max = [sum(np.where(nu*X[0,:] < 0, nu*X[0,:], 0)), sum(np.where(nu*X[0,:] > 0, nu*X[0,:], 0))]
+x_min_max[0] -= (x_min_max[1] - x_min_max[0]) * padding
+x_min_max[1] += (x_min_max[1] - x_min_max[0]) * padding
+# Get the y min and max
+y_min_max = [sum(np.where(nu*X[1,:] < 0, nu*X[1,:], 0)), sum(np.where(nu*X[1,:] > 0, nu*X[1,:], 0))]
+y_min_max[0] -= (y_min_max[1] - y_min_max[0]) * padding
+y_min_max[1] += (y_min_max[1] - y_min_max[0]) * padding
+# Create the plot
+p.add_func("Box Spline", f, x_min_max, y_min_max, vectorized=True)
+p.show(file_name="result.html")
