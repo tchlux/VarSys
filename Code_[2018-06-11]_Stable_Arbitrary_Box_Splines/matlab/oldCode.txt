@@ -1,3 +1,12 @@
+      fprintf(" BASE CASE\n")
+      temp = BoxEv_X(find(M),:);
+      fprintf(" DVECS:        %d        %d\n",size(temp,2),size(temp,1))
+      fprintf("   %f\n   %f\n", temp(1), temp(2))
+
+      fprintf(" NORMAL_VECTOR:   %15.10f    %15.10f\n",N(1,1), N(2,1))
+      disp('')
+
+
     fprintf(' B:  %12.10f\n\n', b)
     pause
 

@@ -12,18 +12,19 @@ SUBROUTINE BOX_EVAL(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
   IMPLICIT NONE
   ! Direction column vector matrix (k x s)
   REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)              :: DVECS
-  REAL(KIND=REAL64), INTENT(IN),  DIMENSION(SIZE(DVECS,2))    :: DVEC_MULTS
+  INTEGER,           INTENT(IN),  DIMENSION(SIZE(DVECS,2))    :: DVEC_MULTS
   REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)              :: EVAL_PTS
   REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(EVAL_PTS,1)) :: BOX_EVALS
   INTEGER,           INTENT(OUT)                              :: ERROR, INFO
 
-
   ! Local variables
   INTEGER :: DIM, NUM_DVECS, IDX
-  REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,2))                  :: LOCATION, LOOKUP
-  REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,2),SIZE(DVECS,2))    :: IDENTITY
-  REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE               :: MIN_NORM_DVECS
+  CHARACTER(LEN=5) :: CHARS
+  INTEGER, DIMENSION(SIZE(DVECS,2))                            :: LOCATION
+  REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,2))                  :: LOOKUP
+  INTEGER,           DIMENSION(SIZE(DVECS,2),SIZE(DVECS,2))    :: IDENTITY
   REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,1),2**SIZE(DVECS,2)) :: NORMAL_VECTORS
+  REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE               :: MIN_NORM_DVECS
 
   ! Initialize error flag and info flag
   INFO = 0
@@ -51,32 +52,59 @@ SUBROUTINE BOX_EVAL(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
      ERROR = 10
      RETURN
   END IF failed_dgels_check
-
-  PRINT *, "SHAPE(DVECS): ", SHAPE(DVECS)
-  DO INFO = 1, SIZE(DVECS,1)
-     PRINT *, DVECS(INFO,:)
-  END DO
-  PRINT *, ""
-  PRINT *, "SHAPE(DVEC_MULTS): ", SHAPE(DVEC_MULTS)
-  PRINT *, "DVEC_MULTS: ", DVEC_MULTS
-  PRINT *, ""
-
+  
   ! Compute the table of normal vectors defining boundaries of
   ! polynomial pieces of box spline.
   LOCATION = 0
+  NORMAL_VECTORS = 0
   CALL COMPUTE_NORMALS(DIM-1, NUM_DVECS, LOCATION, NORMAL_VECTORS)
   failed_norm_check : IF (ERROR .NE. 0) THEN
      RETURN
   END IF failed_norm_check
 
-  PRINT *, "SHAPE(NORMAL_VECTORS): ", SHAPE(NORMAL_VECTORS)
-  DO INFO = 1, SIZE(NORMAL_VECTORS,1)
-     PRINT *, NORMAL_VECTORS(INFO,:)
+  ! C-x C-k e -- Edit currently defined keyboard macro.
+  ! C-x C-k n -- Give name to the most recently defined keyboard macro (session).
+  ! C-x C-k b -- Bind most recent keyboard macro to a key (session).
+
+  PRINT *, ""
+  PRINT *, "======================================================================"
+  PRINT *, "IDENTITY:       "
+  WRITE (CHARS,"(I2)") SIZE(IDENTITY,2)
+  DO INFO = 1, SIZE(IDENTITY,1)
+     PRINT "("//CHARS//"I5)", IDENTITY(INFO,:)
   END DO
+  PRINT *, ""
+  ! 
+  PRINT *, "NORMAL_VECTORS: ", SHAPE(NORMAL_VECTORS)
+  WRITE (CHARS,"(I2)") SIZE(NORMAL_VECTORS,2)
+  DO INFO = 1, SIZE(NORMAL_VECTORS,1)
+     PRINT "("//CHARS//"F10.5)", NORMAL_VECTORS(INFO,:)
+  END DO
+  PRINT *, ""
+  ! 
+  PRINT *, "DVEC_MULTS: ", SHAPE(DVEC_MULTS)
+  WRITE (CHARS,"(I2)") SIZE(DVEC_MULTS)
+  PRINT "("//CHARS//"I5)", DVEC_MULTS
+  PRINT *, ""
+  ! 
+  PRINT *, "DVECS: ", SHAPE(DVECS)
+  WRITE (CHARS,"(I2)") SIZE(DVECS,2)
+  DO INFO = 1, SIZE(DVECS,1)
+     PRINT "("//CHARS//"F10.5)", DVECS(INFO,:)
+  END DO
+  PRINT *, ""
+  ! 
+  PRINT *, "EVAL_PTS:", SHAPE(EVAL_PTS)
+  WRITE (CHARS,"(I2)") SIZE(EVAL_PTS,2)
+  DO INFO = 1, SIZE(EVAL_PTS,1)
+     PRINT "("//CHARS//"F10.5)", EVAL_PTS(INFO,:)
+  END DO
+  INFO = 0
+  PRINT *, "======================================================================"
   PRINT *, ""
 
   ! Recursive evaluation of box spline
-  LOCATION = 0
+  LOCATION = 0.
   BOX_EVALS = 0.
   CALL EVALUATE_BOX_SPLINE(DVEC_MULTS, LOCATION, MIN_NORM_DVECS, &
        MATMUL(EVAL_PTS, MIN_NORM_DVECS), BOX_EVALS)
@@ -89,13 +117,15 @@ CONTAINS
 
   ! ==================================================================
   RECURSIVE SUBROUTINE COMPUTE_NORMALS(DIM, NUM, LOC, NORMAL_VECTORS_SUBSET)
-    ! Evaluate and store the normal vectors that define polynomial
-    ! piece boundaries for the box spline with given direction vector
-    ! set.
+    ! 1) COMPUTE_NORMALS:
+    ! 
+    !   Evaluate and store the normal vectors that define polynomial
+    !   piece boundaries for the box spline with given direction
+    !   vector set.
 
     ! Inputs and output
     INTEGER,           INTENT(IN)                    :: DIM, NUM
-    REAL(KIND=REAL64), INTENT(IN),    DIMENSION(:)   :: LOC
+    INTEGER,           INTENT(IN),    DIMENSION(:)   :: LOC
     REAL(KIND=REAL64), INTENT(INOUT), DIMENSION(:,:) :: NORMAL_VECTORS_SUBSET
     ! Handle recursion
     IF (DIM .GT. 0) THEN
@@ -113,18 +143,22 @@ CONTAINS
     ELSE
        ! Set the column vector to be a vector orthogonal to all
        ! selected vectors of the box spline direction vector set
-       CALL COMPUTE_ORTHOGONAL(TRANSPOSE(DVECS(:,INT(FIND(LOC)))), &
+       CALL COMPUTE_ORTHOGONAL(TRANSPOSE(DVECS(:,FIND(REAL(LOC,REAL64)))), &
             NORMAL_VECTORS_SUBSET(:,1))
     END IF
   END SUBROUTINE COMPUTE_NORMALS
-
+  
   ! ==================================================================
   RECURSIVE SUBROUTINE EVALUATE_BOX_SPLINE(MULTS, LOC, SUB_DVECS,&
        SHIFTED_EVAL_PTS, EVALS_AT_PTS)
-    IMPLICIT NONE
-    ! Multiplicities of direction vectors
-    REAL(KIND=REAL64), INTENT(IN), DIMENSION(NUM_DVECS) :: MULTS
-    REAL(KIND=REAL64), INTENT(IN), DIMENSION(NUM_DVECS) :: LOC
+    ! 2) EVALUATE_BOX_SPLINE:
+    !   
+    !   Evaluate the box spline defined by "DVECS" recursively, where
+    !   this iteration has the remaining vectors "SUB_DVECS", at all
+    !   points in "SHIFTED_EVAL_PTS" and store box spline evaluations
+    !   in "EVALS_AT_PTS".
+    ! 
+    INTEGER,           INTENT(IN), DIMENSION(NUM_DVECS) :: MULTS, LOC
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:)       :: SUB_DVECS
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:)       :: SHIFTED_EVAL_PTS
     REAL(KIND=REAL64), INTENT(OUT), &
@@ -139,12 +173,28 @@ CONTAINS
     ! For computing evaluations in the base case
     REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1)) :: LOCATIONS, SUBTRACTOR
     ! For computing recursive call values
-    REAL(KIND=REAL64), DIMENSION(NUM_DVECS) :: NEXT_MULTS, NEXT_LOC, PT_SHIFT
+    INTEGER,           DIMENSION(NUM_DVECS) :: NEXT_MULTS, NEXT_LOC
+    REAL(KIND=REAL64), DIMENSION(NUM_DVECS) :: PT_SHIFT
     REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: NEXT_DVECS
     INTEGER,           DIMENSION(:),   ALLOCATABLE :: REMAINING_DVECS
     ! Constants (integers are for indexing)
     REAL(KIND=REAL64) :: POSITION
     INTEGER :: IDX, IDX_1, IDX_2, NV_IDX
+
+    PRINT "(' LOC              : '4I5)", LOC
+    PRINT "(' MULTS            : '4I5)", MULTS
+    PRINT "(' SUB_DVECS        :     ('I2','I2')')", SHAPE(SUB_DVECS)
+    WRITE (CHARS,"(I2)") SIZE(SUB_DVECS,2)
+    DO INFO = 1, SIZE(SUB_DVECS,1)
+       PRINT "("//CHARS//"F10.5)", SUB_DVECS(INFO,:)
+    END DO
+    PRINT *, "SHIFTED_EVAL_PTS :"
+    WRITE (CHARS,"(I2)") SIZE(SHIFTED_EVAL_PTS,2)
+    DO INFO = 1, SIZE(SHIFTED_EVAL_PTS,1)
+       PRINT "("//CHARS//"F10.5)", SHIFTED_EVAL_PTS(INFO,:)
+    END DO
+    PRINT *, ""
+    INFO = 0
 
     ! Recursion case ...
     IF (SUM(MULTS) > DIM) THEN
@@ -177,7 +227,7 @@ CONTAINS
              IDX_2 = IDX_2 + 1
           ELSE IF (MULTS(IDX_1) .GT. 0) THEN
              ! Find the next direction vectors (ones with nonzero multiplicities)
-             NEXT_DVECS = DVECS(:,INT(FIND(NEXT_MULTS)))
+             NEXT_DVECS = DVECS(:,FIND(REAL(NEXT_MULTS,REAL64)))
              IF (MATRIX_RANK(TRANSPOSE(NEXT_DVECS)) .EQ. DIM) THEN
                 ! Update Least norm representation
                 NEXT_DVECS = MINIMUM_NORM_REPR(NEXT_DVECS)
@@ -213,7 +263,7 @@ CONTAINS
        ! Base case ... compute characteristic function
        EVALS_AT_PTS = 1.
        ! Delayed translations (this is what makes the algorithm more stable)
-       REMAINING_DVECS = INT(FIND(MULTS))
+       REMAINING_DVECS = FIND(REAL(MULTS,REAL64))
        compute_shift_4 : DO IDX = 1, DIM
           PT_SHIFT(IDX) = SUM(LOC * DVECS(IDX,:))
        END DO compute_shift_4
@@ -256,6 +306,9 @@ CONTAINS
        ! Normalization of evaluations
        EVALS_AT_PTS = EVALS_AT_PTS / ABS( &
             DET(TRANSPOSE(DVECS(:,REMAINING_DVECS(1:DIM)))) )
+       PRINT *, "^^^^^^^^^^^^^^^ BASE CASE!!! ^^^^^^^^^^^^^^^"
+       PRINT *, ""
+       PRINT *, ""
     END IF
   END SUBROUTINE EVALUATE_BOX_SPLINE
 
@@ -265,7 +318,11 @@ CONTAINS
 
   ! ==================================================================
   SUBROUTINE COMPUTE_ORTHOGONAL(A, ORTHOGONAL)
-    ! Get a vector orthogonal to the row vectors stored in matrix
+    ! 3) COMPUTE_ORTHOGONAL
+    ! 
+    !   Given a matrix "A" of row vectors, compute a vector orthogonal
+    !   to the row vectors in "A" and store it in "ORTHOGONAL".
+    ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)       :: A
     REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(A,2)) :: ORTHOGONAL
     ! Local variables for computing the orthogonal vector
@@ -273,6 +330,7 @@ CONTAINS
     REAL(KIND=REAL64), DIMENSION(SIZE(A,2),SIZE(A,2)) :: VT
     REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: WORK
     INTEGER :: IDX
+    LOGICAL :: FOUND_ZERO
     ! Unused parameters
     REAL(KIND=REAL64), DIMENSION(1) :: U
 
@@ -290,7 +348,7 @@ CONTAINS
     !   'A'        -- All N rows of V**T are returned in the array VT
     !   SIZE(A,1)  -- M, number of rows in A
     !   SIZE(A,2)  -- N, number of cols in A
-    !   A          -- Inputs matrix A
+    !   A          -- Inputs matrix A (destroyed during computation)
     !   SIZE(A,1)  -- Leading dimension of A
     !   S          -- Container for singular values of A
     !   U          -- Double precision array for storing U
@@ -301,22 +359,31 @@ CONTAINS
     !   SIZE(WORK) -- Size of the work array
     !   INFO       -- Info message parameter
 
+    ORTHOGONAL = 0.
+    FOUND_ZERO = .FALSE.
     ! Find the first vector in the orthonormal basis for the null
     ! space of A (a vector with an extremely small singular value)
     find_null : DO IDX = 1, SIZE(S)
-       IF (S(IDX) .LE. (EPSILON(U(1)) * MIN(SIZE(A,1),SIZE(A,2)))) THEN
+       IF (S(IDX) .LE. (EPSILON(U(1)) * SIZE(S))) THEN
+          ! If we found a singular value, copy out the orthogonal vector.
+          ORTHOGONAL = VT(IDX,:)
+          FOUND_ZERO = .TRUE.
           EXIT find_null
        END IF
     END DO find_null
-
-    ! Copy out the vector
-    ORTHOGONAL = VT(IDX,:)
+    ! If no orthogonal was found and the matrix is not a span of the
+    ! space, use the first vector in VT at (RANK(A) + 1).
+    IF ((SIZE(VT,1) > SIZE(S)) .AND. (.NOT. FOUND_ZERO))THEN
+       ORTHOGONAL = VT(SIZE(S)+1,:)
+    END IF
   END SUBROUTINE COMPUTE_ORTHOGONAL
 
   ! ==================================================================
   FUNCTION MINIMUM_NORM_REPR(MATRIX) RESULT(MIN_NORM)
-    ! Compute the new minimum norm representation of 'MARTIX' and
-    ! store it in 'MIN_NORM', report any errors in 'ERROR'.
+    ! 4) MINIMUM_NORM_REPR
+    ! 
+    !   Compute the minimum norm representation of 'MARTIX' and store
+    !   it in 'MIN_NORM'.
     ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: MATRIX
     REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: MIN_NORM
@@ -370,7 +437,7 @@ CONTAINS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: MATRIX
     ! Local variables for computing the orthogonal vector
     REAL(KIND=REAL64), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2)) :: A
-    REAL(KIND=REAL64), DIMENSION(MIN(SIZE(MATRIX,1),SIZE(MATRIX,1))) :: S
+    REAL(KIND=REAL64), DIMENSION(MIN(SIZE(MATRIX,1),SIZE(MATRIX,2))) :: S
     REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: WORK
     INTEGER :: IDX, MATRIX_RANK
     ! Unused parameters
@@ -436,9 +503,10 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION FIND(ARRAY) RESULT(NE_ZERO)
-    ! Return a new array with only the nonzero elements of ARRAY.
+    ! Return a new array of the indices of 'ARRAY' that contain
+    ! nonzero elements. Print error and return array with 0 of ARRAY=0.
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: ARRAY
-    REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: NE_ZERO
+    INTEGER, DIMENSION(:), ALLOCATABLE :: NE_ZERO
     ! Local variables
     INTEGER, DIMENSION(SIZE(ARRAY)) :: INDICES
     INTEGER :: COUNT_NONZERO, IDX
@@ -453,6 +521,7 @@ CONTAINS
     END DO
     usage_check : IF (COUNT_NONZERO .LE. 0) THEN
        PRINT *, 'ERROR: "FIND" was given 0 array.'
+       ERROR = 60
        ALLOCATE(NE_ZERO(1))
        NE_ZERO(1) = 0
     ELSE
@@ -463,3 +532,16 @@ CONTAINS
   END FUNCTION FIND
 
 END SUBROUTINE BOX_EVAL
+
+
+! ====================================================================
+!       Matlab output
+! -------------------------
+! 
+! BoxEv_N:
+!    0.00000   0.00000  -1.00000   0.00000   0.70711   0.00000   0.00000   0.00000  -0.70711   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000
+!    0.00000   1.00000   0.00000   0.00000   0.70711   0.00000   0.00000   0.00000   0.70711   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000   0.00000
+! 
+! b:      
+!  0.25005
+! ====================================================================

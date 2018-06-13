@@ -1,3 +1,58 @@
+       PRINT *, ""
+       PRINT *, "========================================================"
+       PRINT *, "DIM           : ", DIM
+       PRINT *, "NUM           : ", NUM
+       PRINT *, "LOC           : ", LOC
+       WRITE (CHARS,"(I2)") SIZE(NORMAL_VECTORS_SUBSET,1)
+       PRINT "(' NORMAL_VECTOR : '"//CHARS//"F10.5)", NORMAL_VECTORS_SUBSET(:,1)
+       PRINT *, "FIND(LOC)     : ", FIND(REAL(LOC,REAL64))
+       PRINT *, "DVECS         : ", SHAPE(TRANSPOSE(DVECS(:,FIND(REAL(LOC,REAL64)))))
+       WRITE (CHARS,"(I2)"), SIZE(DVECS,1)
+       PRINT "("//CHARS//"F10.5)", DVECS(:,FIND(REAL(LOC,REAL64)))
+       PRINT *, "========================================================"
+       PRINT *, ""
+
+
+    PRINT *, "--------------------------------------------------------"
+
+
+          WRITE (CHARS,"(I2)") SIZE(ORTHOGONAL,1)
+          PRINT *, "ORTHOGONAL (EX): "
+          PRINT "("//CHARS//"F10.5)", ORTHOGONAL
+
+
+          WRITE (CHARS,"(I2)") SIZE(ORTHOGONAL,1)
+          PRINT *, "ORTHOGONAL    : "
+          PRINT "("//CHARS//"F10.5)", ORTHOGONAL
+
+
+    ! 
+    PRINT *, "--------------------------------------------------------"
+    PRINT *, "ERROR: ", ERROR
+    ! 
+    WRITE (CHARS,"(I2)") SIZE(S)
+    PRINT *, "SINGULAR VALS : "
+    PRINT "("//CHARS//"F10.5)", S
+    ! 
+    PRINT *, "VT   :", SHAPE(VT)
+    WRITE (CHARS,"(I2)") SIZE(VT,2)
+    DO INFO = 1, SIZE(VT,1)
+       PRINT "("//CHARS//"F10.5)", VT(INFO,:)
+    END DO
+    ! 
+
+
+       PRINT *, "BASE CASE"
+       PRINT *, "DVECS:", SHAPE(DVECS(:,FIND(LOC)))
+       WRITE (CHARS,"(I2)") SIZE(DVECS(:,FIND(LOC)),2)
+       DO INFO = 1, SIZE(DVECS(:,FIND(LOC)),1)
+          PRINT "("//CHARS//"F10.5)", DVECS(INFO,FIND(LOC))
+       END DO
+
+       PRINT *, "NORMAL_VECTOR: ", NORMAL_VECTORS_SUBSET(:,1)
+       PRINT *, ""
+
+
     ! PRINT *, MULTS
     ! PRINT *, LOC
     ! PRINT *, SUB_DVECS

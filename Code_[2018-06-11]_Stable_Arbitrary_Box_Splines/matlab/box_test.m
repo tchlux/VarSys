@@ -12,9 +12,10 @@ echo off
 [xx,yy] = meshgrid(((1:20)-2)/5,((1:20)-2)/5);
  p      = [xx(:) yy(:)];
  ## p      = p(1:5,:);
- p = [ 2 2; ];
+ p = [ 1.0001 1; ];
  b = box_eval(X,nu,p);
-
+ disp('b:')
+ disp(b)
  ## surf(reshape(b,20,20))
  ## pause
 
