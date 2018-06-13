@@ -13,7 +13,7 @@ boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
 
 dvecs = np.array([[1.,0., 1., 1.],
                   [0.,1.,-1., 1.]], order="F")
-mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
+mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 1
 
 # # ====================================================================
 
@@ -24,6 +24,7 @@ mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
 # import time
 # start = time.time()
 # box_evals, error, info = boxspline.boxsplev(dvecs, mults, eval_pts)
+# print(box_evals, error, info)
 # total = time.time() - start
 # print(f" {total:.2f} second evaluation time at {eval_pts.shape[0]} points..")
 # print()

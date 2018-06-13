@@ -16,7 +16,7 @@
 ! complexity for direction vector sets with repeated direction
 ! vectors is reduced from the naive recursive implementation.
 ! 
-! [1] Kobbelt, Leif. "Stable evaluation of box‐splines." 
+! [1] Kobbelt, Leif. "Stable Evaluation of Box‐Splines." 
 !     Springer. Numerical Algorithms 14.4 (1997): 377-382.
 ! 
 ! ====================================================================
@@ -184,7 +184,7 @@ CONTAINS
     ELSE
        ! Set the column vector to be a vector orthogonal to all
        ! selected vectors of the box-spline direction vector set.
-       CALL MATRIX_ORTHOGONAL(TRANSPOSE(DVECS(:,NONZERO(REAL(LOC,REAL64)))), &
+       CALL MATRIX_ORTHOGONAL(TRANSPOSE(DVECS(:,NONZERO(LOC))), &
             NORMAL_VECTORS_SUBSET(:,1))
     END IF
   END SUBROUTINE COMPUTE_NORMALS
@@ -203,8 +203,8 @@ CONTAINS
     !   MULTS            -- Integer array of direction vector multiplicities.
     !   LOC              -- Integer array tracking current recursion position.
     !   SUB_DVECS        -- Real matrix of (subset of) (transformed)
-    !                       direction vectors used to evaluated at
-    !                       provided evaluation points.
+    !                       direction vectors used to compute this box
+    !                       spline at the provided evaluation points.
     !   SHIFTED_EVAL_PTS -- Real matrix of (shifted) evaluation points
     !                       at which the box-spline value will be computed.
     ! 
@@ -266,7 +266,7 @@ CONTAINS
              IDX_2 = IDX_2 + 1
           ELSE IF (MULTS(IDX_1) .GT. 0) THEN
              ! Find the next direction vectors (ones with nonzero multiplicities).
-             NEXT_DVECS = DVECS(:,NONZERO(REAL(NEXT_MULTS,REAL64)))
+             NEXT_DVECS = DVECS(:,NONZERO(NEXT_MULTS))
              IF (ERROR .NE. 0) RETURN
              IF (MATRIX_RANK(TRANSPOSE(NEXT_DVECS)) .EQ. DIM) THEN
                 IF (ERROR .NE. 0) RETURN
@@ -301,13 +301,13 @@ CONTAINS
              IDX_2 = IDX_2 + 1
           END IF
        END DO
-       ! Normalize by number of direction vectors computed over.
+       ! Normalize by the number of direction vectors involved in computation.
        EVALS_AT_PTS = EVALS_AT_PTS / (SUM(MULTS) - DIM)
     ELSE
        ! Base case ... compute characteristic function.
        EVALS_AT_PTS = 1.
+       REMAINING_DVECS = NONZERO(MULTS)
        ! Delayed translations (this is what makes the algorithm more stable).
-       REMAINING_DVECS = NONZERO(REAL(MULTS,REAL64))
        IF (ERROR .NE. 0) RETURN
        compute_shift_4 : DO IDX_1 = 1, DIM
           PT_SHIFT(IDX_1) = SUM(LOC * DVECS(IDX_1,:))
@@ -612,14 +612,14 @@ CONTAINS
     ! nonzero elements. Set error and return array with 0 if ARRAY=0.
     ! 
     ! Input:
-    !   ARRAY -- Real array of numbers.
+    !   ARRAY -- Integer array of numbers.
     ! 
     ! Output:
     !   NE_ZERO -- Integer array corresponding to those indices of
     !              ARRAY that contain nonzero elements.
     ! 
-    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: ARRAY
-    INTEGER, DIMENSION(:), ALLOCATABLE :: NE_ZERO
+    INTEGER, INTENT(IN), DIMENSION(:)              :: ARRAY
+    INTEGER,             DIMENSION(:), ALLOCATABLE :: NE_ZERO
     ! Local variables
     INTEGER, DIMENSION(SIZE(ARRAY)) :: INDICES
     INTEGER :: COUNT_NONZERO, IDX
