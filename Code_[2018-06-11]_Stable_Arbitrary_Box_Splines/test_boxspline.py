@@ -3,13 +3,13 @@ import fmodpy
 boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
     module_link_args=["-lblas", "-llapack", "-lgfortran"])
 
-# devcs = np.array([[1.,0.,1.],
+# dvecs = np.array([[1.,0.,1.],
 #                   [0.,1.,1.]], order="F")
-# mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * 1
+# mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * 2
 
-dvecs = np.array([[1.,0., 1., 1., 1. ],
-                  [0.,1.,-1., 1., -1.]], order="F")
-mults = np.array([1 ,1 ,1 ,1, 1 ], order="F", dtype=np.int32) * 1
+dvecs = np.array([[1.,0., 1., 1.],
+                  [0.,1.,-1., 1.]], order="F")
+mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 1
 
 def f(x):
     eval_pts = np.asarray(x, order='F')

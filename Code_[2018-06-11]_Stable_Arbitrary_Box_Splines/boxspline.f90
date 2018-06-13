@@ -1,5 +1,5 @@
 ! This file (boxspline.f90) contains the subroutine BOXSPLEV that can
-! be used to evaluate a box spline defined by its associated
+! be used to evaluate a box-spline defined by its associated
 ! direction vector set at provided evaluation points.
 ! 
 ! The BOXSPLEV subroutine utilizes the following LAPACK routines:
@@ -9,33 +9,33 @@
 !     DGETRF  -- Computing the determinant of matrix.
 ! 
 ! The implementation uses the numerically consistent algorithm for
-! evaluating box splines originally presented in [1]. Most notably,
-! the evaluation of the box spline near the boundaries of polynomial
+! evaluating box-splines originally presented in [1]. Most notably,
+! the evaluation of the box-spline near the boundaries of polynomial
 ! pieces does *not* exhibit the random behavior that is seen in the
 ! naive recursive implementation. Furthermore, the computational
 ! complexity for direction vector sets with repeated direction
-! vectors.
+! vectors is reduced from the naive recursive implementation.
 ! 
 ! [1] Kobbelt, Leif. "Stable evaluation of box‐splines." 
 !     Numerical Algorithms 14.4 (1997): 377-382.
 ! 
 ! ====================================================================
 SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
-  ! Subroutine for evaluating a box spline defined by a direction
+  ! Subroutine for evaluating a box-spline defined by a direction
   ! vector set at provided evaluation points.
   ! 
   ! Inputs:
   !   DVECS      -- Double precision real column vectors providing the
-  !                 *unique* direction vectors that define this box spline.
+  !                 *unique* direction vectors that define this box-spline.
   !   DVEC_MULTS -- Integer array containing the multiplicity
   !                 of each corresponding direction vector, of length
   !                 SIZE(DVECS,2).
   !   EVAL_PTS   -- Double precision real row vectors providing the
-  !                 points at which the box spline is evaluated. 
+  !                 points at which the box-spline is evaluated. 
   !                 SIZE(EVAL_PTS,2) = SIZE(DVECS,1)
   ! 
   ! Outputs:
-  !   BOX_EVALS -- Double precision real array of box spline
+  !   BOX_EVALS -- Double precision real array of box-spline
   !                evaluations at each corresponding evaluation point.
   !                SIZE(BOX_EVALS) = SIZE(EVAL_PTS,1)
   !   ERROR     -- Integer error flag with corresponding meanings
@@ -50,7 +50,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
   !       00 -> Successful execution.
   !       0* -> Improper usage.
   !       1* -> Error computing normal vectors.
-  !       2* -> Error computing box spline.
+  !       2* -> Error computing box-spline.
   !       3* -> Error computing a orthogonal vector.
   !       4* -> Error computing a minimum norm representation.
   !       5* -> Error computing a matrix rank.
@@ -89,7 +89,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
   ! Initialize error flag and info flag
   INFO = 0
   ERROR = 0
-  ! Store 'global' constants for box spline evaluation.
+  ! Store 'global' constants for box-spline evaluation.
   DIM = SIZE(DVECS, 1)
   NUM_DVECS = SIZE(DVECS, 2)
   ! Create an identity matrix (for easy matrix-vector multiplication)
@@ -99,6 +99,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
      IDENTITY(IDX_1,IDX_1) = 1
      LOOKUP(IDX_1) = 2**(IDX_1-1)
   END DO init_ident_lookup
+
   ! Error checking
   mismatched_dim_check : IF (SIZE(DVECS,1) .NE. SIZE(EVAL_PTS,2)) THEN
      ERROR = 1
@@ -117,17 +118,15 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
         END IF
      END DO
   END DO nonunique_dvec_check
+  
   ! Get the minimum norm representation of the direction vectors
   MIN_NORM_DVECS = MINIMUM_NORM_REPR(DVECS)
-  ! Error checking
-  failed_dgels_check : IF (ERROR .NE. 0) THEN
-     INFO = ERROR
-     ERROR = 10
+  failed_min_check : IF (ERROR .NE. 0) THEN
      RETURN
-  END IF failed_dgels_check
+  END IF failed_min_check
   
   ! Compute the table of normal vectors defining boundaries of
-  ! polynomial pieces of box spline.
+  ! polynomial pieces of box-spline.
   LOCATION = 0
   NORMAL_VECTORS = 0
   CALL COMPUTE_NORMALS(DIM-1, NUM_DVECS, LOCATION, NORMAL_VECTORS)
@@ -135,7 +134,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR, INFO)
      RETURN
   END IF failed_norm_check
 
-  ! Recursive evaluation of box spline
+  ! Recursive evaluation of box-spline
   LOCATION = 0.
   BOX_EVALS = 0.
   CALL EVALUATE_BOX_SPLINE(DVEC_MULTS, LOCATION, MIN_NORM_DVECS, &
@@ -151,12 +150,20 @@ CONTAINS
     ! 1) COMPUTE_NORMALS:
     ! 
     !   Evaluate and store the normal vectors that define polynomial
-    !   piece boundaries for the box spline with given direction
+    !   piece boundaries for the box-spline with given direction
     !   vector set. (O(2^"NUM") calls in recursive subtree).
     ! 
-    ! INPUTS
-
-    ! Inputs and output
+    ! Inputs:
+    !   DIM, NUM -- Integers used for proceeding with recursion.
+    !   LOC      -- Array of integers storing binary-style 
+    !               representation of active unique direction vectors.
+    ! 
+    ! Output:
+    !   NORMAL_VECTORS_SUBSET -- The subset of real-valued normal
+    !                            column vectors being computed by this
+    !                            branch of the recursive tree. At base
+    !                            case there is only one column vector.
+    ! 
     INTEGER,           INTENT(IN)                    :: DIM, NUM
     INTEGER,           INTENT(IN),    DIMENSION(:)   :: LOC
     REAL(KIND=REAL64), INTENT(INOUT), DIMENSION(:,:) :: NORMAL_VECTORS_SUBSET
@@ -169,13 +176,14 @@ CONTAINS
        left_subtree : IF (NUM .GT. DIM) THEN
           CALL COMPUTE_NORMALS(DIM, NUM-1, LOC, &
                NORMAL_VECTORS_SUBSET(:,:1+2**(NUM-1)))
+          IF (ERROR .NE. 0) RETURN
        END IF left_subtree
        ! Always compue the right subtree (because bounds are size-constrained)
        CALL COMPUTE_NORMALS(DIM-1, NUM-1, LOC+IDENTITY(NUM,:), &
             NORMAL_VECTORS_SUBSET(:,1+2**(NUM-1):))
     ELSE
        ! Set the column vector to be a vector orthogonal to all
-       ! selected vectors of the box spline direction vector set
+       ! selected vectors of the box-spline direction vector set.
        CALL COMPUTE_ORTHOGONAL(TRANSPOSE(DVECS(:,FIND(REAL(LOC,REAL64)))), &
             NORMAL_VECTORS_SUBSET(:,1))
     END IF
@@ -186,10 +194,23 @@ CONTAINS
        SHIFTED_EVAL_PTS, EVALS_AT_PTS)
     ! 2) EVALUATE_BOX_SPLINE:
     !   
-    !   Evaluate the box spline defined by "DVECS" recursively, where
+    !   Evaluate the box-spline defined by "DVECS" recursively, where
     !   this iteration has the remaining vectors "SUB_DVECS", at all
-    !   points in "SHIFTED_EVAL_PTS" and store box spline evaluations
+    !   points in "SHIFTED_EVAL_PTS" and store box-spline evaluations
     !   in "EVALS_AT_PTS".
+    ! 
+    ! Inputs:
+    !   MULTS            -- Integer array of direction vector multiplicities.
+    !   LOC              -- Integer array tracking current recursion position.
+    !   SUB_DVECS        -- Real matrix of (subset of) (transformed)
+    !                       direction vectors used to evaluated at
+    !                       provided evaluation points.
+    !   SHIFTED_EVAL_PTS -- Real matrix of (shifted) evaluation points
+    !                       at which the box-spline value will be computed.
+    ! 
+    ! Output:
+    !   EVALS_AT_PTS -- Real array of box-spline evaluations at each
+    !                   corresponding (shifted) evaluation point.
     ! 
     INTEGER,           INTENT(IN), DIMENSION(NUM_DVECS) :: MULTS, LOC
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:)       :: SUB_DVECS
@@ -204,7 +225,7 @@ CONTAINS
          SIZE(EVAL_PTS,2)) :: TEMP_EVAL_PTS
     REAL(KIND=REAL64), DIMENSION(SIZE(EVALS_AT_PTS)) :: TEMP_EVALS_AT_PTS
     ! For computing evaluations in the base case
-    REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1)) :: LOCATIONS, SUBTRACTOR
+    REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1)) :: LOCATIONS
     ! For computing recursive call values
     INTEGER,           DIMENSION(NUM_DVECS) :: NEXT_MULTS, NEXT_LOC
     REAL(KIND=REAL64), DIMENSION(NUM_DVECS) :: PT_SHIFT
@@ -228,6 +249,7 @@ CONTAINS
              ! Recursion with only reduced multiplicity
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, SUB_DVECS, &
                   SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
+             IF (ERROR .NE. 0) RETURN
              EVALS_AT_PTS = EVALS_AT_PTS + TEMP_EVALS_AT_PTS * &
                   SHIFTED_EVAL_PTS(:,IDX_2)
              ! Recursion with different set of direction vectors
@@ -240,15 +262,19 @@ CONTAINS
              END DO shift_pts_1
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, SUB_DVECS, &
                   TEMP_SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
+             IF (ERROR .NE. 0) RETURN
              EVALS_AT_PTS = EVALS_AT_PTS + TEMP_EVALS_AT_PTS * &
                   (MULTS(IDX_1) - SHIFTED_EVAL_PTS(:,IDX_2))
              IDX_2 = IDX_2 + 1
           ELSE IF (MULTS(IDX_1) .GT. 0) THEN
              ! Find the next direction vectors (ones with nonzero multiplicities)
              NEXT_DVECS = DVECS(:,FIND(REAL(NEXT_MULTS,REAL64)))
+             IF (ERROR .NE. 0) RETURN
              IF (MATRIX_RANK(TRANSPOSE(NEXT_DVECS)) .EQ. DIM) THEN
+                IF (ERROR .NE. 0) RETURN
                 ! Update Least norm representation
                 NEXT_DVECS = MINIMUM_NORM_REPR(NEXT_DVECS)
+                IF (ERROR .NE. 0) RETURN
                 ! Recursion with only reduced multiplicity
                 compute_shift_2 : DO IDX_3 = 1, DIM
                    PT_SHIFT(IDX_3) = SUM(LOC * DVECS(IDX_3,:))
@@ -258,6 +284,7 @@ CONTAINS
                 END DO shift_pts_2
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
+                IF (ERROR .NE. 0) RETURN
                 EVALS_AT_PTS = EVALS_AT_PTS + TEMP_EVALS_AT_PTS * &
                      SHIFTED_EVAL_PTS(:,IDX_2)
                 ! Recursion with different set of direction vectors
@@ -269,6 +296,7 @@ CONTAINS
                 END DO shift_pts_3
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
+                IF (ERROR .NE. 0) RETURN
                 EVALS_AT_PTS = EVALS_AT_PTS + TEMP_EVALS_AT_PTS * &
                      (MULTS(IDX_1) - SHIFTED_EVAL_PTS(:,IDX_2))
              END IF
@@ -282,6 +310,7 @@ CONTAINS
        EVALS_AT_PTS = 1.
        ! Delayed translations (this is what makes the algorithm more stable)
        REMAINING_DVECS = FIND(REAL(MULTS,REAL64))
+       IF (ERROR .NE. 0) RETURN
        compute_shift_4 : DO IDX_1 = 1, DIM
           PT_SHIFT(IDX_1) = SUM(LOC * DVECS(IDX_1,:))
        END DO compute_shift_4
@@ -324,6 +353,7 @@ CONTAINS
        ! Normalization of evaluations by determinant of box.
        EVALS_AT_PTS = EVALS_AT_PTS / ABS( &
             DET(TRANSPOSE(DVECS(:,REMAINING_DVECS(1:DIM)))) )
+       IF (ERROR .NE. 0) RETURN
     END IF
   END SUBROUTINE EVALUATE_BOX_SPLINE
 
@@ -335,8 +365,14 @@ CONTAINS
   SUBROUTINE COMPUTE_ORTHOGONAL(A, ORTHOGONAL)
     ! 3) COMPUTE_ORTHOGONAL
     ! 
-    !   Given a matrix "A" of row vectors, compute a vector orthogonal
-    !   to the row vectors in "A" and store it in "ORTHOGONAL".
+    !   Given a matrix A of row vectors, compute a vector orthogonal to
+    !   the row vectors in A and store it in ORTHOGONAL using DGESVD.
+    ! 
+    ! Input:
+    !   A -- Real dense matrix.
+    ! 
+    ! Output:
+    !   ORTHOGONAL -- Real vector orthogonal to given matrix.
     ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)       :: A
     REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(A,2)) :: ORTHOGONAL
@@ -351,14 +387,19 @@ CONTAINS
 
     ! Query the size of the work array to construct
     CALL DGESVD('N', 'A', SIZE(A,1), SIZE(A,2), A, SIZE(A,1), S, &
-         U, SIZE(U,1), VT, SIZE(VT,1), U, -1, ERROR)
+         U, SIZE(U,1), VT, SIZE(VT,1), U, -1, INFO)
+
+    IF (INFO .NE. 0) THEN
+       ERROR = 34
+       RETURN
+    END IF
 
     ! Allocate the work array
     ALLOCATE(WORK(INT(U(1))))
 
     ! Use the SVD to get the orthogonal vectors
     CALL DGESVD('N','A',SIZE(A,1),SIZE(A,2),A,SIZE(A,1),S,U,SIZE(U), &
-         VT, SIZE(VT,1), WORK, SIZE(WORK), ERROR)
+         VT, SIZE(VT,1), WORK, SIZE(WORK), INFO)
     !   'N'        -- No columns of U are computed
     !   'A'        -- All N rows of V**T are returned in the array VT
     !   SIZE(A,1)  -- M, number of rows in A
@@ -373,6 +414,11 @@ CONTAINS
     !   WORK       -- Work array for computing SVD
     !   SIZE(WORK) -- Size of the work array
     !   INFO       -- Info message parameter
+
+    IF (INFO .NE. 0) THEN
+       ERROR = 35
+       RETURN
+    END IF
 
     ORTHOGONAL = 0.
     FOUND_ZERO = .FALSE.
@@ -398,7 +444,15 @@ CONTAINS
     ! 4) MINIMUM_NORM_REPR
     ! 
     !   Compute the minimum norm representation of 'MARTIX' and store
-    !   it in 'MIN_NORM'.
+    !   it in 'MIN_NORM', use DGELS for least squares computation.
+    ! 
+    ! Input:
+    !   MATRIX -- Real dense matrix.
+    ! 
+    ! Output:
+    !   MIN_NORM -- Real dense matrix that is the minimum norm
+    !               representation of MATRIX computed by finding the
+    !               least squares solution to the problem (AA^T)X = A.
     ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: MATRIX
     REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: MIN_NORM
@@ -415,19 +469,20 @@ CONTAINS
     ! Get the size of the work array necessary
     CALL DGELS('N', SIZE(SQUARE,1), SIZE(SQUARE,2), SIZE(MIN_NORM,2),&
          SQUARE, SIZE(SQUARE,1), MIN_NORM, SIZE(MIN_NORM,1), &
-         DGELS_SIZE_HOLDER, -1, ERROR)
-    allocate_dgels_array : IF (ERROR .EQ. 0) THEN
-       DGELS_DIM = DGELS_SIZE_HOLDER(1)
-       ALLOCATE( DGELS_WORK_ARRAY(1:DGELS_DIM) )
-    ELSE
-       INFO = ERROR
-       ERROR = 20
+         DGELS_SIZE_HOLDER, -1, INFO)
+
+    IF (INFO .NE. 0) THEN
+       ERROR = 42
        RETURN
-    END IF allocate_dgels_array
+    END IF
+
+    DGELS_DIM = DGELS_SIZE_HOLDER(1)
+    ALLOCATE( DGELS_WORK_ARRAY(1:DGELS_DIM) )
+
     ! Call DGELS for actual solve
     CALL DGELS('N', SIZE(SQUARE,1), SIZE(SQUARE,2), SIZE(MIN_NORM,2),&
          SQUARE, SIZE(SQUARE,1), MIN_NORM, SIZE(MIN_NORM,1), &
-         DGELS_WORK_ARRAY, DGELS_DIM, ERROR)
+         DGELS_WORK_ARRAY, DGELS_DIM, INFO)
     !   'N'              -- No transpose of A is necessary
     !   SIZE(SQUARE,1)   -- number of rows in A
     !   SIZE(SQUARE,2)   -- number of columns in A
@@ -438,19 +493,26 @@ CONTAINS
     !   SIZE(MIN_NORM,1) -- Leading dimension of B (number of rows)
     !   DGELS_WORK_ARRAY -- Workspace array for DGELS
     !   DGELS_DIM        -- Size of dgels_work_array
-    !   ERROR            -- For verifying successful execution
-    ls_error_check : IF (ERROR .NE. 0) THEN
-       INFO = ERROR
-       ERROR = 30
+    !   INFO             -- For verifying successful execution
+
+    IF (INFO .NE. 0) THEN
+       ERROR = 43
        RETURN
-    END IF ls_error_check
+    END IF
   END FUNCTION MINIMUM_NORM_REPR
 
   ! ==================================================================
   FUNCTION MATRIX_RANK(MATRIX)
     ! 5) MATRIX_RANK
     ! 
-    !   Get the rank of the provided matrix.
+    !   Get the rank of the provided matrix using the SVD.
+    ! 
+    ! Input:
+    !   MATRIX -- Real dense matrix.
+    ! 
+    ! Output:
+    !   MATRIX_RANK -- The integer rank of MATRIX.
+    ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: MATRIX
     ! Local variables for computing the orthogonal vector
     REAL(KIND=REAL64), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2)) :: A
@@ -463,14 +525,19 @@ CONTAINS
     A = MATRIX
     ! Query the size of the work array to construct
     CALL DGESVD('N', 'N', SIZE(A,1), SIZE(A,2), A, SIZE(A,1), S, &
-         U, SIZE(U), VT, SIZE(VT), U, -1, ERROR)
+         U, SIZE(U), VT, SIZE(VT), U, -1, INFO)
+
+    IF (INFO .NE. 0) THEN
+       ERROR = 54
+       RETURN
+    END IF
 
     ! Allocate the work array
     ALLOCATE(WORK(INT(U(1))))
 
     ! Use the SVD to get the orthogonal vectors
     CALL DGESVD('N','N',SIZE(A,1),SIZE(A,2),A,SIZE(A,1),S,U,SIZE(U), &
-         VT, SIZE(VT), WORK, SIZE(WORK), ERROR)
+         VT, SIZE(VT), WORK, SIZE(WORK), INFO)
     !   'N'        -- No columns of U are computed
     !   'N'        -- No vectors in V**T are computed
     !   SIZE(A,1)  -- M, number of rows in A
@@ -486,6 +553,11 @@ CONTAINS
     !   SIZE(WORK) -- Size of the work array
     !   INFO       -- Info message parameter
 
+    IF (INFO .NE. 0) THEN
+       ERROR = 55
+       RETURN
+    END IF
+
     MATRIX_RANK = SIZE(S)
     ! Find the first singular value in the orthonormal basis for the null
     ! space of A (a vector with an extremely small singular value)
@@ -498,26 +570,37 @@ CONTAINS
   END FUNCTION MATRIX_RANK
 
   ! ==================================================================
-  FUNCTION DET(M) RESULT(D)
+  FUNCTION DET(MATRIX)
     ! 6) DET
     ! 
-    !   Compute the determinant of a matrix without modifying it.
+    !   Compute the determinant of a matrix without modifying it
+    !   using the QR decomposition (and a copy).
     ! 
-    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:) :: M
-    REAL(KIND=REAL64) :: D
+    ! Input:
+    !   MATRIX -- Real dense matrix.
+    ! 
+    ! Output:
+    !   DET -- The real-valued determinant of matrix M.
+    ! 
+    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:) :: MATRIX
+    REAL(KIND=REAL64) :: DET
     ! Local variable
-    REAL(KIND=REAL64), DIMENSION(SIZE(M,1),SIZE(M,2)) :: MATRIX
+    REAL(KIND=REAL64), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2)) :: M
     INTEGER, DIMENSION(MIN(SIZE(MATRIX,1), SIZE(MATRIX,2))) :: IPIV
-    INTEGER :: INFO, IDX
+    INTEGER :: IDX
     ! Copy into a local matrix
-    MATRIX = M
+    M = MATRIX
     ! Do the LU factorization
-    CALL DGETRF(SIZE(MATRIX,1), SIZE(MATRIX,2), MATRIX, &
-         SIZE(MATRIX,1), IPIV, INFO)
+    CALL DGETRF(SIZE(M,1), SIZE(M,2), M, SIZE(M,1), IPIV, INFO)
+
+    IF (INFO .NE. 0) THEN
+       ERROR = 66
+    END IF
+
     ! Compute the determinant (product of diagonal of U)
-    D = 1
-    DO IDX = 1, MIN(SIZE(MATRIX,1), SIZE(MATRIX,2))
-       D = D * MATRIX(IDX,IDX)
+    DET = 1.
+    DO IDX = 1, MIN(SIZE(M,1), SIZE(M,2))
+       DET = DET * M(IDX,IDX)
     END DO
   END FUNCTION DET
 
@@ -527,6 +610,14 @@ CONTAINS
     ! 
     ! Return a new array of the indices of 'ARRAY' that contain
     ! nonzero elements. Print error and return array with 0 of ARRAY=0.
+    ! 
+    ! Input:
+    !   ARRAY -- Real array of numbers.
+    ! 
+    ! Output:
+    !   NE_ZERO -- Integer array corresponding to those indices of
+    !              ARRAY that contain nonzero elements.
+    ! 
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: ARRAY
     INTEGER, DIMENSION(:), ALLOCATABLE :: NE_ZERO
     ! Local variables
@@ -542,8 +633,7 @@ CONTAINS
        END IF
     END DO
     usage_check : IF (COUNT_NONZERO .LE. 0) THEN
-       PRINT *, 'ERROR: "FIND" was given 0 array.'
-       ERROR = 60
+       ERROR = 70
        ALLOCATE(NE_ZERO(1))
        NE_ZERO(1) = 0
     ELSE
