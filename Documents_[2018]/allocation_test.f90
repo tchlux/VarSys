@@ -1,0 +1,25 @@
+PROGRAM TEST_ALLOCATION
+  IMPLICIT NONE
+  INTEGER :: I
+  INTEGER, PARAMETER :: SIZE = 100000
+  INTEGER, DIMENSION(:), ALLOCATABLE :: ALLOC
+  
+  PRINT *, ''
+  PRINT *, 'This program calls a function which returns an allocated'
+  PRINT *, 'array without ever calling DEALLOCATE. Observe computer'
+  PRINT *, 'memory usage throughout the execution of the program.'
+  PRINT *, ''
+
+  DO I = 1, 1000000
+     ALLOC = RETURN_ALLOCATABLE(SIZE)
+  END DO
+  PRINT *, 'Done!'
+
+CONTAINS
+  FUNCTION RETURN_ALLOCATABLE(SIZE) RESULT(ALLOC)
+    INTEGER, INTENT(IN) :: SIZE
+    INTEGER, DIMENSION(:), ALLOCATABLE :: ALLOC
+    ALLOCATE(ALLOC(1:SIZE))
+  END FUNCTION RETURN_ALLOCATABLE
+
+END PROGRAM TEST_ALLOCATION

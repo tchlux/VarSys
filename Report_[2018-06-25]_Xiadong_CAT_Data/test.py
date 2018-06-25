@@ -1,0 +1,158 @@
+import os, random
+from util.data import Data
+from util.plot import Plot
+from util.stats import cdf_fit_func
+
+file_name = "study.csv.pkl"
+data_name = "study.pkl.zip"
+# sub_data_name = "sub_study_10K.pkl"
+sub_data_name = "sub_study_1M.pkl"
+sub_size = 1000000
+if not os.path.exists(sub_data_name):
+    print("Loading file..")
+    if not os.path.exists(data_name):
+        d = Data.load(file_name, sep=",", verbose=True)
+        d.save(data_name)
+    else:
+        d = Data.load(data_name)
+    print("Done loading.")
+    print(d)
+    print()
+    print("Getting random subsample..")
+    sub_d = d[sorted(random.sample(range(len(d)), sub_size))]
+    print("Saving random subsample..")
+    sub_d.save(sub_data_name)
+    d = sub_d
+else:
+    d = Data.load(sub_data_name)
+
+d = d[d.names[:3]]
+
+
+# ==============================================
+#      Test Ability To Predict Clock Cycles     
+# ==============================================
+
+d += d.predict(d.names[2])
+d[d.names[2] + " Error"] = ((g-t) for (t,g) in zip(d[d.names[2]], d[d.names[3]]))
+print()
+print(d)
+print()
+p = Plot()
+p.add_histogram(d.names[-1], d[d.names[-1]], [-300,300])
+p.show(file_name="Clock_Cycle_Prediction_Error.html")
+
+# ======================================
+#      Analyze CDFs of Clock Cycles     
+# ======================================
+
+print("Collecting by unique values..")
+unique_configs = d[d.names[:2]].unique().collect(d[d.names[:3]])
+print("Fitting CDF functions..")
+unique_configs[unique_configs.names[-1]] = (
+    cdf_fit_func(data) for data in unique_configs[unique_configs.names[-1]])
+print(unique_configs)
+print("Generating CDF plot..")
+p = Plot()
+v_idx = 1
+g_idx = 1
+vals = sorted(set(unique_configs[unique_configs.names[v_idx]]))
+for row in unique_configs:
+    color_idx = vals.index(row[v_idx])
+    # Unpack row
+    l3, pack, clock_cdf = row
+    # Add the CDF function
+    p.add_func(f"L3-{l3}  Packet-{pack}", clock_cdf, clock_cdf(),
+               color=p.color(color_idx), group=row[g_idx])
+p.show(file_name="Clock_Cycle_CDFs.html")
+
+# ====================================================================
+# ====================================================================
+# 
+# d.summarize()
+# 
+# Compilation started at Mon Jun 25 09:14:14
+# 
+# python3 test.py
+# Column names and types:
+#   L3 Size  Packet Size  Clock Cycles  Byte Index  Possible Values
+#   int      int          float         int         int            
+# 100.0% complete.
+# 
+# =====================================================================
+# Size: (6291456 x 5)
+# 
+#  L3 Size | Packet Size | Clock Cycles | Byte Index | Possible Values
+#  int     | int         | float        | int        | int            
+# ---------------------------------------------------------------------
+#  768     | 400         | 3625.865     | 0          | 0              
+#  768     | 400         | 3614.345     | 0          | 1              
+#  768     | 400         | 3620.677     | 0          | 2              
+#  768     | 400         | 3500.377     | 0          | 3              
+#  768     | 400         | 3704.56      | 0          | 4              
+#  768     | 400         | 3705.661     | 0          | 5              
+#  768     | 400         | 3677.781     | 0          | 6              
+#  768     | 400         | 3754.06      | 0          | 7              
+#  768     | 400         | 3585.773     | 0          | 8              
+#  768     | 400         | 3588.672     | 0          | 9              
+#  768     | 400         | 3659.41      | 0          | 10             
+#   ...
+# 
+# =====================================================================
+# 
+# SUMMARY:
+# 
+#   This data has 6291456 rows, 5 columns.
+#     5 columns are recognized as ordinal, 0 are categorical.
+#     0 rows have missing values.
+# 
+# COLUMNS:
+# 
+#   0 -- "L3 Size"         <class 'int'>   (4 unique values)
+#     768  1572864 ( 25.0%) ############
+#     2304 1572864 ( 25.0%) ############
+#     3840 1572864 ( 25.0%) ############
+#     5376 1572864 ( 25.0%) ############
+# 
+#   1 -- "Packet Size"     <class 'int'>   (3 unique values)
+#     400  2097152 ( 33.3%) #################
+#     600  2097152 ( 33.3%) #################
+#     800  2097152 ( 33.3%) #################
+# 
+#   2 -- "Clock Cycles"    <class 'float'> (404439 unique values)
+#     [ 3.14e+03,  3.50e+03) 2085770 ( 33.2%) #################
+#     [ 3.50e+03,  3.85e+03)   11122 (  0.2%) 
+#     [ 3.85e+03,  4.20e+03)     260 (  0.0%) 
+#     [ 4.20e+03,  4.55e+03) 2094406 ( 33.3%) #################
+#     [ 4.55e+03,  4.91e+03)    2746 (  0.0%) 
+#     [ 4.91e+03,  5.26e+03)       0 (  0.0%) 
+#     [ 5.26e+03,  5.61e+03)       0 (  0.0%) 
+#     [ 5.61e+03,  5.96e+03) 1753053 ( 27.9%) ##############
+#     [ 5.96e+03,  6.32e+03]  344099 (  5.5%) ###
+# 
+#   3 -- "Byte Index"      <class 'int'>   (16 unique values)
+#     [ 0.00e+00,  1.67e+00)  786432 ( 12.5%) ######
+#     [ 1.67e+00,  3.33e+00)  786432 ( 12.5%) ######
+#     [ 3.33e+00,  5.00e+00)  393216 (  6.2%) ###
+#     [ 5.00e+00,  6.67e+00)  786432 ( 12.5%) ######
+#     [ 6.67e+00,  8.33e+00)  786432 ( 12.5%) ######
+#     [ 8.33e+00,  1.00e+01)  393216 (  6.2%) ###
+#     [ 1.00e+01,  1.17e+01)  786432 ( 12.5%) ######
+#     [ 1.17e+01,  1.33e+01)  786432 ( 12.5%) ######
+#     [ 1.33e+01,  1.50e+01]  786432 ( 12.5%) ######
+# 
+#   4 -- "Possible Values" <class 'int'>   (256 unique values)
+#     [ 0.00e+00,  2.83e+01)  712704 ( 11.3%) ######
+#     [ 2.83e+01,  5.67e+01)  688128 ( 10.9%) #####
+#     [ 5.67e+01,  8.50e+01)  688128 ( 10.9%) #####
+#     [ 8.50e+01,  1.13e+02)  712704 ( 11.3%) ######
+#     [ 1.13e+02,  1.42e+02)  688128 ( 10.9%) #####
+#     [ 1.42e+02,  1.70e+02)  688128 ( 10.9%) #####
+#     [ 1.70e+02,  1.98e+02)  712704 ( 11.3%) ######
+#     [ 1.98e+02,  2.27e+02)  688128 ( 10.9%) #####
+#     [ 2.27e+02,  2.55e+02]  712704 ( 11.3%) ######
+# 
+# 
+# Compilation finished at Mon Jun 25 09:18:31
+# ====================================================================
+# ====================================================================

@@ -1,0 +1,62 @@
+Dissertation Topic Ideas
+
+# Approximating a Differential Model from Data
+
+  **Goal:** Identify best approximation techniques for constructing models of a truth function $\ f: \mathbb{R}^{d} \rightarrow \mathbb{R}^{b}$ of the forms:
+
+   $\ \hat f: \mathbb{R}^{d+\nabla d} \rightarrow \mathbb{R}^{b}$
+     Position + change $\rightarrow$ new response value.
+
+   $\ \hat f: \mathbb{R}^{d+b} \rightarrow \mathbb{R}^{\nabla d}$
+     Position + new response $\rightarrow$ necessary change.
+
+  where $\mathbb{R}^{d+\nabla d}$ denotes the real vector space $\mathbb{R}^{2d}$ in which the fist half of the vector is the current position and the second half of the vector is the "change" in position. The approximation techniques will be constructed given a row-vector matrix of $n$ nodes $X^{(n\ \times\ d)}$ and response values $Y^{(n\ \times\ b)}$ associated with each node.
+
+  **Target:** either TOMS or Mathematics journal depending on which is more feasible (provable properties or quality math software).
+
+  **Steps:**
+- Analyze basic theoretical properties of a model with this form given minimal assumptions (real vector space, Lipschitz continuous truth function, well spaced nodes)
+- Pick data (VarSys) to do initial empirical study and convert data into differential form (distance between all pairs)
+- Construct models with different approximation techniques (Delaunay, Voronoi, Box, NN) and analyze results
+- Use empirical results to write a (few) paper(s)
+- Develop deeper theory on performance of models and what model characteristics lead to what outcomes.
+- If theoretical results are interesting enough, begin targeting math journal publication, otherwise target math software implementation.
+
+----
+
+# Provable Properties of Box/Voronoi Meshes for Functional Approximation
+
+  **Goal:** Extend my existing mesh-based approximation techniques to functional interpolation and study meaningful provable properties about them.
+
+  **Target:** a Mathematics journal publication.
+
+  **Steps:**
+- Establish new method for approximating functions with a function as response value other than forcing weights to be convex (or perhaps not, if it turns out that my current approach is acceptable?)
+- Study theoretical properties of the various approximations, what can be maintained and what can't?
+
+----
+
+# Box/Voronoi Meshes for Functional Approximation Math Software
+
+  **Goal:** Extend my existing mesh-based approximation techniques to functional interpolation and generating an optimized and robust code-base for computing them.
+
+  **Target:** TOMS publication.
+
+  **Steps:**
+- Establish new method for approximating functions with a function as response value other than forcing weights to be convex (or perhaps not, if it turns out that my current approach is acceptable?)
+- Identify most likely use-case scenario for the routines, develop robust optimized and stable implementation of algorithms (studying potential optimizations in the process)
+
+----
+
+# Mixed Integer Programming for $L_0$
+
+  **Goal:** Use mixed integer programming and real math-software to perform the same optimization tasks as being done in the Machine Learning (ML) community for reducing model size.
+
+  **Target:** a series of publications (conferences, journal) in the ML community.
+
+  **Steps:**
+- Read on recently literature surrounding $L_0$, standard use case, assumptions about the problem at hand
+- Read up on mixed integer programming, identify connection to current work
+- Identify optimal approach to solving the standard $L_0$ problem being faced by the current ML community
+- Identify and apply existing math software to the $L_0$ problem
+

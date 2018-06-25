@@ -1,0 +1,72 @@
+Error Bounds on Multivariate Interpolants
+
+  **Goal:** Extend my existing mesh-based approximation techniques to functional interpolation and study meaningful provable properties about them.
+
+  **Target:** a Mathematics journal and TOMS publications.
+
+  **Steps:**
+- Establish new method for approximating functions with a function as response value other than forcing weights to be convex (or perhaps not, if it turns out that my current approach is acceptable?)
+- Study theoretical properties of the various approximations, what can be maintained and what can't?
+- Identify most likely use-case scenario for the routines, develop robust optimized and stable implementation of algorithms (studying potential optimizations in the process)
+
+----
+
+**Theorem:** The Lipschitz constant of an interpolating function produced by a simplicial mesh from data $X^{(d\ \times\ n)}$ with associated response values $f(x)$, $x \in \mathbb{R}^d$, $x \in X$, for underlying function $f$, is *at most* 
+
+$$\max_{x,y\ \in\ X}  \frac{|\ f(x) - f(y)\ |}{\|x - y\|_2},$$
+
+which is also the lower bound estimate of the Lipschitz constant for $\ f$ based on the known response values.
+
+----
+
+**Theorem:** Given a function $f: \mathbb{R}^d \rightarrow \mathbb{R}$ with Lipschitz constant $l$, points $X \subset \mathbb{R}^d$, $|X| = n$, and associated response values $f(x)$, $x \in X$. If $l$ is equal to
+
+$$\max_{x,y \in X}  \frac{|\ f(x) - f(y)\ |}{\|x - y\|_2},$$
+
+then the maximum error of a simplicial mesh interpolant is bounded by
+
+$$\max_{x,y\ \in\ X}  \frac{l\ \|x - y\|_2}{ 2\ |\ f(x) - f(y)\ |} $$
+
+----
+
+**Theorem:** Given $l$-Lipschitz continuous function $f: \mathbb{R}^d \rightarrow \mathbb{R}^b$ under a p-norm and a finite set of points $X \subset \mathbb{R}^d$ with known values $f(x)$ for all $x \in X$, *any* function $\hat f: \mathbb{R}^d \rightarrow \mathbb{R}^b$ that satisfies $\hat f(x) = f(x)$ for all $x \in X$ and is $m$-Lipschitz continuous under the p-norm will have approximation error upper bounded by
+
+$$\max_{x,y\ \in\ X}  \frac{m\ l\ \|x - y\|_2}{ 2\ |\ f(x) - f(y)\ |} $$
+
+over the convex hull of $X$.
+
+----
+
+The max value a function can take at $y$ is
+$$ \min_{x\ \in\ X} l d(y,x) $$
+
+The min value a function can take at $y$ is
+$$ \max_{x\ \in\ X} -l d(y,x) $$
+
+The Lipschitz-median function takes on the value at $y$:
+$$ \frac{\bigl ( \min_{x\ \in\ X} l d(y,x) + f(x) \bigr ) + \bigl ( \max_{x\ \in\ X} f(x) - l d(y,x) \bigr ) }{2} $$
+
+----
+
+Solve the problem, what is the minimum Lipschitz constant that allows for a value at this point?
+
+- distance to all points
+- $\min_l l \times d$
+
+This is useless. It ends up resembling an inverse distance weighting function. The issue with it is that it squeezes the approximating function towards average values. The smallest Lipschitz constant will occur when the value produced is as reasonably close to the local median response value. 
+
+----
+
+Given an $l$ Lipschitz continuous function $f: \mathcal{A} \rightarrow \mathcal{B}$ and $n$ nodes, an $m$ Lipschitz continuous interpolant at all $n$ nodes has an error upper bounded by
+
+$$ \max_{n^{(i)},\ n^{(j)}\ \in \mathcal{A}} \frac{\frac{l+m}{2} - |\bigl ( f(n^{(i)}), f(n^{(j))} \bigr ) |}{\bigl ( n^{(i)}, n^{(j)} \bigr )}$$
+
+over the convex set defined by the $n$ nodes.
+
+----
+
+Assuming that an $l$ Lipschitz continuous function $f$ has $m$ Lipschitz continuous sub-regions for $m \leq l$, a 
+
+----
+
+**Theorem** For a Lipschitz continuous function, the *achievable set* of values at any point $z \in \mathcal{B}$ is convex.

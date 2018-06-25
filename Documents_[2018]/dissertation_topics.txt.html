@@ -1,0 +1,270 @@
+
+    <!doctype html>
+    <meta charset="utf-8">
+
+    
+    <!-- Include Distill -->
+    <!-- <script src="https://distill.pub/template.v1.js"></script> -->
+    <!-- <script src="http://people.cs.vt.edu/tchlux/distill.template.v1.no-banner.js"></script> -->
+     <script src="/Users/thomaslux/Git/txt_to_html/resources/distill.template.v1.no-banner.js"></script> 
+    
+    
+    <!-- Include MathJax -->
+    <!-- <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"> </script> -->
+     <script type="text/javascript" async src="/Users/thomaslux/Git/txt_to_html/resources/MathJax-2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML,local/local"></script> 
+    
+    
+
+    <!-- Script for setting up the author block -->
+    <script type="text/front-matter">
+      title: Dissertation Topic Ideas
+      description: 
+      authors:
+
+      affiliations:
+
+    </script>
+
+    <style type="text/css">
+      dt-article ol, dt-article ul {
+        padding-left: 50px;
+      }
+
+      dt-article ul {
+        list-style: none;
+      }
+
+      dt-article li {
+        margin-bottom: 10px;
+      }
+
+      ul li:before {
+        content: "–  ";
+        margin-left: -1em
+      }
+
+      td {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+      }
+    </style>
+
+    <dt-article>
+    <h1>Dissertation Topic Ideas</h1>
+    <p></p>
+    <dt-byline></dt-byline>
+
+    
+<p>
+</p><h2 id="Approximating a Differential Model from Data"> Approximating a Differential Model from Data</h2>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Goal:</b> Identify best approximation techniques for constructing models of a truth function \(\ f: \mathbb{R}^{d} \rightarrow \mathbb{R}^{b}\) of the forms:</p></p>
+
+<p><p style='padding-left: 45px; margin-top: 0px; margin-bottom: 0px;'>\(\ \hat f: \mathbb{R}^{d+\nabla d} \rightarrow \mathbb{R}^{b}\)</p>
+<p style='padding-left: 75px; margin-top: 0px; margin-bottom: 0px;'>Position + change \(\rightarrow\) new response value.</p></p>
+
+<p><p style='padding-left: 45px; margin-top: 0px; margin-bottom: 0px;'>\(\ \hat f: \mathbb{R}^{d+b} \rightarrow \mathbb{R}^{\nabla d}\)</p>
+<p style='padding-left: 75px; margin-top: 0px; margin-bottom: 0px;'>Position + new response \(\rightarrow\) necessary change.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'>where \(\mathbb{R}^{d+\nabla d}\) denotes the real vector space \(\mathbb{R}^{2d}\) in which the fist half of the vector is the current position and the second half of the vector is the "change" in position. The approximation techniques will be constructed given a row-vector matrix of \(n\) nodes \(X^{(n\ \times\ d)}\) and response values \(Y^{(n\ \times\ b)}\) associated with each node.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Target:</b> either TOMS or Mathematics journal depending on which is more feasible (provable properties or quality math software).</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Steps:</b></p>
+
+<ul><li>Analyze basic theoretical properties of a model with this form given minimal assumptions (real vector space, Lipschitz continuous truth function, well spaced nodes)</li>
+<li>Pick data (VarSys) to do initial empirical study and convert data into differential form (distance between all pairs)</li>
+<li>Construct models with different approximation techniques (Delaunay, Voronoi, Box, NN) and analyze results</li>
+<li>Use empirical results to write a (few) paper(s)</li>
+<li>Develop deeper theory on performance of models and what model characteristics lead to what outcomes.</li>
+<li>If theoretical results are interesting enough, begin targeting math journal publication, otherwise target math software implementation.</li></ul></p>
+
+<p>
+<hr>
+</p>
+<h2 id="Provable Properties of Box/Voronoi Meshes for Functional Approximation"> Provable Properties of Box/Voronoi Meshes for Functional Approximation</h2>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Goal:</b> Extend my existing mesh-based approximation techniques to functional interpolation and study meaningful provable properties about them.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Target:</b> a Mathematics journal publication.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Steps:</b></p>
+
+<ul><li>Establish new method for approximating functions with a function as response value other than forcing weights to be convex (or perhaps not, if it turns out that my current approach is acceptable?)</li>
+<li>Study theoretical properties of the various approximations, what can be maintained and what can't?</li></ul></p>
+
+<p>
+<hr>
+</p>
+<h2 id="Box/Voronoi Meshes for Functional Approximation Math Software"> Box/Voronoi Meshes for Functional Approximation Math Software</h2>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Goal:</b> Extend my existing mesh-based approximation techniques to functional interpolation and generating an optimized and robust code-base for computing them.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Target:</b> TOMS publication.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Steps:</b></p>
+
+<ul><li>Establish new method for approximating functions with a function as response value other than forcing weights to be convex (or perhaps not, if it turns out that my current approach is acceptable?)</li>
+<li>Identify most likely use-case scenario for the routines, develop robust optimized and stable implementation of algorithms (studying potential optimizations in the process)</li></ul></p>
+
+<p>
+<hr>
+</p>
+<h2 id="Mixed Integer Programming for \(L_0\)"> Mixed Integer Programming for \(L_0\)</h2>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Goal:</b> Use mixed integer programming and real math-software to perform the same optimization tasks as being done in the Machine Learning (ML) community for reducing model size.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Target:</b> a series of publications (conferences, journal) in the ML community.</p></p>
+
+<p><p style='padding-left: 30px; margin-top: 0px; margin-bottom: 0px;'><b>Steps:</b></p>
+
+<ul><li>Read on recently literature surrounding \(L_0\), standard use case, assumptions about the problem at hand</li>
+<li>Read up on mixed integer programming, identify connection to current work</li>
+<li>Identify optimal approach to solving the standard \(L_0\) problem being faced by the current ML community</li>
+<li>Identify and apply existing math software to the \(L_0\) problem</li></ul></p>
+
+
+    </dt-article>
+
+    
+<dt-appendix>
+</dt-appendix>
+
+
+    
+<script type="text/bibliography">
+</script>
+
+
+    
+<!--
+     ============================================= 
+          DISTILL PROPER USAGE AND FORMATTING      
+     ============================================= 
+
+        Article Foundation (can use h2 for description)    
+    =======================================================
+    <dt-article>
+      <h1> [title text] </h1>
+      <p> [description text] </p>
+      <dt-byline></dt-byline>
+      [article content]
+    </dt-article>
+    <dt-appendix>
+    </dt-appendix>
+    <script type="text/bibliography">
+      @article{,
+      title={},
+      author={},
+      journal={},
+      year={},
+      url={}
+      }
+      ...
+    </script>
+
+        Body and Headers    
+    ========================
+    <p></p>
+    <h1></h1>
+    <h2></h2>
+    <h3></h3>
+    <h4></h4>
+
+        Citations    
+    =================
+    <dt-cite key="[key name]"></dt-cite>
+
+        Code (use block for multiple lines)    
+    ===========================================
+    <dt-code block language="[language]">
+      [code]
+    </dt-code>
+
+        Footnotes    
+    =================
+    <dt-fn> [text] </dt-fn>
+
+        Lists (unordered uses <ul> instead)    
+    ===========================================
+    <p>
+      <ol>
+	<li> [entry text]
+      </ol>
+    </p>
+
+        Math    
+    ============
+    \( [inline math text] \)
+    $$ [newline math text]  $$
+
+        Styling    
+    ===============
+    <i> [italics] </i> 
+    <b> [bold] </b>
+    <br> [line break]
+    <font color="[color]"> [colored text] </font>
+
+        Tables    
+    ==============
+    <table>
+      <tr> [table row]
+	<td> [table column] </td> ...
+      </tr>
+    </table>
+
+         Custom Widths for Tables     
+    ==================================
+    <style type="text/css">
+      td {
+        width: 200px;
+        padding: 0px 0px 0px 50px;
+        background-color: #eee;
+      }
+    </style>
+
+
+    =======================
+        EXAMPLE ARTICLE
+    =======================
+
+    <!doctype html>
+    <meta charset="utf-8">
+    <script src="https://distill.pub/template.v1.js"></script>
+
+    <script type="text/front-matter">
+      title: "Article Title"
+      description: "Description of the post"
+      authors:
+      - Chris Olah: http://colah.github.io
+      - Shan Carter: http://shancarter.com
+      affiliations:
+      - Google Brain: http://g.co/brain
+      - Google Brain: http://g.co/brain
+    </script>
+
+    <dt-article>
+      <h1>Hello World</h1>
+      <h2>A description of the article</h2>
+      <dt-byline></dt-byline>
+      <p>This is the first paragraph of the article.</p>
+      <p>We can also cite <dt-cite key="gregor2015draw"></dt-cite> external publications.</p>
+    </dt-article>
+
+    <dt-appendix>
+    </dt-appendix>
+
+    <script type="text/bibliography">
+      @article{gregor2015draw,
+      title={DRAW: A recurrent neural network for image generation},
+      author={Gregor, Karol and Danihelka, Ivo and Graves, Alex and Rezende, Danilo Jimenez and Wierstra, Daan},
+      journal={arXivreprint arXiv:1502.04623},
+      year={2015},
+      url={https://arxiv.org/pdf/1502.04623.pdf}
+      }
+    </script>
+
+-->
+
+
+    

@@ -1,0 +1,56 @@
+
+
+
+! SUBROUTINE VEC_MAT(A, B, C)
+!   USE ISO_FORTRAN_ENV, ONLY: REAL64, INT64
+!   IMPLICIT NONE
+!   REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)               :: B
+!   REAL(KIND=REAL64), INTENT(IN),  DIMENSION(SIZE(B,1))         :: A
+!   REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(A),SIZE(B,2)) :: C
+!   C = MATMUL(A, B)
+! END SUBROUTINE VEC_MAT
+  
+
+SUBROUTINE NONZERO(A)
+  USE ISO_FORTRAN_ENV, ONLY: REAL64, INT64
+  IMPLICIT NONE
+  ! Inputs
+  REAL(KIND=REAL64), INTENT(INOUT), DIMENSION(:) :: A
+  ! Storage for output of function
+  REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: B
+  ! Get the nonzero elements
+  B = FIND(A)
+  PRINT *, ''
+  PRINT *, 'A       ', A
+  PRINT *, 'SIZE(B) ', SIZE(B)
+  PRINT *, 'FIND(A) ', FIND(A)
+  PRINT *, ''
+  A(1) = 1
+  B = FIND(A)
+  PRINT *, ''
+  PRINT *, 'A       ', A
+  PRINT *, 'SIZE(B) ', SIZE(B)
+  PRINT *, 'FIND(A) ', FIND(A)
+  PRINT *, ''
+
+CONTAINS
+  FUNCTION FIND(ARRAY) RESULT(NE_ZERO)
+    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: ARRAY
+    REAL(KIND=REAL64), DIMENSION(:), ALLOCATABLE :: NE_ZERO
+    ! Local variables
+    INTEGER, DIMENSION(SIZE(ARRAY)) :: INDICES
+    INTEGER :: COUNT_NONZERO, IDX
+    ! Identify nonzero elements of ARRAY
+    COUNT_NONZERO = 0
+    DO IDX = 1, SIZE(ARRAY)
+       IF (ARRAY(IDX) .NE. 0) THEN
+          COUNT_NONZERO = COUNT_NONZERO + 1
+          INDICES(COUNT_NONZERO) = IDX
+       END IF
+    END DO
+    ! Allocate the smaller output array and copy in the values
+    ALLOCATE(NE_ZERO(1:COUNT_NONZERO))
+    NE_ZERO = ARRAY(INDICES(:COUNT_NONZERO))
+  END FUNCTION FIND
+
+END SUBROUTINE NONZERO
