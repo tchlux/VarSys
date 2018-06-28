@@ -1,0 +1,455 @@
+
+
+See the file qnstops.f95 in  pawnee.cs.vt.edu:/f/ltw/mathsoft/QNSTOP.zip
+for how to use allocatable arrays and pass work arrays to LAPACK routines.
+The idea is to allocate work arrays ONCE, outside any loops, to the 
+largest required size, and then pass pieces of those arrays as needed.
+Note that QNSTOP uses integer and real arrays of different shapes ("rank"
+is the technical Fortran term---Q(:,:,:) is a rank three array).  Hence 
+there would only be one source of an allocation error, rather than
+"xyz allocation error" as in your original code.  FYI, I have never seen 
+an allocation error in practice, but it's possible.
+
+----------------------------------------------------------------------
+
+I overlooked another sanity check for DVECS(1:S,1:M).  We need to check
+(first) that S <= M and then (second) that DVECS(1:S,1:S) is not close to
+singular. It's cheaper to estimate the condition number than to compute 
+the singular values, so the routine to use is DGECON.
+
+I added a new ERROR value of 06, and the test for it, but not the required 
+LAPACK calls.  You have to allocate work storage for LAPACK at this level 
+anyway, so the calls to DGETRF and DGECON will just use that common work
+storage.
+
+Yes, all these "obvious" checks are indeed necessary---I've had users call
+my codes with negative or zero dimensions!
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+! This file (boxspline.f90) contains the subroutine BOXSPLEV that can
+! be used to evaluate a box-spline, defined by its associated
+! direction vector set, at given evaluation points, as well as the
+! module REAL_PRECISION defining the real precision.
+! 
+! ====================================================================
+MODULE REAL_PRECISION  ! HOMPACK90 module for 64-bit arithmetic.
+  INTEGER, PARAMETER:: R8=SELECTED_REAL_KIND(13)
+END MODULE REAL_PRECISION
+
+SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
+! BOXSPLEV evaluates a box-spline, defined by a direction vector set in
+! dimension S, at given evaluation points.
+! 
+! The implementation uses the numerically consistent algorithm for
+! evaluating box-splines originally presented in [1]. Most notably,
+! the evaluation of the box-spline near the boundaries of polynomial
+! pieces does not exhibit the random behavior that is seen in the
+! naive recursive implementation. Furthermore, the computational
+! complexity for direction vector sets with repeated direction
+! vectors is reduced from the naive recursive implementation.
+! 
+! [1] Kobbelt, Leif. "Stable evaluation of box-splines." 
+!     Numerical Algorithms 14.4 (1997): 377-382.
+! 
+! The subroutine BOXSPLEV utilizes the LAPACK routines DGECON, DGELS,
+! DGESVD, and DGETRF.
+! 
+! On input:
+! 
+! DVECS(:,:) is a real S x M array whose columns are the unique direction
+!    vectors used in defining the box-spline.  S <= M, and DVECS(1:S,1:S)
+!    must be invertible.
+!
+! DVEC_MULTS(:) is an integer array of length M containing the multiplicity
+!    of each corresponding direction vector. 
+!
+! EVAL_PTS(:,:) is a real S x L array whose columns are the points at which
+!    the box-spline is to be evaluated. 
+!
+! On output:
+! 
+! BOX_EVALS(:) is a real array of length L containing the box-spline
+!    values at the evaluation points.
+!
+! ERROR is an integer error flag of the form
+!             100*(LAPACK INFO flag) + 10*T + U.
+!    ERROR .EQ. 0 is a normal return.  For ERROR .NE. 0, the meanings of
+!    the tens digit T and the units digit U are:
+!
+!    Tens digit T:
+!    0  Improper usage.
+!    1  Error computing normal vectors.
+!    2  Error computing box-spline.
+!    3  Error computing an orthogonal vector.
+!    4  Error computing a minimum norm representation.
+!    5  Error computing a matrix rank.
+!    6  Error computing a matrix determinant.
+!    7  Error finding nonzero entries in an array.
+! 
+!    Units digit U, for T = 0:
+!    1  Mismatched dimension, SIZE(DVEC_MULTS) .NE. SIZE(DVECS,2).
+!    2  Mismatched dimension, SIZE(EVAL_PTS,1) .NE. SIZE(DVECS,1).
+!    3  Mismatched dimension, SIZE(BOX_EVALS) .NE. SIZE(EVAL_PTS,2).
+!    4  One of the multiplicity values provided was < 1.
+!    5  Columns of DVECS are not unique.
+!    6  M < S or DVECS(1:S,1:S) is near singular.
+! 
+!    Units digit U, for T /= 0:
+!    1  Work array allocation failed.
+!    2  DGELS computation error, see 'INFO' for details.
+!    3  DGESVD computation error, see 'INFO' for details.
+!    4  DGETRF computation error, see 'INFO' for details.
+! 
+! The calling program should include the following interface to BOXSPLEV:
+! INTERFACE 
+!   SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: DVECS
+!     INTEGER, INTENT(IN), DIMENSION(:):: DVEC_MULTS
+!     REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: EVAL_PTS
+!     REAL(KIND=R8), INTENT(OUT), DIMENSION(:):: BOX_EVALS
+!     INTEGER, INTENT(OUT):: ERROR
+!   END SUBROUTINE BOXSPLEV
+! END INTERFACE
+
+USE REAL_PRECISION, ONLY: R8
+IMPLICIT NONE
+REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: DVECS
+INTEGER, INTENT(IN), DIMENSION(:):: DVEC_MULTS
+REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: EVAL_PTS
+REAL(KIND=R8), INTENT(OUT), DIMENSION(:):: BOX_EVALS
+INTEGER, INTENT(OUT):: ERROR
+! Local variables.
+INTEGER:: DIM, IDX_1, IDX_2, NUM_DVECS
+INTEGER, DIMENSION(SIZE(DVECS,2)):: LOCATION
+INTEGER, DIMENSION(SIZE(DVECS,2)):: LOOKUP
+INTEGER, DIMENSION(SIZE(DVECS,2),SIZE(DVECS,2)):: IDENTITY
+REAL(KIND=R8), PARAMETER:: SQRTEPS=SQRT(EPSILON(1.0_R8))
+REAL(KIND=R8):: RCOND
+REAL(KIND=R8), DIMENSION(SIZE(DVECS,1),2**SIZE(DVECS,2)):: NORMAL_VECTORS
+REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE:: MIN_NORM_DVECS
+
+!!!!!!!!!!  LAPACK work arrays should be declared and allocated here.
+!!!!!!!!!!
+
+ERROR = 0 ! Initialize error flag.
+! Store 'global' constants for box-spline evaluation.
+DIM = SIZE(DVECS, 1)
+NUM_DVECS = SIZE(DVECS, 2)
+! Create an identity matrix (for easy matrix-vector multiplication)
+! and compute the index lookup indices (for binary style hashing).
+IDENTITY = 0
+FORALL(IDX_1=1:NUM_DVECS)
+  IDENTITY(IDX_1,IDX_1) = 1
+  LOOKUP(IDX_1) = 2**(IDX_1-1)
+END FORALL
+
+! Check for usage errors.
+! Check for dimension mismatches.
+IF(SIZE(DVEC_MULTS) .NE. SIZE(DVECS,2)) THEN; ERROR = 1; RETURN; END IF
+IF(SIZE(EVAL_PTS,1) .NE. SIZE(DVECS,1) THEN; ERROR = 2; RETURN; END IF
+IF(SIZE(BOX_EVALS) .NE. SIZE(EVAL_PTS,2) THEN; ERROR = 3; RETURN; END IF
+! Check for invalid multiplicity.
+IF (MINVAL(DVEC_MULTS) .LT. 1) THEN; ERROR = 4; RETURN; END
+! Check uniqueness of DVECS columns.
+DO IDX_1 = 1, NUM_DVECS-1
+   DO IDX_2 = IDX_1+1, NUM_DVECS
+      IF (SUM(ABS(DVECS(:,IDX_1) - DVECS(:,IDX_2))) .LT. SQRTEPS) THEN
+         ERROR = 5; RETURN
+      END IF
+   END DO
+END DO
+! Check if M < S or rank DVECS(1:S,1:S) < S.
+IF (SIZE(DVECS,2) .LT. SIZE(DVECS,1)) THEN
+   ERROR = 6; RETURN
+ELSE   ! Compute condition number COND(DVECS(1:S,1:S)) and test for near
+       ! rank deficiency: 1/COND(DVECS(1:S,1:S)) < SQRT(EPSILON(1.0_R8)).
+...
+	Use LAPACK DGETRF and DGECON....
+
+   IF(RCOND .LT. SQRTEPS) THEN
+      ERROR = 6; RETURN
+   ENDIF
+ENDIF
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+----------------------------------------------------------------------
+
+The subroutine MATRIX_ORTHOGONAL contains the comment "! If no orthogonal 
+was found and the matrix is not a span of the space,".  Read this 
+carefully---it is utter mathematical nonsense.
+
+The comment continues "use the first vector in VT at (RANK(A) + 1)."
+If A is M x N and rank A = N, VT is an N x N matrix, and has no "vector at
+N+1"!  Again, garbage....
+
+Looking at all these subroutines, I see that you do allocate arrays inside 
+these routines (called repeatedly), which MUST be changed.  Equally bad
+(or worse?) is that you allocate WORK in MATRIX_ORTHOGONAL but do NOT
+deallocate WORK before leaving MATRIX_ORTHOGONAL.  This is a programming 
+error (maybe languages like Python forgive such things), but compiled 
+languages like C, Ada, Fortran do NOT.  This is called a memory leak, 
+which usually crashes the execution (depending on the compiler and 
+operating system).
+
+Burn this is your brain: every ALLOCATE must be paired with a DEALLOCATE.
+
+----------------------------------------------------------------------
+
+I have some serious concerns about the calculations in MATRIX_ORTHOGONAL
+and MATRIX_MINIMUM_NORM.
+
+It is a cardinal rule in numerical linear algebra (I'm sure Dr. Beattie
+said this a million times) to NEVER compute A A^t, and you do that
+explicitly with MATMUL.  The problem you've solving does NOT require
+that product be produced.
+
+Also, you're searching the singular values as if they are in any order---
+they're not, read the documentation for DGESVD!
+
+Clean all this up, both the mathematics and the code, and send it back to 
+me in a couple weeks... or more...
+
+----------------------------------------------------------------------
+
+attached file are my changes so far
+
+Questions: you use LOOKUP to compute an integer index, so I'm pretty sure 
+LOOKUP should have been declared INTEGER rather than REAL.  That you got 
+by is sheer dumb luck---any of your calculations with LOOKUP were 
+converted to REAL, then back to INTEGER, not the same as a 100% integer
+calculation.
+
+For clarity, things like   LOC + IDENTITY(:,NUM)   should be written as
+LOC(:) + IDENTITY(:,NUM)  , becaue the former also makes sense if LOC is a 
+scalar.
+
+Also, declaring input arrays via things like
+   INTEGER,           INTENT(IN),  DIMENSION(SIZE(DVECS,2))    :: DVEC_MULTS
+doesn't work in general.  What if the passed array did NOT have that size?
+Then the actual array on the input stack would not match the size compiled 
+for the subroutine, and all hell would break loose (aka seg fault).
+
+A clean way to do this is to make all arrays assumed shape, pass array 
+segments as the arguments, and then in the subroutine check the ACTUAL
+sizes of the arrays.  My attached revised code does this.
+
+Your code also contains dimensions like 2**NUM_DVECS.  If the data 
+dimension is 40, which is not unreasonable for using spline orders 1 or 2,
+this would be 2**40 and untenable.  Surely you don't really need arrays 
+that big?  The cost of memory page faults far exceeds the cost of linear 
+searches, so the time saved by having clever indexing is more than lost by
+
+
+the cost of managing memory.
+
+Finally, users either have to provide an explicit interface for BOXSPLEV
+or put your subroutine in a module (which you could do now, providing a
+MODULE BOXSPLEV rather than SUBROUTINE BOXSPLEV).  For the former I
+included an interface in the comments.
+
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+! This file (boxspline.f90) contains the subroutine BOXSPLEV that can
+! be used to evaluate a box-spline, defined by its associated
+! direction vector set, at given evaluation points, as well as the
+! module REAL_PRECISION defining the real precision.
+! 
+! ====================================================================
+MODULE REAL_PRECISION  ! HOMPACK90 module for 64-bit arithmetic.
+  INTEGER, PARAMETER:: R8=SELECTED_REAL_KIND(13)
+END MODULE REAL_PRECISION
+
+SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
+! BOXSPLEV evaluates a box-spline, defined by a direction vector set in
+! dimension S, at given evaluation points.
+! 
+! The implementation uses the numerically consistent algorithm for
+! evaluating box-splines originally presented in [1]. Most notably,
+! the evaluation of the box-spline near the boundaries of polynomial
+! pieces does not exhibit the random behavior that is seen in the
+! naive recursive implementation. Furthermore, the computational
+! complexity for direction vector sets with repeated direction
+! vectors is reduced from the naive recursive implementation.
+! 
+! [1] Kobbelt, Leif. "Stable evaluation of box-splines." 
+!     Numerical Algorithms 14.4 (1997): 377-382.
+! 
+! The subroutine BOXSPLEV utilizes the LAPACK routines  DGELS, DGESVD,
+! and DGETRF.
+! 
+! On input:
+! 
+! DVECS(:,:) is a real S x M array whose columns are the unique direction
+!    vectors used in defining the box-spline.  S <= M, and DVECS(1:S,1:S)
+!    must be invertible.
+!
+! DVEC_MULTS(:) is an integer array of length M containing the multiplicity
+!    of each corresponding direction vector. 
+!
+! EVAL_PTS(:,:) is a real S x L array whose columns are the points at which
+!    the box-spline is to be evaluated. 
+!
+! On output:
+! 
+! BOX_EVALS(:) is a real array of length L containing the box-spline
+!    values at the evaluation points.
+!
+! ERROR is an integer error flag of the form
+!             100*(LAPACK INFO flag) + 10*T + U.
+!    ERROR .EQ. 0 is a normal return.  For ERROR .NE. 0, the meanings of
+!    the tens digit T and the units digit U are:
+!
+!    Tens digit T:
+!    0  Improper usage.
+!    1  Error computing normal vectors.
+!    2  Error computing box-spline.
+!    3  Error computing an orthogonal vector.
+!    4  Error computing a minimum norm representation.
+!    5  Error computing a matrix rank.
+!    6  Error computing a matrix determinant.
+!    7  Error finding nonzero entries in an array.
+! 
+!    Units digit U, for T = 0:
+!    1  Mismatched dimension, SIZE(DVEC_MULTS) .NE. SIZE(DVECS,2).
+!    2  Mismatched dimension, SIZE(EVAL_PTS,1) .NE. SIZE(DVECS,1).
+!    3  Mismatched dimension, SIZE(BOX_EVALS) .NE. SIZE(EVAL_PTS,2).
+!    4  One of the multiplicity values provided was < 1.
+!    5  Columns of DVECS are not unique.
+! 
+!    Units digit U, for T /= 0:
+!    1  Work array allocation failed.
+!    2  DGELS computation error, see 'INFO' for details.
+!    3  DGESVD computation error, see 'INFO' for details.
+!    4  DGETRF computation error, see 'INFO' for details.
+! 
+! The calling program should include the following interface to BOXSPLEV:
+! INTERFACE 
+!   SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: DVECS
+!     INTEGER, INTENT(IN), DIMENSION(:):: DVEC_MULTS
+!     REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: EVAL_PTS
+!     REAL(KIND=R8), INTENT(OUT), DIMENSION(:):: BOX_EVALS
+!     INTEGER, INTENT(OUT):: ERROR
+!   END SUBROUTINE BOXSPLEV
+! END INTERFACE
+
+USE REAL_PRECISION, ONLY: R8
+IMPLICIT NONE
+REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: DVECS
+INTEGER, INTENT(IN), DIMENSION(:):: DVEC_MULTS
+REAL(KIND=R8), INTENT(IN), DIMENSION(:,:):: EVAL_PTS
+REAL(KIND=R8), INTENT(OUT), DIMENSION(:):: BOX_EVALS
+INTEGER, INTENT(OUT):: ERROR
+! Local variables.
+INTEGER:: DIM, IDX_1, IDX_2, NUM_DVECS
+INTEGER, DIMENSION(SIZE(DVECS,2)):: LOCATION
+INTEGER, DIMENSION(SIZE(DVECS,2)):: LOOKUP
+INTEGER, DIMENSION(SIZE(DVECS,2),SIZE(DVECS,2)):: IDENTITY
+REAL(KIND=R8), PARAMETER:: SQRTEPS=SQRT(EPSILON(1.0_R8))
+REAL(KIND=R8), DIMENSION(SIZE(DVECS,1),2**SIZE(DVECS,2)):: NORMAL_VECTORS
+REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE:: MIN_NORM_DVECS
+
+!!!!!!!!!!  LAPACK work arrays should be declared and allocated here.
+!!!!!!!!!!
+
+ERROR = 0 ! Initialize error flag.
+! Store 'global' constants for box-spline evaluation.
+DIM = SIZE(DVECS, 1)
+NUM_DVECS = SIZE(DVECS, 2)
+! Create an identity matrix (for easy matrix-vector multiplication)
+! and compute the index lookup indices (for binary style hashing).
+IDENTITY = 0
+FORALL(IDX_1=1:NUM_DVECS)
+  IDENTITY(IDX_1,IDX_1) = 1
+  LOOKUP(IDX_1) = 2**(IDX_1-1)
+END FORALL
+
+! Check for usage errors.
+! Check for dimension mismatches.
+IF(SIZE(DVEC_MULTS) .NE. SIZE(DVECS,2)) THEN; ERROR = 1; RETURN; END IF
+IF(SIZE(EVAL_PTS,1) .NE. SIZE(DVECS,1) THEN; ERROR = 2; RETURN; END IF
+IF(SIZE(BOX_EVALS) .NE. SIZE(EVAL_PTS,2) THEN; ERROR = 3; RETURN; END IF
+! Check for invalid multiplicity.
+IF (MINVAL(DVEC_MULTS) .LT. 1) THEN; ERROR = 2; RETURN; END
+! Check uniqueness of DVECS columns.
+DO IDX_1 = 1, NUM_DVECS-1
+   DO IDX_2 = IDX_1+1, NUM_DVECS
+      IF (SUM(ABS(DVECS(:,IDX_1) - DVECS(:,IDX_2))) .LT. SQRTEPS) THEN
+         ERROR = 3; RETURN
+      END IF
+   END DO
+END DO
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+----------------------------------------------------------------------
+
+Look up the FORALL statement; that may convert many of your DO loops to 
+just one line.  Don't mess with your code logic yet, as some of my changes 
+in the initial comments will require redoing the code.
+
+----------------------------------------------------------------------
+
+Set your editor character set to ASCII for Fortran programs---the file you 
+sent had numerous 8-bit characters!
+
+BOXSPLEV subroutine --> subroutine BOXSPLEV (cf. Thomas student vs.
+student Thomas)
+
+Use R8 from the module REAL_PRECISION, which is carefully designed to work 
+on all known architectures.  The REAL64 assumes IEEE 754 64 bit 
+arithmetic.
+
+Don't clutter the argument list with arguments that are rarely needed.
+There is no need for TWO error flags!
+
+Since you're not passing dimensions explicitly (which is OK), you need to 
+check ALL the dimensions in all the array arguments.  You only checked 
+one case.
+
+In Fortran, NEVER, EVER, store points as rows of matrices (cf. EVAL_PTS).
+
+Do you ever check that DVECS(1:S,1:S) is invertible, where DVECS is S x M,
+S <= M?
+
+Do you call any BLAS routines?
+
+Why is LOOKUP real but IDENTITY integer?
+
+Where are the LAPACK work arrays allocated or declared?  Apparently not in
+BOXSPLEV, the top level.  Allocation, whether explicit or automatic, is 
+VERY*** expensive, so you NEVER want to be allocating inside an inner 
+loop.
+
+If LAPACK work arrays are being created inside a recursive routine, you've 
+got a huge memory footprint problem.  Allocate these arrays just once, at 
+the top level, and then pass array segments of the right size in the
+recursive routines (as done in QNSTOP).
+
+Having LONG variable names does NOT improve readability, nor does 
+unnecessary vertical whitespace.  e.g.,
+
+   error_breakpoint_3 : IF (ERROR .NE. 0) THEN
+      RETURN
+   END IF error_breakpoint_3
+
+could just be
+
+IF (ERROR .NE. 0) RETURN  ! 3rd error breakpoint.
+
+It's ok to put multiple short statements on the same line, e.g.,
+LOCATION = 0; NORMAL_VECTORS = 0.0_R8
+
+When using constants, always use the correct data type; yes, Fortran does 
+the conversion, but then the reader ALSO has to do the conversion 
+mentally.  e.g., your statement NORMAL_VECTORS = 0  suggests to the reader 
+than NORMAL_VECTORS is an integer scalar.  Much clearer would be
+NORMAL_VECTORS(1:,1:) = 0.0_R8
+
+I'm going to just edit (not reprogram) the code/comments, and send you 
+bits and pieces as I do them.

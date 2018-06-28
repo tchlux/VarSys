@@ -2,32 +2,67 @@ import os, random
 from util.data import Data
 from util.plot import Plot
 from util.stats import cdf_fit_func
+import numpy as np
 
-file_name = "study.csv.pkl"
-data_name = "study.pkl.zip"
+# Should a subset of data be used
+sub_data = True
+# Source file and loaded data names.
+file_name = "study.csv"
+data_name = "study.pkl.gz"
 # sub_data_name = "sub_study_10K.pkl"
 sub_data_name = "sub_study_1M.pkl"
-sub_size = 1000000
-if not os.path.exists(sub_data_name):
-    print("Loading file..")
+sub_size = 10000 if "10K" in sub_data_name else 1000000
+if sub_data:
+    # Load data (and get a subset of it for testing and analysis)
+    if not os.path.exists(sub_data_name):
+        print("Loading file..")
+        if not os.path.exists(data_name):
+            d = Data.load(file_name, sep=",", verbose=True)
+            print("Saving data..")
+            d.save(data_name)
+        else:
+            d = Data.load(data_name)
+        print("Done loading.")
+        print(d)
+        print()
+        print("Getting random subsample..")
+        sub_d = d[sorted(random.sample(range(len(d)), sub_size))]
+        print("Saving random subsample..")
+        sub_d.save(sub_data_name)
+        d = sub_d
+    else:
+        print("Loading data from file..")
+        d = Data.load(sub_data_name, verbose=True)
+else:
     if not os.path.exists(data_name):
+        print("Loading file..")
         d = Data.load(file_name, sep=",", verbose=True)
+        print("Saving data..")
         d.save(data_name)
     else:
+        print("Loading compressed data..")
         d = Data.load(data_name)
-    print("Done loading.")
-    print(d)
-    print()
-    print("Getting random subsample..")
-    sub_d = d[sorted(random.sample(range(len(d)), sub_size))]
-    print("Saving random subsample..")
-    sub_d.save(sub_data_name)
-    d = sub_d
-else:
-    d = Data.load(sub_data_name)
+ 
+print("Getting the predictors..")
+predictors = d.names[:2] + d.names[3:]
+target = [d.names[2]]
+print("Getting the unique values..")
+unique_data = d[predictors].unique()
+unique_data.sort()
+print("Collecting by unique values..")
+d = unique_data.collect(d)
+print("Identifying rows that need to be removed..")
+to_remove = [i for i in range(len(d)) if (len(d[i, d.names[-1]]) <= 1)]
+print("Removing empty rows..")
+for idx in to_remove[::-1]: d.pop(idx)
+print("Generating distribution functions..")
+d[d.names[-1] + " Distribution"] = map(cdf_fit_func, d[d.names[-1]])
+print(d)
+for func in d[d.names[-1]]:
+    func.__sub__ = ks
+exit()
 
-d = d[d.names[:3]]
-
+# d = d[d.names[:3]]
 
 # ==============================================
 #      Test Ability To Predict Clock Cycles     
@@ -41,6 +76,28 @@ print()
 p = Plot()
 p.add_histogram(d.names[-1], d[d.names[-1]], [-300,300])
 p.show(file_name="Clock_Cycle_Prediction_Error.html")
+print("Getting percentiles of errors..")
+percs = [0,10,20,30,40,50,60,70,80,90,100]
+errors = abs(np.array(list(d[d.names[-1]])))
+print()
+print("Absolute error percentiles:")
+for p in percs:
+    print(f"{p:3d}th % -- {np.percentile(errors,p):0.0f}")
+print()
+
+# Absolute error percentiles:
+#   0th % -- 0
+#  10th % -- 1
+#  20th % -- 2
+#  30th % -- 3
+#  40th % -- 5
+#  50th % -- 6
+#  60th % -- 9
+#  70th % -- 13
+#  80th % -- 24
+#  90th % -- 51
+# 100th % -- 778
+
 
 # ======================================
 #      Analyze CDFs of Clock Cycles     
