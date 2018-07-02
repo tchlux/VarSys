@@ -110,7 +110,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(EVAL_PTS,1)) :: BOX_EVALS
   INTEGER,           INTENT(OUT)                 :: ERROR
   ! Local variables.
-  INTEGER :: DIM, IDX_1, IDX_2, NUM_DVECS, INFO
+  INTEGER :: DIM, NUM_DVECS, NUM_PTS, INFO, IDX_1, IDX_2
   INTEGER,           DIMENSION(SIZE(DVECS,2))                  :: LOCATION, LOOKUP
   INTEGER,           DIMENSION(SIZE(DVECS,2),SIZE(DVECS,2))    :: IDENTITY
   REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,1),2**SIZE(DVECS,2)) :: NORMAL_VECTORS
@@ -123,6 +123,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   ! Store 'global' constants for box-spline evaluation.
   DIM = SIZE(DVECS, 1)
   NUM_DVECS = SIZE(DVECS, 2)
+  NUM_PTS = SIZE(EVAL_PTS, 1)
   ! Allocate a work array large enough for all LAPACK calls.
   LAPACK_WORK = ALLOCATE_MAX_LAPACK_WORK()
   IF (ERROR .NE. 0) RETURN
@@ -135,9 +136,9 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   END FORALL
   ! Check for usage errors.
   ! Check for dimension mismatches.
-  IF (SIZE(DVEC_MULTS) .NE. NUM_DVECS)        THEN; ERROR = 1; RETURN; END IF
-  IF (SIZE(EVAL_PTS,2) .NE. DIM)              THEN; ERROR = 2; RETURN; END IF
-  IF (SIZE(BOX_EVALS)  .NE. SIZE(EVAL_PTS,1)) THEN; ERROR = 3; RETURN; END IF
+  IF (SIZE(DVEC_MULTS) .NE. NUM_DVECS) THEN; ERROR = 1; RETURN; END IF
+  IF (SIZE(EVAL_PTS,2) .NE. DIM)       THEN; ERROR = 2; RETURN; END IF
+  IF (SIZE(BOX_EVALS)  .NE. NUM_PTS)   THEN; ERROR = 3; RETURN; END IF
   ! Check for invalid multiplicity.
   IF (MINVAL(DVEC_MULTS) .LT. 1) THEN; ERROR = 4; RETURN; END IF
   ! Check uniqueness of DVECS columns.
@@ -248,24 +249,23 @@ CONTAINS
     !   EVALS_AT_PTS -- Real array of box-spline evaluations at each
     !                   corresponding (shifted) evaluation point.
     ! 
-    INTEGER,           INTENT(IN), DIMENSION(NUM_DVECS) :: MULTS, LOC
-    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:)       :: SUB_DVECS
-    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:)       :: SHIFTED_EVAL_PTS
-    REAL(KIND=REAL64), INTENT(OUT), &
-         DIMENSION(SIZE(EVAL_PTS,1)) :: EVALS_AT_PTS
+    INTEGER,           INTENT(IN),  DIMENSION(SIZE(DVECS,2))    :: MULTS, LOC
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)              :: SUB_DVECS
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:)              :: SHIFTED_EVAL_PTS
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(EVAL_PTS,1)) :: EVALS_AT_PTS
     ! Temporary variables for recursive computations of eval points,
     ! shifted evaluation points, and the actual evaluations of box splines.
     REAL(KIND=REAL64), DIMENSION(SIZE(SHIFTED_EVAL_PTS,1),&
-         SIZE(SHIFTED_EVAL_PTS,2))                   :: TEMP_SHIFTED_EVAL_PTS
-    REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1),&
-         SIZE(EVAL_PTS,2))                           :: TEMP_EVAL_PTS
-    REAL(KIND=REAL64), DIMENSION(SIZE(EVALS_AT_PTS)) :: TEMP_EVALS_AT_PTS
-    REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1))   :: LOCATIONS
-    REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE   :: NEXT_DVECS
-    INTEGER,           DIMENSION(NUM_DVECS)          :: NEXT_MULTS, NEXT_LOC
-    INTEGER,           DIMENSION(:),   ALLOCATABLE   :: REMAINING_DVECS
-    REAL(KIND=REAL64), DIMENSION(DIM) :: PT_SHIFT
-    REAL(KIND=REAL64) :: POSITION, SHIFT
+         SIZE(SHIFTED_EVAL_PTS,2))                 :: TEMP_SHIFTED_EVAL_PTS
+    REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1), &
+         SIZE(EVAL_PTS,2))                         :: TEMP_EVAL_PTS
+    REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1)) :: TEMP_EVALS_AT_PTS
+    REAL(KIND=REAL64), DIMENSION(SIZE(EVAL_PTS,1)) :: LOCATIONS
+    REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: NEXT_DVECS
+    INTEGER,           DIMENSION(:),   ALLOCATABLE :: REMAINING_DVECS
+    INTEGER,           DIMENSION(SIZE(DVECS,2))    :: NEXT_MULTS, NEXT_LOC
+    REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,1))    :: PT_SHIFT
+    REAL(KIND=REAL64) :: POSITION
     INTEGER :: IDX_1, IDX_2, IDX_3
     ! Recursion case ...
     IF (SUM(MULTS) > DIM) THEN
@@ -274,8 +274,8 @@ CONTAINS
        ! Sum over all direction vectors.
        DO IDX_1 = 1, NUM_DVECS
           ! Update multiplicity of directions and position in recursion tree.
-          NEXT_MULTS = MULTS - IDENTITY(:, IDX_1) ! Reduce multiplicity.
-          NEXT_LOC   = LOC   + IDENTITY(:, IDX_1) ! Track recursion position.
+          NEXT_MULTS(:) = MULTS(:) - IDENTITY(:, IDX_1) ! Reduce multiplicity.
+          NEXT_LOC(:)   = LOC(:)   + IDENTITY(:, IDX_1) ! Track recursion position.
           ! Make recursive calls.
           IF (MULTS(IDX_1) .GT. 1) THEN
              ! Perform recursion with only reduced multiplicity.
@@ -287,8 +287,8 @@ CONTAINS
              ! Perform recursion with transformed set of direction
              ! vectors and evaluation points.
              compute_shift_1 : FORALL (IDX_3 = 1:SIZE(SUB_DVECS,2))
-                SHIFT = SUM(DVECS(:,IDX_1) * SUB_DVECS(:,IDX_3))
-                TEMP_SHIFTED_EVAL_PTS(:,IDX_3) = SHIFTED_EVAL_PTS(:,IDX_3) - SHIFT
+                TEMP_SHIFTED_EVAL_PTS(:,IDX_3) = SHIFTED_EVAL_PTS(:,IDX_3) - &
+                     SUM(DVECS(:,IDX_1) * SUB_DVECS(:,IDX_3))
              END FORALL compute_shift_1
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, SUB_DVECS, &
                   TEMP_SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
@@ -346,7 +346,7 @@ CONTAINS
           ! Compute shifted position (relative to normal ector).
           POSITION = SUM(DVECS(:,REMAINING_DVECS(IDX_1)) * NORMAL_VECTORS(:,IDX_3))
           ! Compute shifted evaluation locations. (NUM_PTS, DIM) x (DIM, 1)
-          compute_shifted_point_1 : FORALL (IDX_2 = 1:SIZE(EVAL_PTS,1))
+          compute_shifted_point_1 : FORALL (IDX_2 = 1:NUM_PTS)
              LOCATIONS(IDX_2) = SUM(TEMP_EVAL_PTS(IDX_2,:) * NORMAL_VECTORS(:,IDX_3))
           END FORALL compute_shifted_point_1
           ! Identify those points that are outside of this box (0-side).
@@ -360,7 +360,7 @@ CONTAINS
           compute_shift_5 : FORALL (IDX_2 = 1:DIM)
              PT_SHIFT(IDX_2) = SUM(NEXT_LOC * DVECS(IDX_2,:))
           END FORALL compute_shift_5
-          compute_shifted_point_2 : FORALL (IDX_2 = 1:SIZE(EVAL_PTS,1))
+          compute_shifted_point_2 : FORALL (IDX_2 = 1:NUM_PTS)
              LOCATIONS(IDX_2) = SUM((EVAL_PTS(IDX_2,:) - PT_SHIFT) * &
                   NORMAL_VECTORS(:,IDX_3))
           END FORALL compute_shifted_point_2
@@ -388,6 +388,9 @@ CONTAINS
     ! 
     !   Given a matrix A of row vectors, compute a vector orthogonal to
     !   the row vectors in A and store it in ORTHOGONAL using DGESVD.
+    !   If there are any singular values [value < SQRT(epsilon)],
+    !   the vector associated with the largest such singular values is
+    !   returned.
     ! 
     ! Input:
     !   A -- Real dense matrix.
@@ -402,6 +405,7 @@ CONTAINS
     REAL(KIND=REAL64), DIMENSION(SIZE(A,2),SIZE(A,2)) :: VT
     INTEGER :: IDX
     LOGICAL :: FOUND_ZERO
+    REAL(KIND=REAL64) :: TOL
     ! Unused parameters
     REAL(KIND=REAL64), DIMENSION(1) :: U
 
@@ -425,12 +429,13 @@ CONTAINS
 
     IF (INFO .NE. 0) THEN; ERROR = 33 + 100*INFO; RETURN; END IF
 
-    ORTHOGONAL = 0.
+    ORTHOGONAL(:) = 0.
     FOUND_ZERO = .FALSE.
+    TOL = EPSILON(0._REAL64) * SIZE(S) ! <- Compute tolerance for considering a singular value '0'
     ! Find the first vector in the orthonormal basis for the null
     ! space of A (a vector with an extremely small singular value).
     find_null : DO IDX = 1, SIZE(S)
-       IF (S(IDX) .LE. (EPSILON(U(1)) * SIZE(S))) THEN
+       IF (S(IDX) .LE. TOL) THEN
           ! If we found a singular value, copy out the orthogonal vector.
           ORTHOGONAL = VT(IDX,:)
           FOUND_ZERO = .TRUE.
@@ -469,7 +474,7 @@ CONTAINS
     ! Allocate the output matrix.
     ALLOCATE(MIN_NORM(1:SIZE(MATRIX,2),1:SIZE(MATRIX,2)))
     ! Make "MIN_NORM" the identity matrix
-    MIN_NORM = 0.
+    MIN_NORM(:,:) = 0.
     FORALL (IDX = 1:SIZE(MIN_NORM,1)) MIN_NORM(IDX,IDX) = 1.
 
     ! Call DGELS for actual solve.
@@ -592,7 +597,7 @@ CONTAINS
     !   MATRIX -- Real dense matrix.
     ! 
     ! Output:
-    !   RCOND -- Real value corresponding to the inverse of the
+    !   RCOND -- Real value corresponding to the reciprocal of the
     !            condition number of the provided matrix.
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:) :: MATRIX
     REAL(KIND=REAL64) :: RCOND
