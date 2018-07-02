@@ -114,6 +114,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   INTEGER,           DIMENSION(SIZE(DVECS,2))                  :: LOCATION, LOOKUP
   INTEGER,           DIMENSION(SIZE(DVECS,2),SIZE(DVECS,2))    :: IDENTITY
   REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,1),2**SIZE(DVECS,2)) :: NORMAL_VECTORS
+  REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,1),SIZE(DVECS,2))    :: DVECS_COPY
   REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE               :: MIN_NORM_DVECS
   REAL(KIND=REAL64), DIMENSION(:),   ALLOCATABLE               :: LAPACK_WORK
   REAL(KIND=REAL64), PARAMETER :: SQRTEPS = SQRT(EPSILON(1.0_REAL64))
@@ -158,8 +159,10 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
      ENDIF
   ENDIF
 
-  ! Get the minimum norm representation of the direction vectors.
-  MIN_NORM_DVECS = MATRIX_MINIMUM_NORM(DVECS)
+  ! Get the minimum norm representation of the direction vectors, use
+  ! a copy to ensure the original DVECS are not modified.
+  DVECS_COPY(:,:) = DVECS(:,:)
+  MIN_NORM_DVECS = MATRIX_MINIMUM_NORM(DVECS_COPY)
   IF (ERROR .NE. 0) RETURN
   
   ! Compute the table of normal vectors defining boundaries of
@@ -264,15 +267,6 @@ CONTAINS
     REAL(KIND=REAL64), DIMENSION(DIM) :: PT_SHIFT
     REAL(KIND=REAL64) :: POSITION, SHIFT
     INTEGER :: IDX_1, IDX_2, IDX_3
-    PRINT *, ''
-    PRINT *, "MULTS: ", MULTS
-    PRINT *, "LOC: ", LOC
-    PRINT *, "SUB_DVECS: "
-    PRINT *, SUB_DVECS(1,:)
-    PRINT *, SUB_DVECS(2,:)
-    PRINT *, "SHIFTED_EVAL_PTS: "
-    PRINT *, SHIFTED_EVAL_PTS(1,:)
-    PRINT *, ''
     ! Recursion case ...
     IF (SUM(MULTS) > DIM) THEN
        EVALS_AT_PTS = 0.
@@ -285,7 +279,6 @@ CONTAINS
           ! Make recursive calls.
           IF (MULTS(IDX_1) .GT. 1) THEN
              ! Perform recursion with only reduced multiplicity.
-             PRINT *, "A"
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, SUB_DVECS, &
                   SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
              IF (ERROR .NE. 0) RETURN
@@ -293,11 +286,10 @@ CONTAINS
                   SHIFTED_EVAL_PTS(:,IDX_2)
              ! Perform recursion with transformed set of direction
              ! vectors and evaluation points.
-             compute_shift_1 : DO IDX_3 = 1, SIZE(SUB_DVECS,2)
+             compute_shift_1 : FORALL (IDX_3 = 1:SIZE(SUB_DVECS,2))
                 SHIFT = SUM(DVECS(:,IDX_1) * SUB_DVECS(:,IDX_3))
                 TEMP_SHIFTED_EVAL_PTS(:,IDX_3) = SHIFTED_EVAL_PTS(:,IDX_3) - SHIFT
-             END DO compute_shift_1
-             PRINT *, "B"
+             END FORALL compute_shift_1
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, SUB_DVECS, &
                   TEMP_SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
              IF (ERROR .NE. 0) RETURN
@@ -315,10 +307,8 @@ CONTAINS
                 IF (ERROR .NE. 0) RETURN
                 ! Perform recursion with only reduced multiplicity.
                 compute_shift_2 : FORALL (IDX_3 = 1:DIM)
-                   SHIFT = SUM(LOC * DVECS(IDX_3,:))
-                   TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SHIFT
+                   TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SUM(LOC * DVECS(IDX_3,:))
                 END FORALL compute_shift_2
-                PRINT *, "C"
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
                 IF (ERROR .NE. 0) RETURN
@@ -326,10 +316,8 @@ CONTAINS
                      SHIFTED_EVAL_PTS(:,IDX_2)
                 ! Perform recursion with transformed set of direction vectors.
                 compute_shift_3 : FORALL (IDX_3 = 1:DIM)
-                   SHIFT = SUM(NEXT_LOC * DVECS(IDX_3,:))
-                   TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SHIFT
+                   TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SUM(NEXT_LOC * DVECS(IDX_3,:))
                 END FORALL compute_shift_3
-                PRINT *, "D"
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
                 IF (ERROR .NE. 0) RETURN
@@ -348,8 +336,7 @@ CONTAINS
        REMAINING_DVECS = NONZERO(MULTS)
        IF (ERROR .NE. 0) RETURN
        compute_shift_4 : FORALL (IDX_1 = 1:DIM)
-          SHIFT = SUM(LOC * DVECS(IDX_1,:))
-          TEMP_EVAL_PTS(:,IDX_1) = EVAL_PTS(:,IDX_1) - SHIFT
+          TEMP_EVAL_PTS(:,IDX_1) = EVAL_PTS(:,IDX_1) - SUM(LOC * DVECS(IDX_1,:))
        END FORALL compute_shift_4
        ! Check against all *precomputed* hyperplanes (also contributes to stability).
        DO IDX_1 = 1, DIM
@@ -478,6 +465,7 @@ CONTAINS
     REAL(KIND=REAL64), DIMENSION(:,:), ALLOCATABLE :: MIN_NORM
     ! Local variables
     INTEGER :: IDX
+
     ! Allocate the output matrix.
     ALLOCATE(MIN_NORM(1:SIZE(MATRIX,2),1:SIZE(MATRIX,2)))
     ! Make "MIN_NORM" the identity matrix
@@ -502,11 +490,6 @@ CONTAINS
 
     IF (INFO .NE. 0) THEN; ERROR = 43 + 100*INFO; RETURN; END IF
     ! Extract the minimum norm representation from the output of DGELS.
-    PRINT *, "MIN_NORM: "
-    DO INFO = 1, SIZE(MIN_NORM,1)
-       PRINT *, MIN_NORM(INFO,:)
-    END DO
-    INFO = 0
     MIN_NORM = MIN_NORM(1:SIZE(MATRIX,1),:)
   END FUNCTION MATRIX_MINIMUM_NORM
 

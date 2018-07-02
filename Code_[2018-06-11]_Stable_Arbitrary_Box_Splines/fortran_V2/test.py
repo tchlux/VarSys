@@ -35,3 +35,8 @@ min_norm, residuals, rank, singular_vals = np.linalg.lstsq(
     mat.T, np.identity(mat.shape[1]), rcond=None)
 print(min_norm)
 print()
+
+import fmodpy
+fmodpy.wrap("min_norm.f90", module_link_args=["-lblas","-llapack","-lgfortran"])
+import min_norm
+min_norm.matrix_minimum_norm(mat)

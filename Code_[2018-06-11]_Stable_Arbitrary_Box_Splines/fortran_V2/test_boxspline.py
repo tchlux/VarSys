@@ -13,13 +13,14 @@ boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
 
 dvecs = np.array([[1.,0., 1., 1.],
                   [0.,1.,-1., 1.]], order="F")
-mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 1
+mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
 
 # ====================================================================
 
 eval_pts = np.meshgrid(list(range(50)), list(range(50)))
 eval_pts = np.vstack((eval_pts[0].flatten(), eval_pts[1].flatten())).T
-eval_pts = np.asarray(eval_pts[:1], order='F', dtype=np.float64)
+eval_pts = np.asarray(eval_pts, order='F', dtype=np.float64)
+# eval_pts = np.asarray([[1.5, .5]], order='F', dtype=np.float64)
 
 import time
 start = time.time()
@@ -61,7 +62,10 @@ exit()
 #            use_gradient=True, plot_points=4000)
 # p.show(z_range=[-.05,2.05], file_name="result.html")
 
+# ====================================================================
+
 # C-x C-k e -- Edit currently defined keyboard macro.
 # C-x C-k n -- Give name to the most recently defined keyboard macro (session).
 # C-x C-k b -- Bind most recent keyboard macro to a key (session).
 
+# ~/Git/VarSys/Code_[2018-06-11]_Stable_Arbitrary_Box_Splines/boxspline.f90
