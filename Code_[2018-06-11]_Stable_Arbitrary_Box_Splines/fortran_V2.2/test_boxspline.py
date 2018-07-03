@@ -33,13 +33,13 @@ mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
 
 if (TIME or TEST):
     if (TEST):
-        eval_pts = np.asarray([[1.5, .5]], order='F', dtype=np.float64)
+        eval_pts = np.asarray(np.array([[1.5, .5]]).T, order='F', dtype=np.float64)
     else:
         eval_pts = np.meshgrid(list(range(50)), list(range(50)))
         eval_pts = np.vstack((eval_pts[0].flatten(), eval_pts[1].flatten())).T
-        eval_pts = np.asarray(eval_pts, order='F', dtype=np.float64)
+        eval_pts = np.asarray(eval_pts.T, order='F', dtype=np.float64)
 
-    box_evals = np.zeros(eval_pts.shape[0], order='F', dtype=np.float64)
+    box_evals = np.zeros(eval_pts.shape[1], order='F', dtype=np.float64)
     import time
     start = time.time()
     box_evals, error = boxspline.boxsplev(dvecs, mults, eval_pts, box_evals)
@@ -56,8 +56,8 @@ if (TIME or TEST):
 
 if PLOT:
     def f(x):
-        eval_pts = np.asarray(x, order='F')
-        box_evals = np.zeros(eval_pts.shape[0], order='F', dtype=np.float64)
+        eval_pts = np.asarray(x.T, order='F')
+        box_evals = np.zeros(eval_pts.shape[1], order='F', dtype=np.float64)
         box_evals, error = boxspline.boxsplev(dvecs, mults, eval_pts, box_evals)
         if (error != 0):
             print('-'*70 + '\n')
