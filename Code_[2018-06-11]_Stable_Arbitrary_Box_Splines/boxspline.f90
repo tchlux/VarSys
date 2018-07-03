@@ -4,9 +4,9 @@
 ! module REAL_PRECISION defining the real precision.
 ! 
 ! ====================================================================
-! MODULE REAL_PRECISION  ! HOMPACK90 module for 64-bit arithmetic.
-!   INTEGER, PARAMETER :: R8=SELECTED_REAL_KIND(13)
-! END MODULE REAL_PRECISION
+MODULE REAL_PRECISION  ! HOMPACK90 module for 64-bit arithmetic.
+  INTEGER, PARAMETER :: R8=SELECTED_REAL_KIND(13)
+END MODULE REAL_PRECISION
 
 SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   ! BOXSPLEV evaluates a box-spline, defined by a direction vector set
@@ -138,7 +138,7 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   IF (ERROR .NE. 0) RETURN
   ! Create an identity matrix (for easy matrix-vector multiplication).
   IDENTITY = 0
-  FORALL (IDX_1 = 1:NUM_DVECS); IDENTITY(IDX_1,IDX_1) = 1; END FORALL
+  FORALL (IDX_1 = 1:NUM_DVECS) IDENTITY(IDX_1,IDX_1) = 1
   ! Check for usage errors (dimension mismatches, invalid multiplicity)
   IF (SIZE(DVEC_MULTS) .NE. NUM_DVECS) THEN; ERROR = 1; RETURN; END IF
   IF (SIZE(EVAL_PTS,2) .NE. DIM)       THEN; ERROR = 2; RETURN; END IF
@@ -175,9 +175,8 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   CALL EVALUATE_BOX_SPLINE(DVEC_MULTS, LOCATION, MIN_NORM_DVECS, &
        MATMUL(EVAL_PTS, MIN_NORM_DVECS), BOX_EVALS)
   IF (ERROR .NE. 0) RETURN
-
-  ! Explicitly deallocate the work array storage (redundant, handled
-  ! automatically if an earlier RETURN statement is encountered).
+  ! Deallocate storage allocated in function calls.
+  IF (ALLOCATED(MIN_NORM_DVECS)) DEALLOCATE(MIN_NORM_DVECS)
   IF (ALLOCATED(LAPACK_WORK)) DEALLOCATE(LAPACK_WORK)
 CONTAINS
   
@@ -217,7 +216,7 @@ CONTAINS
     REAL(KIND=R8), DIMENSION(SIZE(EVAL_PTS,1)) :: TEMP_EVALS_AT_PTS
     REAL(KIND=R8), DIMENSION(SIZE(EVAL_PTS,1)) :: LOCATIONS
     REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE :: NEXT_DVECS
-    INTEGER,       DIMENSION(:),   ALLOCATABLE :: REMAINING_DVECS
+    INTEGER,       DIMENSION(:),   ALLOCATABLE :: REMAINING_DVECS, NONZERO_DVECS
     INTEGER,       DIMENSION(SIZE(DVECS,2))    :: NEXT_MULTS, NEXT_LOC
     REAL(KIND=R8), DIMENSION(SIZE(DVECS,1))    :: PT_SHIFT, NORMAL_VECTOR
     REAL(KIND=R8) :: POSITION
@@ -241,10 +240,10 @@ CONTAINS
                   SHIFTED_EVAL_PTS(:,IDX_2)
              ! Perform recursion with transformed set of direction
              ! vectors and evaluation points.
-             compute_shift_1 : FORALL (IDX_3 = 1:SIZE(SUB_DVECS,2))
+             compute_shift_1 : DO CONCURRENT (IDX_3 = 1:SIZE(SUB_DVECS,2))
                 TEMP_SHIFTED_EVAL_PTS(:,IDX_3) = SHIFTED_EVAL_PTS(:,IDX_3) - &
                      SUM(DVECS(:,IDX_1) * SUB_DVECS(:,IDX_3))
-             END FORALL compute_shift_1
+             END DO compute_shift_1
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, SUB_DVECS, &
                   TEMP_SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
              IF (ERROR .NE. 0) RETURN
@@ -253,31 +252,35 @@ CONTAINS
              IDX_2 = IDX_2 + 1
           ELSE IF (MULTS(IDX_1) .GT. 0) THEN
              ! Find the next direction vectors (ones with nonzero multiplicities).
-             NEXT_DVECS = DVECS(:,NONZERO(NEXT_MULTS))
+             NONZERO_DVECS = NONZERO(NEXT_MULTS)
+             NEXT_DVECS = DVECS(:,NONZERO_DVECS)
              IF (ERROR .NE. 0) RETURN
+             IF (ALLOCATED(NONZERO_DVECS)) DEALLOCATE(NONZERO_DVECS)
              IF (MATRIX_RANK(TRANSPOSE(NEXT_DVECS)) .EQ. DIM) THEN
                 IF (ERROR .NE. 0) RETURN
                 ! Update Least norm representation of the direction vectors.
                 NEXT_DVECS = MATRIX_MINIMUM_NORM(NEXT_DVECS)
                 IF (ERROR .NE. 0) RETURN
                 ! Perform recursion with only reduced multiplicity.
-                compute_shift_2 : FORALL (IDX_3 = 1:DIM)
+                compute_shift_2 : DO CONCURRENT (IDX_3 = 1:DIM)
                    TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SUM(LOC * DVECS(IDX_3,:))
-                END FORALL compute_shift_2
+                END DO compute_shift_2
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
                 IF (ERROR .NE. 0) RETURN
                 EVALS_AT_PTS(:) = EVALS_AT_PTS(:) + TEMP_EVALS_AT_PTS(:) * &
                      SHIFTED_EVAL_PTS(:,IDX_2)
                 ! Perform recursion with transformed set of direction vectors.
-                compute_shift_3 : FORALL (IDX_3 = 1:DIM)
+                compute_shift_3 : DO CONCURRENT (IDX_3 = 1:DIM)
                    TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SUM(NEXT_LOC * DVECS(IDX_3,:))
-                END FORALL compute_shift_3
+                END DO compute_shift_3
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
                 IF (ERROR .NE. 0) RETURN
                 EVALS_AT_PTS(:) = EVALS_AT_PTS(:) + TEMP_EVALS_AT_PTS(:) * &
                      (MULTS(IDX_1) - SHIFTED_EVAL_PTS(:,IDX_2))
+                ! Deallocate the computed next direction vectors
+                IF (ALLOCATED(NEXT_DVECS)) DEALLOCATE(NEXT_DVECS)
              END IF
              IDX_2 = IDX_2 + 1
           END IF
@@ -290,21 +293,21 @@ CONTAINS
        ! Delayed translations (this is what makes the algorithm more stable).
        REMAINING_DVECS = NONZERO(MULTS)
        IF (ERROR .NE. 0) RETURN
-       compute_shift_4 : FORALL (IDX_1 = 1:DIM)
+       compute_shift_4 : DO CONCURRENT (IDX_1 = 1:DIM)
           TEMP_EVAL_PTS(:,IDX_1) = EVAL_PTS(:,IDX_1) - SUM(LOC * DVECS(IDX_1,:))
-       END FORALL compute_shift_4
+       END DO compute_shift_4
        ! Check evaluation point locations against all remaining direction vectors.
        DO IDX_1 = 1, DIM
           ! Calculate normal vector to current hyperplane.
-          CALL MATRIX_ORTHOGONAL(TRANSPOSE(DVECS(:, &
-               NONZERO(MULTS - IDENTITY(:,REMAINING_DVECS(IDX_1))))), &
-               NORMAL_VECTOR)
+          NONZERO_DVECS = NONZERO(MULTS - IDENTITY(:,REMAINING_DVECS(IDX_1)))
+          CALL MATRIX_ORTHOGONAL(TRANSPOSE(DVECS(:, NONZERO_DVECS)), NORMAL_VECTOR)
+          IF (ALLOCATED(NONZERO_DVECS)) DEALLOCATE(NONZERO_DVECS)
           ! Compute shifted position (relative to normal ector).
           POSITION = SUM(DVECS(:,REMAINING_DVECS(IDX_1)) * NORMAL_VECTOR(:))
           ! Compute shifted evaluation locations. (NUM_PTS, DIM) x (DIM, 1)
-          compute_shifted_point_1 : FORALL (IDX_2 = 1:NUM_PTS)
+          compute_shifted_point_1 : DO CONCURRENT (IDX_2 = 1:NUM_PTS)
              LOCATIONS(IDX_2) = SUM(TEMP_EVAL_PTS(IDX_2,:) * NORMAL_VECTOR(:))
-          END FORALL compute_shifted_point_1
+          END DO compute_shifted_point_1
           ! Identify those points that are outside of this box (0-side).
           IF (POSITION .GT. 0) THEN
              WHERE (LOCATIONS .LT. 0) EVALS_AT_PTS = 0_R8
@@ -313,13 +316,13 @@ CONTAINS
           END IF
           ! Recompute shifted location (other side of box) based on selected direction vector.
           NEXT_LOC(:) = LOC(:) + IDENTITY(:,REMAINING_DVECS(IDX_1))
-          compute_shift_5 : FORALL (IDX_2 = 1:DIM)
+          compute_shift_5 : DO CONCURRENT (IDX_2 = 1:DIM)
              PT_SHIFT(IDX_2) = SUM(NEXT_LOC * DVECS(IDX_2,:))
-          END FORALL compute_shift_5
-          compute_shifted_point_2 : FORALL (IDX_2 = 1:NUM_PTS)
+          END DO compute_shift_5
+          compute_shifted_point_2 : DO CONCURRENT (IDX_2 = 1:NUM_PTS)
              LOCATIONS(IDX_2) = SUM((EVAL_PTS(IDX_2,:) - PT_SHIFT) * &
                   NORMAL_VECTOR(:))
-          END FORALL compute_shifted_point_2
+          END DO compute_shifted_point_2
           ! Identify those shifted points that are outside of this box on REMAINING_DVEC(IDX_1)-side.
           IF (POSITION .GT. 0) THEN
              WHERE (LOCATIONS .GE. 0) EVALS_AT_PTS = 0.
@@ -645,5 +648,3 @@ CONTAINS
 
 END SUBROUTINE BOXSPLEV
 
-    
-! python3 -c "import fmodpy; fmodpy.wrap('boxspline.f90', module_link_args=['-lblas','-llapack','-lgfortran'], verbose=True)"

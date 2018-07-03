@@ -1,6 +1,6 @@
 import numpy as np
 import fmodpy
-boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
+boxspline = fmodpy.fimport("boxspline.f90", verbose=True, 
     module_link_args=["-lblas", "-llapack", "-lgfortran"])
 
 # Control flot logic
@@ -90,5 +90,7 @@ if PLOT:
 # C-x C-k e -- Edit currently defined keyboard macro.
 # C-x C-k n -- Give name to the most recently defined keyboard macro (session).
 # C-x C-k b -- Bind most recent keyboard macro to a key (session).
+
+# python3 -c "import fmodpy; fmodpy.wrap('boxspline.f90', module_link_args=['-lblas','-llapack','-lgfortran'], verbose=True)"
 
 # ~/Git/VarSys/Code_[2018-06-11]_Stable_Arbitrary_Box_Splines/
