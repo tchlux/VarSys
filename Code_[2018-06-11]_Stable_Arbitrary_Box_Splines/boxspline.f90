@@ -71,15 +71,14 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   !
   !    Tens digit T:
   !      0  Improper usage.
-  !      1  Error computing normal vectors.
-  !      2  Error computing box-spline.
-  !      3  Error computing an orthogonal vector.
-  !      4  Error computing a minimum norm representation.
-  !      5  Error computing a matrix rank.
-  !      6  Error computing a matrix determinant.
-  !      7  Error computing the reciprocal condition number of matrix.
-  !      8  Error finding nonzero entries in an array.
-  !      9  Error preparing memory.
+  !      1  Error computing box-spline.                               
+  !      2  Error computing an orthogonal vector.                     
+  !      3  Error computing a minimum norm representation.            
+  !      4  Error computing a matrix rank.                            
+  !      5  Error computing a matrix determinant.                     
+  !      6  Error computing the reciprocal condition number of matrix.
+  !      7  Error finding nonzero entries in an array.                
+  !      8  Error preparing memory.                                   
   ! 
   !    Units digit U, for T = 0:
   !      1  Mismatched dimension, SIZE(DVEC_MULTS) .NE. SIZE(DVECS,2).
@@ -133,9 +132,6 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   DIM       = SIZE(DVECS, 1)
   NUM_DVECS = SIZE(DVECS, 2)
   NUM_PTS   = SIZE(EVAL_PTS, 1)
-  ! Allocate a work array large enough for all LAPACK calls.
-  LAPACK_WORK = ALLOCATE_MAX_LAPACK_WORK()
-  IF (ERROR .NE. 0) RETURN
   ! Create an identity matrix (for easy matrix-vector multiplication).
   IDENTITY = 0
   FORALL (IDX_1 = 1:NUM_DVECS) IDENTITY(IDX_1,IDX_1) = 1
@@ -163,6 +159,10 @@ SUBROUTINE BOXSPLEV(DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
      ENDIF
   ENDIF
 
+  ! Allocate a work array large enough for all LAPACK calls.
+  LAPACK_WORK = ALLOCATE_MAX_LAPACK_WORK()
+  IF (ERROR .NE. 0) RETURN
+
   ! Get the minimum norm representation of the direction vectors, use
   ! a copy to ensure the original DVECS are not modified.
   DVECS_COPY(:,:) = DVECS(:,:)
@@ -183,7 +183,7 @@ CONTAINS
   ! ==================================================================
   RECURSIVE SUBROUTINE EVALUATE_BOX_SPLINE(MULTS, LOC, SUB_DVECS,&
        SHIFTED_EVAL_PTS, EVALS_AT_PTS)
-    ! 2) EVALUATE_BOX_SPLINE:
+    ! 1) EVALUATE_BOX_SPLINE:
     !   
     !   Evaluate the box-spline defined by "DVECS" recursively, where
     !   this iteration has the remaining vectors "SUB_DVECS", at all
@@ -343,7 +343,7 @@ CONTAINS
 
   ! ==================================================================
   SUBROUTINE MATRIX_ORTHOGONAL(A, ORTHOGONAL)
-    ! 3) MATRIX_ORTHOGONAL
+    ! 2) MATRIX_ORTHOGONAL
     ! 
     !   Given a matrix A of row vectors, compute a vector orthogonal to
     !   the row vectors in A and store it in ORTHOGONAL using DGESVD.
@@ -352,10 +352,10 @@ CONTAINS
     !   returned.
     ! 
     ! Input:
-    !   A -- Real dense matrix.
+    !   A(:,:) -- Real dense matrix.
     ! 
     ! Output:
-    !   ORTHOGONAL -- Real vector orthogonal to given matrix.
+    !   ORTHOGONAL(:) -- Real vector orthogonal to given matrix.
     ! 
     REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:)       :: A
     REAL(KIND=R8), INTENT(OUT), DIMENSION(SIZE(A,2)) :: ORTHOGONAL
@@ -386,7 +386,7 @@ CONTAINS
     !   SIZE(WORK) -- Size of the work array
     !   INFO       -- Info message parameter
 
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 33; RETURN; END IF
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 23; RETURN; END IF
 
     ORTHOGONAL(:) = 0.
     FOUND_ZERO = .FALSE.
@@ -411,7 +411,7 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION MATRIX_MINIMUM_NORM(MATRIX) RESULT(MIN_NORM)
-    ! 4) MATRIX_MINIMUM_NORM
+    ! 3) MATRIX_MINIMUM_NORM
     ! 
     !   Compute the minimum norm representation of 'MARTIX' and store
     !   it in 'MIN_NORM', use DGELS to find the least squares
@@ -419,11 +419,11 @@ CONTAINS
     !   stable solution to the linear system (A^T A) X = A^T.
     ! 
     ! Input:
-    !   MATRIX -- Real dense matrix.
+    !   MATRIX(:,:) -- Real dense matrix.
     ! 
     ! Output:
-    !   MIN_NORM -- Real dense matrix that is the minimum norm
-    !               representation of MATRIX.
+    !   MIN_NORM(:,:) -- Real dense matrix that is the minimum norm
+    !                    representation of MATRIX.
     ! 
     REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: MATRIX
     REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE :: MIN_NORM
@@ -452,19 +452,19 @@ CONTAINS
     !   SIZE(LAPACK_WORK) -- Size of work array
     !   INFO              -- For verifying successful execution
 
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 42; RETURN; END IF
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 32; RETURN; END IF
     ! Extract the minimum norm representation from the output of DGELS.
     MIN_NORM = MIN_NORM(1:SIZE(MATRIX,1),:)
   END FUNCTION MATRIX_MINIMUM_NORM
 
   ! ==================================================================
   FUNCTION MATRIX_RANK(MATRIX)
-    ! 5) MATRIX_RANK
+    ! 4) MATRIX_RANK
     ! 
     !   Get the rank of the provided matrix using the SVD.
     ! 
     ! Input:
-    !   MATRIX -- Real dense matrix.
+    !   MATRIX(:,:) -- Real dense matrix.
     ! 
     ! Output:
     !   MATRIX_RANK -- The integer rank of MATRIX.
@@ -495,7 +495,7 @@ CONTAINS
     !   WORK       -- Work array for computing SVD
     !   SIZE(WORK) -- Size of the work array
     !   INFO       -- Info message parameter
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 53; RETURN; END IF
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 43; RETURN; END IF
 
     MATRIX_RANK = SIZE(S)
     ! Find the first singular value in the orthonormal basis for the null
@@ -510,13 +510,13 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION MATRIX_DET(MATRIX)
-    ! 6) MATRIX_DET
+    ! 5) MATRIX_DET
     ! 
     !   Compute the determinant of a matrix without modifying it
     !   using the LU decomposition (and a copy).
     ! 
     ! Input:
-    !   MATRIX -- Real dense matrix.
+    !   MATRIX(:,:) -- Real dense matrix.
     ! 
     ! Output:
     !   MATRIX_DET -- The real-valued determinant of MATRIX.
@@ -534,7 +534,7 @@ CONTAINS
 
     IF (INFO .NE. 0) THEN
        MATRIX_DET = 1.
-       ERROR = 100*INFO + 64
+       ERROR = 100*INFO + 54
        RETURN
     END IF
 
@@ -547,13 +547,13 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION MATRIX_CONDITION_INV(MATRIX) RESULT(RCOND)
-    ! 7) MATRIX_CONDITION_INV
+    ! 6) MATRIX_CONDITION_INV
     ! 
     ! Compute the condition number (for testing near rank deficiency)
     ! using DGECON (which computes 1 / CONDITION).
     ! 
     ! Input:
-    !   MATRIX -- Real dense matrix.
+    !   MATRIX(:,:) -- Real dense matrix.
     ! 
     ! Output:
     !   RCOND -- Real value corresponding to the reciprocal of the
@@ -567,18 +567,18 @@ CONTAINS
     CALL DGECON('I', SIZE(MATRIX,2), MATRIX, SIZE(MATRIX,1),&
          SUM(ABS(MATRIX)), RCOND, WORK, IWORK, INFO)
     ! Store output of 'info' flag.
-    IF (INFO .NE. 0) ERROR = 100 * INFO + 75
+    IF (INFO .NE. 0) ERROR = 100 * INFO + 65
   END FUNCTION MATRIX_CONDITION_INV
 
   ! ==================================================================
   FUNCTION NONZERO(ARRAY) RESULT(NE_ZERO)
-    ! 8) NONZERO
+    ! 7) NONZERO
     ! 
     ! Return a new array of the indices of 'ARRAY' that contain
     ! nonzero elements. Set error and return array with 1 if ALL(ARRAY==0).
     ! 
     ! Input:
-    !   ARRAY -- Real array of numbers.
+    !   ARRAY(:) -- Integer array of numbers.
     ! 
     ! Output:
     !   NE_ZERO -- Integer array corresponding to those indices of
@@ -598,7 +598,7 @@ CONTAINS
        END IF
     END DO
     IF (COUNT_NONZERO .LE. 0) THEN
-       ERROR = 80
+       ERROR = 70
        ALLOCATE(NE_ZERO(1))
        NE_ZERO(1) = 1
     ELSE
@@ -610,16 +610,16 @@ CONTAINS
 
   ! ==================================================================
   FUNCTION ALLOCATE_MAX_LAPACK_WORK() RESULT(WORK)
-    ! 9) ALLOCATE_MAX_LAPACK_WORK
+    ! 8) ALLOCATE_MAX_LAPACK_WORK
     ! 
     ! Return an allocated real array that has a size equal to the
     ! maximum requested LAPACK work array size across all routines
-    ! that will be executed in the evaluation of a Box Spline.
+    ! that will be executed in the evaluation of a box-spline.
     ! 
     ! Output:
     !   WORK -- Real array with size large enough to accomadate all
     !           LAPACK subroutines that will be used to evaluated a
-    !           Box Spline given the dimension and number of vectors.
+    !           box-spline given the dimension and number of vectors.
     ! 
     REAL(KIND=R8), DIMENSION(:), ALLOCATABLE :: WORK
     REAL(KIND=R8), DIMENSION(3) :: SIZES
@@ -630,17 +630,17 @@ CONTAINS
     ! Query the size of the work array for DGESVD. (MATRIX_ORTHOGONAL)
     CALL DGESVD('N', 'A', NUM_DVECS, DIM, WORK, NUM_DVECS, &
          WORK, WORK, 1, WORK, NUM_DVECS, SIZES(1:), -1, INFO)
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 91; RETURN; END IF
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
 
     ! Query the size of the work array to (MATRIX_RANK)
     CALL DGESVD('N', 'N', NUM_DVECS, DIM, WORK, NUM_DVECS, &
          WORK, WORK, 1, WORK, 1, SIZES(2:), -1, INFO)
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 91; RETURN; END IF
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
 
     ! Get the size of the work array for DGELS. (MATRIX_MINIMUM_NORM)
     CALL DGELS('T', DIM, NUM_DVECS, NUM_DVECS, WORK, DIM, WORK, &
          NUM_DVECS, SIZES(3:), -1, INFO)
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 91; RETURN; END IF
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
 
     ! Allocate the work array by rounding the max value in 'SIZES'.
     ALLOCATE(WORK(1:INT(.5_R8 + MAXVAL(SIZES))))
