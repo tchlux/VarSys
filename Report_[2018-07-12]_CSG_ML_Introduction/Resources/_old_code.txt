@@ -1,0 +1,38 @@
+from util.algorithms import Approximator
+from scipy.optimize import minimize
+from autograd import elementwise_grad as grad
+# from util.optimize import minimize
+# from util.optimize import Random
+
+class NN(Approximator):
+    def __init__(self, nodes=10):
+        self.nodes = nodes
+    def _fit(self, x, y, method=None):
+        # Add a column of ones to the x (the bias)
+        x = np.concatenate((x, np.ones(len(x))[:,None]), axis=1)
+        self.input_wts = np.ones((x.shape[1],self.nodes))
+        self.output_wts = np.ones((self.nodes, 1))
+        num_weights = self.input_wts.size + self.output_wts.size
+        # Construct the evaluation function
+        def weight_func(wts):
+            input_wts = wts[:self.input_wts.size].reshape(self.input_wts.shape)
+            output_wts = wts[self.input_wts.size:].reshape(self.output_wts.shape)
+            internal_state = np.matmul(x, input_wts)
+            internal_state = np.where(internal_state > 0, internal_state, 0)
+            guess = np.matmul(internal_state, output_wts)
+            error = np.sum((y - guess)**2)
+            return error
+        # sol = minimize(weight_func, np.ones(num_weights), display=True, max_time=30)
+        sol = minimize(weight_func, np.ones(num_weights)).x
+        self.input_wts[:] = sol[:self.input_wts.size].reshape(self.input_wts.shape)
+        self.output_wts[:] = sol[self.input_wts.size:].reshape(self.output_wts.shape)
+        # Done fitting
+
+    def _predict(self, x):
+        x = np.concatenate((x, np.ones(len(x))[:,None]), axis=1)
+        internal_state = np.matmul(x, self.input_wts)
+        internal_state = np.where(internal_state > 0, internal_state, 0)
+        output = np.matmul(internal_state, self.output_wts)
+        return np.matmul(internal_state, self.output_wts)
+
+

@@ -1,0 +1,223 @@
+>> Don't clutter the argument list with arguments that are rarely needed.
+>> There is no need for TWO error flags!
+>
+> Done. A note of warning, some of the LAPACK 'INFO' error flags are
+> negative. The resulting ERROR codes may confuse users under the 100 INFO +
+
+Negative error flags are usage errors (correct?), not execution errors, so 
+your own LAPACK calls should NEVER produce a usage error.  If you really want 
+to cover all bases, 100 INFO + ... will always be negative for INFO negative,
+so you could add one sentence to the error code description saying that
+any negative flag value means a LAPACK usage error, which should never occur.
+
+> 10 TENS + UNITS format, because TENS and UNITS are always positive. Would
+> it be more clear if I match the sign of TENS and UNITS to the sign of the
+> INFO flag?
+>
+No, see above.
+
+>
+>> In Fortran, NEVER, EVER, store points as rows of matrices (cf. EVAL_PTS).
+>
+> I implemented the column-vector storage version, but experienced about a
+> 10% slowdown over row-vector storage. Accordingly, the attached version is
+> still in row-vector form.
+
+Not acceptable.  The 10% is due to other things in your code (that are
+also inefficient), and not the row vs. column storage of points.  Your 
+dimensions are so small and number of points so small that cache misses for
+evaluating the box-splines are dominated by other parts of the code.
+Clearly, for large enough number of evaluation points, for row storage,
+the first and second components of an evaluation point will be in different 
+cache lines, causing a cache miss that will NOT occur for column storage.
+Secondly, and not unimportant, is that the convention for storing 
+mathematical vectors in Fortran is as columns of arrays.
+
+You can make no case (10% for 5 different compilers, for large data sets,
+provably due to this storage alone, etc.) for row storage of evaluation 
+points.  Do what I said.  And I do mean the "NEVER, EVER".
+
+>
+> The speedup for row-vector storage is likely due to the types of operations
+> performed on EVAL_PTS. Most operations in the code are computed
+> component-wise and applied to an entire column in row-vector storage. Also
+
+So you've organized the code to operate on one dimension, at a time, of ALL
+the data points?  That was a choice, leading to row storage of the points.
+
+> an additional TRANSPOSE is necessary to perform the matrix multiplications
+> for translating evaluation points according to the direction vectors when
+> column-vector storage is used.
+
+I'm not convinced that a TRANSPOSE is ever necessary:  for matrix B and
+vector x, B^T x = (x^T B)^T, which can be done MATMUL and no transpose 
+operation!  Rethink your linear algebra.
+
+>
+>> Do you ever check that DVECS(1:S,1:S) is invertible, where DVECS is S x M,
+>> S <= M?
+>
+> Addressed in later comment regarding DGECON.
+
+I believe I added an error code for this, so it needs to be done upfront,
+with all the other sanity checks.  The comment about DGECON later concerns
+working storage, not an input error check.
+
+>> When using constants, always use the correct data type; yes, Fortran does
+>> the conversion, but then the reader ALSO has to do the conversion
+>> mentally.
+
+A statement like L = 0 implies that L is an integer, which makes the code 
+hard to read, e.g., a later computation like K/L would be interpreted as an 
+integer division, unless the reader goes back to the declarations to see that
+L was REAL.  In the same vein, always explicitly recast the data types,
+as in X = REAL(I,KIND=R8)/17.0_R8  , rather than depending on the compiler
+to recast the statement X = I/17.0_R8.
+
+One of the really bad habits that UG CS majors have is to do only what is
+"necessary" (cf. DEALLOCATE) rather than what is readable, unambiguous,
+and good programming practice.
+
+>
+>>  Look up the FORALL statement; that may convert many of your DO loops to
+>>
+>> just one line.
+>
+> Done. I used FORALL where the assignments were constants, but DO CONCURRENT
+> when the assignments were computed values.
+
+I don't think I suggested using FORALL for long DO blocks, I was suggesting 
+that
+DO I=1,N
+  A(I,I+1)=1.0_R8
+END DO
+be rewritten as the ONE statement
+FORALL (I=1:N) A(I,I+1)=1.0_R8
+
+We all know that multiple statements with dependencies shouldn't be done
+using a FORALL!  The Intel fellow's posting was more about compiler
+optimization of code than about scientific computing and math software.
+He's a compiler writer, not a numerical analyst.
+
+Do not use DO CONCURRENT, as that is not in the 2003 standard, and
+almost no current compiler fully supports the 2008 standard (read the fine 
+print---the compilers support "most" 2008 features).  e.g., the commercial
+Lahey compiler doesn't FULLY support any standard beyond 95.  (Don't
+believe the headlines or list of features in ads!)
+
+Furthermore, we will do parallel computing with OpenMP or MPI, not with
+DO CONCURRENT.
+
+Delete the "CONCURRENT".
+
+>> A clean way to do this is to make all arrays assumed shape, pass array
+>> segments as the arguments, and then in the subroutine check the ACTUAL
+>> sizes of the arrays.  My attached revised code does this.
+>
+> Noted. Speed increases about 5% when the size is declared internally, so I
+> kept that format for internal subroutines.
+>
+In internal subroutines, passed arrays should always have the correct size,
+so there is no need to check the sizes or use assumed shape arrays.
+Furthermore, since all arrays are global for internal subroutines, I question 
+why you need "pass" any arrays to an internal subroutine?  Just reference
+the array directly.   ?????
+
+More importantly, if your internal subroutine needs a work array of some 
+size, do NOT make that array allocatable or automatic within the internal
+subroutine.  Rather, allocate or declare that work array in the top level 
+suboutine, and then just use (or pass a segment of) it in the internal
+subroutine.
+
+The big picture here is that allocating (including "automatic" arrays)
+arrays inside frequently called subroutines or inner loops is VERY expensive
+(which everyone in HPC SC knows!), and should always be avoided.
+
+I strongly urge you to rethink your use of automatic and allocatable arrays
+at all levels, and also how arrays need to be communicated to internal
+routines.
+
+The things that make Fortran arrays more efficient than C/Java arrays also
+make allocation in Fortran much more expensive than in C/Java.  As just one
+example, the linked list in C is a total disaster in Fortran.
+
+> Recall, this code can evaluate an arbitrary box-spline. It *cannot*
+> <200b>reasonably <200b> 
+
+FYI, there are 8-bit characters in the above line.
+
+> be used for any continuous box-spline above six dimensions. The
+> computational complexity of evaluating an arbitrary box-spline is O(
+> (2k)^{n - s} ), where "k" is the number of unique direction vectors, "n" is
+> the sum of multiplicities, and "s" is the dimension. This is partly why I
+
+OK, this fact should be up front in the comments in the code.
+
+>> Also, you're searching the singular values as if they are in any order---
+>> they're not, read the documentation for DGESVD!
+>
+> I am not sure what you are saying here. I read the documentation before
+> writing the code. I am only assuming that the singular values are  in non
+> increasing order.
+
+Think!  Your code is "searching" for a zero singular value, starting with
+the largest singular value.  All you have to do is examine the LAST singular
+value!!!
+
+>> The subroutine MATRIX_ORTHOGONAL contains the comment "! If no orthogonal
+>> was found and the matrix is not a span of the space,".  Read this
+>> carefully.
+>
+> I reworded the comment more carefully.
+>
+I don't think you get how bad this is.  Piece by piece: "no orthogonal"
+---orthogonal is an adjective, not a noun, so "no orthogonal" as a subject is
+nonsense; "matrix is not a span"---span is a subspace, matrix is a function,
+xso that part is also nonsense; "span of the space"---span is also a verb, but 
+that doesn't fit here, so "span" here must be a noun, so again the
+phrase is utter nonsense, "span of a set of vectors", not "span of a space".
+
+>The Fortran standard (since at least '97) states that deallocation is
+>automatically performed at the end of scope for procedures. DEALLOCATE
+>*can* be used to conserve memory in the body of an executing code block,
+>but the statement is not necessary.
+
+Not every compiler implements EVERY semantic aspect of a standard,
+and even if they claim to, in reality many such parts of standards are done
+implemented correctly.  It is good programming practice, AND a practical
+necessity, to follow every ALLOCATE with a DEACLLOCATE.  When your code 
+fails, the user will complain to YOU, not to the compiler vendor!
+
+FACT: some features of Fortran 90 were still not working correctly as late as
+2008 in major compilers (gfortran, Intel, DEC, SUN), from personal experience.
+
+Just put a DEALLOCATE (one) at the final return, or if there are multiple
+places where a RETURN occurs after an allocation, replace RETURN by
+CALL CLEANUP; RETURN, where CLEANUP does the deallocations.
+
+>> We need to check
+>> (first) that S <= M and then (second) that DVECS(1:S,1:S) is not close to
+>> singular. It's cheaper to estimate the condition number than to compute
+>> the singular values, so the routine to use is DGECON.
+>
+>Done. DGECON requires an explicitly stated amount of storage relative to
+>the input size and is only called once before the recursion (main body of
+>code). For those reasons, DGECON memory allocation is automatic with the
+>computation of the condition number and does not rely on the shared LAPACK
+>working memory.
+
+I'm not convinced this automatic array is needed.  The size of the LAPACK
+working storage is known a priori (given your matrix sizes), and not some
+mysterious figure that has to be determined dynamically (apparently that's
+what you're doing).  The LAPACK working arrays should be allocated outside the
+main loop anyway, so that can be done before this check on DVECS(1:S,1:S),
+in which case DGECON can use the same work arrays as your other later
+calls to LAPACK.  Why not?
+
+--------------------
+Big picture that you're missing so far: the goals of mathematical software
+are (1) mathematical correctness, (2) speed, (3) minimal memory footprint,
+(4) robustness, wrt inputs and edge cases.  Commercial software goals
+(to which CS students are aligned) are: (1) program development time,
+(2) GUI interfaces and bells and whistles, (3) users will debug the code.
+
