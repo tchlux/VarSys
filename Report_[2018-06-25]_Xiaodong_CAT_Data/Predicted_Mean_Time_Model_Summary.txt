@@ -1,0 +1,71 @@
+[L3 0768] [Packet 0400] Predicted mean absolute error Percentiles:
+     0th -- 408.09705160793783
+    50th -- 411.2546044779492
+   100th -- 415.1002369301027
+ Range: 7.0
+
+[L3 0768] [Packet 0600] Predicted mean absolute error Percentiles:
+     0th -- 110.2844374999986
+    50th -- 115.74702734375023
+   100th -- 121.6742343750002
+ Range: 11.4
+
+[L3 0768] [Packet 0800] Predicted mean absolute error Percentiles:
+     0th -- 2886.3188437500003
+    50th -- 2895.2767031250005
+   100th -- 2903.8435859375004
+ Range: 17.5
+
+[L3 2304] [Packet 0400] Predicted mean absolute error Percentiles:
+     0th -- 4.058277343750433
+    50th -- 6.3227890624996235
+   100th -- 8.099144531250204
+ Range: 4.0
+
+[L3 2304] [Packet 0600] Predicted mean absolute error Percentiles:
+     0th -- 1.3071562500017535
+    50th -- 3.8572167968750364
+   100th -- 6.759292968749833
+ Range: 5.5
+
+[L3 2304] [Packet 0800] Predicted mean absolute error Percentiles:
+     0th -- 127.75678906249959
+    50th -- 132.13269335937503
+   100th -- 136.53098828124985
+ Range: 8.8
+
+[L3 3840] [Packet 0400] Predicted mean absolute error Percentiles:
+     0th -- 12.49283203124969
+    50th -- 13.747078124999916
+   100th -- 14.878179687500506
+ Range: 2.4
+
+[L3 3840] [Packet 0600] Predicted mean absolute error Percentiles:
+     0th -- 15.555289062501288
+    50th -- 16.947132812500058
+   100th -- 18.354707031248836
+ Range: 2.8
+
+[L3 3840] [Packet 0800] Predicted mean absolute error Percentiles:
+     0th -- 7.146074218750982
+    50th -- 8.871849609375658
+   100th -- 10.678988281249985
+ Range: 3.5
+
+[L3 5376] [Packet 0400] Predicted mean absolute error Percentiles:
+     0th -- 408.3744278846134
+    50th -- 409.7124507211511
+   100th -- 410.95301682692025
+ Range: 2.6
+
+[L3 5376] [Packet 0600] Predicted mean absolute error Percentiles:
+     0th -- 2.980050781248792
+    50th -- 4.847177734375691
+   100th -- 6.350277343750349
+ Range: 3.4
+
+[L3 5376] [Packet 0800] Predicted mean absolute error Percentiles:
+     0th -- 2533.9155625000003
+    50th -- 2536.957941406251
+   100th -- 2539.5208281249998
+ Range: 5.6

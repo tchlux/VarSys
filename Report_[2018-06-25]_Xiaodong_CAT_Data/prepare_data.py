@@ -11,8 +11,8 @@ _no_aesni = ""
 # _no_aesni = "_no_aesni"
 file_name = f"study{_no_aesni}.csv"
 data_name = f"study{_no_aesni}.pkl.gz"
-# sub_data_name = f"sub_study{_no_aesni}_10K.pkl"
-sub_data_name = f"sub_study{_no_aesni}_1M.pkl"
+sub_data_name = f"sub_study{_no_aesni}_10K.pkl"
+# sub_data_name = f"sub_study{_no_aesni}_1M.pkl"
 sub_size = 10000 if "10K" in sub_data_name else 1000000
 if sub_data:
     # Load data (and get a subset of it for testing and analysis)
@@ -45,22 +45,27 @@ else:
         print("Loading compressed data..")
         d = Data.load(data_name)
  
+print()
 print("Getting the predictors..")
 predictors = d.names[:2] + d.names[3:]
 target = [d.names[2]]
 print("Getting the unique values..")
 unique_data = d[predictors].unique()
+print("Sorting unique data..")
 unique_data.sort()
 print("Collecting by unique values..")
 d = unique_data.collect(d)
+print()
 
 print("Identifying rows that need to be removed..")
 to_remove = [i for i in range(len(d)) if (len(d[i, d.names[-1]]) <= 1)]
-print("Removing empty rows..")
+print(f"Removing {len(to_remove)} empty rows..")
 for idx in to_remove[::-1]: d.pop(idx)
+print()
 
 print("Generating distribution functions..")
 d[d.names[-1] + " Distribution"] = map(cdf_fit_func, d[d.names[-1]])
+print()
 
 print("Collecting system data into time models..")
 system_settings = d.names[:2]

@@ -16,7 +16,8 @@ def percentile_color(p):
 print(data[0,-1][0,-2])
 print(data[0,-1][0,-1].inverse(percentiles))
 
-data = data[data[data.names[0]] == 3840]
+min_pack = min(data[data.names[1]])
+data = data[data[data.names[1]] == min_pack]
 
 first = True
 for sys_config in data:
@@ -35,6 +36,6 @@ for sys_config in data:
         #     byte, val, clock_cycles, cdf = position
         #     print("",byte, val, clock_cycles)
     p.show(width=900, height=500, 
-           file_name="clock_cycle_distributions" ,
+           file_name="clock_cycle_distributions.html" ,
            append=(not first), show=first)
     first = False
