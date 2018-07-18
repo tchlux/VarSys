@@ -4,7 +4,7 @@ boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
     module_link_args=["-lblas", "-llapack", "-lgfortran"])
 
 # Control flot logic
-TEST = True
+TEST = False
 TIME = True
 PLOT = not TIME
 
@@ -27,7 +27,7 @@ if TEST: PLOT = False
 # Zwart-Powell element
 dvecs = np.array([[1.,0., 1., 1.],
                   [0.,1.,-1., 1.]], order="F")
-mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
+mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * (2 if TIME else 1)
 
 # ====================================================================
 
@@ -46,7 +46,7 @@ if (TIME or TEST):
     total = time.time() - start
     print(box_evals, error)
     if (TIME):
-        print(f" {total:.2e} second evaluation time at {eval_pts.shape[0]} points..")
+        print(f" {total:.2e} second evaluation time at {eval_pts.shape[1]} points..")
         # Only print out the speedup if the right element is being used.
         if (np.sum(mults) == 8):
             print()

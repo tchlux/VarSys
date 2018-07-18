@@ -1,0 +1,4 @@
+Title
+Description
+
+$\sigma^2 = \sum_{i=1}^{n} \frac{(x_i - \mu)^2}{n - 1}$

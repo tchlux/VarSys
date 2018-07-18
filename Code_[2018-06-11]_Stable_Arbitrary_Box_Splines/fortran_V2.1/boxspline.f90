@@ -270,7 +270,7 @@ CONTAINS
           END IF
        END DO
        ! Normalize by number of direction vectors in computation.
-       EVALS_AT_PTS = EVALS_AT_PTS / (SUM(MULTS) - DIM)
+       EVALS_AT_PTS = EVALS_AT_PTS / REAL(SUM(MULTS) - DIM, REAL64)
     ELSE
        ! Base case ... compute characteristic function.
        EVALS_AT_PTS = 1.

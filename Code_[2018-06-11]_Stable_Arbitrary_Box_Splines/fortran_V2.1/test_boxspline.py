@@ -9,7 +9,7 @@ boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
 
 # dvecs = np.array([[1.,0.,1.],
 #                   [0.,1.,1.]], order="F")
-# mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * 2
+# mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * 1
 
 dvecs = np.array([[1.,0., 1., 1.],
                   [0.,1.,-1., 1.]], order="F")
