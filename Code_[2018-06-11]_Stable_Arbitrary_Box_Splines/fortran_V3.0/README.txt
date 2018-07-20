@@ -4,3 +4,5 @@ appears faster for the average use-case based on 2.2). This version
 also makes the first attempt at performing all necessary array
 allocation at the top-level subroutine and removing all allocations
 from internal subroutine headers.
+
+Speedup over Matlab ~ 8x
