@@ -23,7 +23,7 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   !     O( 2^{n - s} {n! / s!} ),
   ! where "n" is the number of direction vectors and "s" is the
   ! dimension, to
-  !     O( (2k)^{n - s} ),
+  !     O( (k)^{n - s} ),
   ! where "k" is the number of unique direction vectors, "n" is the
   ! total number of direction vectors, and "s" is the dimension.
   ! 
@@ -35,12 +35,12 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   ! not precomputing the 2^k normal vectors, which require O( 2^k s )
   ! space in [1].
   ! 
-  ! 
   ! [1] Kobbelt, Leif. "Stable Evaluation of Box-Splines." 
   !     Numerical Algorithms 14.4 (1997): 377-382.
   ! 
-  ! The subroutine BOXSPLEV utilizes the LAPACK routines DGECON, DGELS,
-  ! DGESVD, and DGETRF.
+  ! 
+  ! The subroutine BOXSPLEV utilizes LAPACK routines DGECON, DGELS,
+  ! DGESVD, DGETRF, and BLAS routine DGEMM.
   ! 
   ! On input:
   ! 
@@ -71,14 +71,14 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   !
   !    Tens digit T:
   !      0  Improper usage.
-  !      1  Error computing box-spline.                               
-  !      2  Error computing an orthogonal vector.                     
-  !      3  Error computing a minimum norm representation.            
-  !      4  Error computing a matrix rank.                            
-  !      5  Error computing a matrix determinant.                     
-  !      6  Error computing the reciprocal condition number of matrix.
-  !      7  Error finding nonzero entries in an array.                
-  !      8  Error preparing memory.                                   
+  !      1  Error computing box-spline.
+  !      2  Error computing a minimum norm representation of direction vectors.
+  !      3  Error copying direction vectors with nonzero multiplicity.
+  !      4  Error computing an orthogonal vector.
+  !      5  Error computing the reciprocal condition number of matrix.
+  !      6  Error computing a matrix rank.                            
+  !      7  Error computing a matrix determinant.                     
+  !      8  Error preparing memory.
   ! 
   !    Units digit U, for T = 0:
   !      1  Mismatched dimension, SIZE(DVEC_MULTS) .NE. SIZE(DVECS,2).
@@ -118,27 +118,28 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: EVAL_PTS
   REAL(KIND=R8), INTENT(OUT), DIMENSION(:)   :: BOX_EVALS
   INTEGER,       INTENT(OUT)                 :: ERROR
-  ! Single-usage recursion variables and global variables.
-  INTEGER :: DIM, NUM_DVECS, NUM_PTS, DEPTH, INFO, IDX_1, IDX_2
-  INTEGER,       DIMENSION(SIZE(UNIQUE_DVECS,2),SIZE(UNIQUE_DVECS,2))  :: IDENTITY
-  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,2),SIZE(UNIQUE_DVECS,2))  :: ORTHO_MIN_WORK
-  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,1),SIZE(UNIQUE_DVECS,1))  :: TRANS_DVECS
-  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,1))                       :: SING_VALS
+  ! Reusable recursion variables and global variables.
+  INTEGER :: DIM, NUM_DVECS, NUM_PTS, DEPTH, INFO
+  REAL(KIND=R8) :: POSITION
   REAL(KIND=R8), PARAMETER :: SQRTEPS = SQRT(EPSILON(1.0_R8))
   REAL(KIND=R8), PARAMETER :: ONE  = 1.0_R8
   REAL(KIND=R8), PARAMETER :: ZERO = 0.0_R8
-  ! Recursion variables for evaluating box-spline. Last dimension is depth.
+  INTEGER,       DIMENSION(SIZE(UNIQUE_DVECS,2),  SIZE(UNIQUE_DVECS,2)) :: IDENTITY
+  INTEGER,       DIMENSION(SIZE(UNIQUE_DVECS,1),  SIZE(UNIQUE_DVECS,1)) :: DET_WORK
+  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,2),  SIZE(UNIQUE_DVECS,2)) :: ORTHO_MIN_WORK
+  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,1)-1,SIZE(UNIQUE_DVECS,1)) :: TRANS_DVECS
+  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,1))                        :: SING_VALS
+  REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE :: TEMP_EVAL_PTS
+  REAL(KIND=R8), DIMENSION(:),   ALLOCATABLE :: PT_SHIFT, PT_SHIFT_R, NORMAL_VECTOR, LAPACK_WORK
+  INTEGER,       DIMENSION(:),   ALLOCATABLE :: REMAINING_DVECS, NONZERO_DVECS
+  ! Unique recursion variables for evaluating box-spline. Last dimension is depth.
   REAL(KIND=R8), DIMENSION(:,:,:), ALLOCATABLE :: DVECS
   INTEGER,       DIMENSION(:,:),   ALLOCATABLE :: LOC
   INTEGER,       DIMENSION(:,:),   ALLOCATABLE :: MULTS
-  real(KIND=R8), DIMENSION(:,:),   ALLOCATABLE :: EVALS_AT_PTS
+  REAL(KIND=R8), DIMENSION(:,:),   ALLOCATABLE :: EVALS_AT_PTS
   REAL(KIND=R8), DIMENSION(:,:,:), ALLOCATABLE :: SHIFTED_EVAL_PTS
-  ! Single-usage variables for evaluating the box-spline.
-  REAL(KIND=R8) :: POSITION, TOL
-  REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE :: TEMP_EVAL_PTS
-  REAL(KIND=R8), DIMENSION(:),   ALLOCATABLE :: PT_SHIFT, PT_SHIFT_R, NORMAL_VECTOR
-  REAL(KIND=R8), DIMENSION(:),   ALLOCATABLE :: LAPACK_WORK
-  INTEGER,       DIMENSION(:),   ALLOCATABLE :: REMAINING_DVECS, NONZERO_DVECS
+  ! Local variables for preparation.
+  INTEGER :: IDX_1, IDX_2
 
   ! Initialize error and info flags.
   ERROR = 0; INFO = 0; 
@@ -147,7 +148,6 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   DIM       = SIZE(UNIQUE_DVECS, 1)
   NUM_DVECS = SIZE(UNIQUE_DVECS, 2)
   NUM_PTS   = SIZE(EVAL_PTS, 2)
-  TOL = EPSILON(0._R8) * SIZE(SING_VALS) ! <- Compute tolerance for considering a singular value '0'
   ! Check for usage errors (dimension mismatches, invalid multiplicity)
   IF (SIZE(DVEC_MULTS)   .NE. NUM_DVECS) THEN; ERROR = 1; RETURN; END IF
   IF (SIZE(EVAL_PTS,1)   .NE. DIM)       THEN; ERROR = 2; RETURN; END IF
@@ -190,7 +190,7 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   ! Recursively evaluate the box-spline.
   CALL EVALUATE_BOX_SPLINE()
   IF (ERROR .NE. 0) THEN; CALL FREE_MEMORY(); RETURN; END IF
-  BOX_EVALS(:) = EVALS_AT_PTS(1:SIZE(BOX_EVALS),1)
+  BOX_EVALS(:) = EVALS_AT_PTS(:,1)
 CONTAINS
 
   ! ==================================================================
@@ -309,15 +309,15 @@ CONTAINS
        END DO compute_shift_4
        ! Check evaluation point locations against all remaining direction vectors.
        DO IDX_1 = 1, DIM
-          ! Swap "current" direction with the last direction
-          TRANS_DVECS = TRANSPOSE(DVECS(:,:DIM,DEPTH+1))
-          TRANS_DVECS(IDX_1,:) = DVECS(:,DIM,DEPTH+1)
-          ! Calculate the orthogonal to the remaining direction vectors.
-          CALL MATRIX_ORTHOGONAL(TRANS_DVECS(:DIM-1,:), NORMAL_VECTOR)
+          ! Get the active set of direction vectors (exluding current vector).
+          TRANS_DVECS(:,:) = TRANSPOSE(DVECS(:,:DIM-1,DEPTH+1))
+          IF (IDX_1 .LT. DIM) TRANS_DVECS(IDX_1,:) = DVECS(:,DIM,DEPTH+1)
+          ! Calculate the orthogonal vector to the remaining direction vectors.
+          CALL COMPUTE_ORTHOGONAL(TRANS_DVECS, NORMAL_VECTOR)
           IF (ERROR .NE. 0) RETURN
           ! Compute shifted position (relative to normal vector).
           POSITION = DOT_PRODUCT(DVECS(:,IDX_1,DEPTH+1), NORMAL_VECTOR(:))
-          ! Compute shifted evaluation locations. (NUM_PTS, DIM) x (DIM, 1)
+          ! Compute shifted evaluation locations. (1, DIM) x (DIM, NUM_PTS)
           EVALS_AT_PTS(:,DEPTH+1) = MATMUL(NORMAL_VECTOR, SHIFTED_EVAL_PTS(:DIM,:,DEPTH+1))
           ! Identify those points that are outside of this box (0-side).
           IF (POSITION .GT. 0) THEN
@@ -345,53 +345,13 @@ CONTAINS
     DEPTH = DEPTH - 1
   END SUBROUTINE EVALUATE_BOX_SPLINE
 
-  !===============================================================
-  !             Mathematical Convenience Operations               
-  !===============================================================
-
-  ! ==================================================================
-  SUBROUTINE MATRIX_ORTHOGONAL(A, ORTHOGONAL)
-    ! 2) MATRIX_ORTHOGONAL
-    ! 
-    !   Given a matrix A of row vectors, compute a vector orthogonal to
-    !   the row vectors in A and store it in ORTHOGONAL using DGESVD.
-    !   If there are any singular values [value < SQRT(epsilon)],
-    !   the vector associated with the largest such singular values is
-    !   returned.
-    ! 
-    ! Input:
-    !   A(:,:) -- Real dense matrix.
-    ! 
-    ! Output:
-    !   ORTHOGONAL(:) -- Real vector orthogonal to given matrix.
-    ! 
-    REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:)       :: A
-    REAL(KIND=R8), INTENT(OUT), DIMENSION(SIZE(A,2)) :: ORTHOGONAL
-    ! Unused DGESVD parameter
-    REAL(KIND=R8), DIMENSION(1) :: U
-
-    ! Use the SVD to get the orthogonal vectors.
-    CALL DGESVD('N', 'A', SIZE(A,1), SIZE(A,2), A, SIZE(A,1), &
-         SING_VALS, U, SIZE(U), ORTHO_MIN_WORK(:SIZE(A,2),:SIZE(A,2)), &
-         SIZE(A,2), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 23; RETURN; END IF
-
-    ORTHOGONAL(:) = 0._R8
-    ! Find a vector in the orthonormal basis for the null
-    ! space of A (a vector with an extremely small singular value).
-    IF (SING_VALS(SIZE(SING_VALS)-1) .LE. TOL) THEN
-       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(SING_VALS)-1,:SIZE(A,2))
-    ! If no orthogonal vector was found and the matrix does not contain
-    ! enough vectors to span the space, use the first vector in VT at
-    ! (RANK(A) + 1).
-    ELSE IF (SIZE(A,2) > SIZE(SING_VALS)-1) THEN
-       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(SING_VALS),:SIZE(A,2))
-    END IF
-  END SUBROUTINE MATRIX_ORTHOGONAL
+  !===================================================================
+  !             Supporting code for computing box-spline              
+  !===================================================================
 
   ! ==================================================================
   SUBROUTINE MAKE_DVECS_MIN_NORM()
-    ! 3) MAKE_DVECS_MIN_NORM
+    ! 2) MAKE_DVECS_MIN_NORM
     ! 
     !   Compute the minimum norm representation of 'MATRIX' and store
     !   it in 'MIN_NORM', use DGELS to find the least squares
@@ -406,116 +366,26 @@ CONTAINS
          DVECS(:,:NUM_DVECS,DEPTH+1), SIZE(DVECS,1), ORTHO_MIN_WORK, &
          SIZE(ORTHO_MIN_WORK,1), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
     ! Check for error.
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 32; RETURN; END IF
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 22; RETURN; END IF
     ! Extract the minimum norm representation from the output of DGELS.
     DVECS(:,:NUM_DVECS,DEPTH+1) = ORTHO_MIN_WORK(:SIZE(DVECS,1),:NUM_DVECS)
   END SUBROUTINE MAKE_DVECS_MIN_NORM
 
   ! ==================================================================
-  FUNCTION MATRIX_RANK(MATRIX)
-    ! 4) MATRIX_RANK
-    ! 
-    !   Get the rank of the provided matrix using the SVD.
-    ! 
-    ! Input:
-    !   MATRIX(:,:) -- Real dense matrix.
-    ! 
-    ! Output:
-    !   MATRIX_RANK -- The integer rank of MATRIX.
-    ! 
-    REAL(KIND=R8), INTENT(IN), DIMENSION(:,:) :: MATRIX
-    ! Local variables for computing the orthogonal vector.
-    REAL(KIND=R8), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2)) :: A
-
-    INTEGER :: IDX, MATRIX_RANK
-    ! Unused DGESVD parameters.
-    REAL(KIND=R8), DIMENSION(1) :: U, VT
-
-    A = MATRIX
-    ! Use the SVD to get the orthogonal vectors.
-    CALL DGESVD('N', 'N', SIZE(A,1), SIZE(A,2), A, SIZE(A,1), SING_VALS,&
-         U, SIZE(U), VT, SIZE(VT), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 43; RETURN; END IF
-
-    MATRIX_RANK = MIN(SIZE(A,2), SIZE(A,1))
-    ! Find the first singular value in the orthonormal basis for the null
-    ! space of A (a vector with an extremely small singular value)
-    find_null : DO IDX = 1, SIZE(A,2)
-       IF (SING_VALS(IDX) .LE. TOL) THEN
-          MATRIX_RANK = IDX - 1
-          EXIT find_null
-       END IF
-    END DO find_null
-  END FUNCTION MATRIX_RANK
-
-  ! ==================================================================
-  FUNCTION MATRIX_DET(MATRIX)
-    ! 5) MATRIX_DET
-    ! 
-    !   Compute the determinant of a matrix without modifying it
-    !   using the LU decomposition (and a copy).
-    ! 
-    ! Input:
-    !   MATRIX(:,:) -- Real dense matrix.
-    ! 
-    ! Output:
-    !   MATRIX_DET -- The real-valued determinant of MATRIX.
-    ! 
-    REAL(KIND=R8), INTENT(IN), DIMENSION(:,:) :: MATRIX
-    REAL(KIND=R8) :: MATRIX_DET
-    ! Local variable
-    REAL(KIND=R8), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2)) :: M
-    INTEGER, DIMENSION(MIN(SIZE(MATRIX,1), SIZE(MATRIX,2))) :: IPIV
-    INTEGER :: IDX
-    ! Copy into a local matrix.
-    M = MATRIX
-    ! Do the LU decomposition.
-    CALL DGETRF(SIZE(M,1), SIZE(M,2), M, SIZE(M,1), IPIV, INFO)
-
-    IF (INFO .NE. 0) THEN
-       MATRIX_DET = 1._R8
-       ERROR = 100*INFO + 54
-       RETURN
-    END IF
-
-    ! Compute the determinant (product of diagonal of U).
-    MATRIX_DET = 1.
-    DO IDX = 1, MIN(SIZE(M,1), SIZE(M,2))
-       MATRIX_DET = MATRIX_DET * M(IDX,IDX)
-    END DO
-  END FUNCTION MATRIX_DET
-
-  ! ==================================================================
-  FUNCTION MATRIX_CONDITION_INV(MATRIX) RESULT(RCOND)
-    ! 6) MATRIX_CONDITION_INV
-    ! 
-    ! Compute the condition number (for testing near rank deficiency)
-    ! using DGECON (which computes 1 / CONDITION).
-    ! 
-    ! Input:
-    !   MATRIX(:,:) -- Real dense matrix.
-    ! 
-    ! Output:
-    !   RCOND -- Real value corresponding to the reciprocal of the
-    !            condition number of the provided matrix.
-    REAL(KIND=R8), INTENT(IN), DIMENSION(:,:) :: MATRIX
-    REAL(KIND=R8) :: RCOND
-    ! Local arrays for work.
-    REAL(KIND=R8), DIMENSION(4*SIZE(MATRIX,2)) :: WORK
-    INTEGER,       DIMENSION(  SIZE(MATRIX,2)) :: IWORK
-    ! Use LAPACK
-    CALL DGECON('I', SIZE(MATRIX,2), MATRIX, SIZE(MATRIX,1),&
-         SUM(ABS(MATRIX)), RCOND, WORK, IWORK, INFO)
-    ! Store output of 'info' flag.
-    IF (INFO .NE. 0) ERROR = 100 * INFO + 65
-  END FUNCTION MATRIX_CONDITION_INV
-
-  ! ==================================================================
   SUBROUTINE PACK_DVECS(MULTS, SRCE_DVECS, DEST_DVECS)
-    ! Given multiplicities, the source direction vectors, and the
-    ! storage location for the remaining direction vectors, pack all
-    ! of the nonzero source dvecs into the output dvecs. Update global
-    ! variable "NUM_DVECS" in the process.
+    ! 3) PACK_DVECS
+    ! 
+    !   Given multiplicities and source direction vectors, pack all
+    !   of the nonzero-multiplicity source direction vectors into the
+    !   storage location provided for remaining direction vectors.
+    !   Update global variable "NUM_DVECS" in the process.
+    ! 
+    ! Inputs:
+    !   MULTS(:)        -- Integer array of multiplicities.
+    !   SRCE_DVECS(:,:) -- Real dense matrix of (source) direction
+    !                      vectors.
+    !   DEST_DVECS(:,:) -- Real dense matrix for storing direction
+    !                      vectors.
     ! 
     INTEGER,       INTENT(IN),  DIMENSION(:)   :: MULTS
     REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: SRCE_DVECS
@@ -531,44 +401,170 @@ CONTAINS
   END SUBROUTINE PACK_DVECS
 
   ! ==================================================================
+  SUBROUTINE COMPUTE_ORTHOGONAL(A, ORTHOGONAL)
+    ! 4) COMPUTE_ORTHOGONAL
+    ! 
+    !   Given a matrix A of row vectors, compute a vector orthogonal to
+    !   the row vectors in A and store it in ORTHOGONAL using DGESVD.
+    !   If there any near-zero singular values are identified, the
+    !   vector associated with the smallest such singular values is
+    !   returned.
+    ! 
+    ! Input:
+    !   A(:,:) -- Real dense matrix.
+    ! 
+    ! Output:
+    !   ORTHOGONAL(:) -- Real vector orthogonal to given matrix.
+    ! 
+    REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:)       :: A
+    REAL(KIND=R8), INTENT(OUT), DIMENSION(SIZE(A,2)) :: ORTHOGONAL
+    ! Local variables.
+    REAL(KIND=R8) :: TOL
+    REAL(KIND=R8), DIMENSION(1) :: U
+    ! Use the SVD to get the orthogonal vector(s).
+    CALL DGESVD('N', 'A', SIZE(A,1), SIZE(A,2), A, SIZE(A,1), &
+         SING_VALS, U, SIZE(U), ORTHO_MIN_WORK(:SIZE(A,2),:SIZE(A,2)), &
+         SIZE(A,2), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 43; RETURN; END IF
+    ! Compute the appropriate tolerance based on calculations.
+    TOL = EPSILON(1._R8) * MAXVAL(SHAPE(A)) * MAXVAL(SING_VALS)
+    ORTHOGONAL(:) = 0._R8
+    ! Check for a vector in the orthonormal basis for the null
+    ! space of A (a vector with an extremely small singular value).
+    IF (SING_VALS(SIZE(SING_VALS)-1) .LE. TOL) THEN
+       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(SING_VALS)-1,:SIZE(A,2))
+    ! If no orthogonal vector was found and the matrix does not contain
+    ! enough vectors to span the space, use the first vector in VT at
+    ! (RANK(A) + 1).
+    ELSE IF (SIZE(A,2) > SIZE(SING_VALS)-1) THEN
+       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(SING_VALS),:SIZE(A,2))
+    END IF
+  END SUBROUTINE COMPUTE_ORTHOGONAL
+
+  ! ==================================================================
+  FUNCTION MATRIX_CONDITION_INV(MATRIX) RESULT(RCOND)
+    ! 5) MATRIX_CONDITION_INV
+    ! 
+    !   Compute the condition number (for testing near rank deficiency)
+    !   using DGECON (which computes 1 / CONDITION).
+    ! 
+    ! Input:
+    !   MATRIX(:,:) -- Real dense matrix.
+    ! 
+    ! Output:
+    !   RCOND -- Real value corresponding to the reciprocal of the
+    !            condition number of the provided matrix.
+    REAL(KIND=R8), INTENT(IN), DIMENSION(:,:) :: MATRIX
+    REAL(KIND=R8) :: RCOND
+    ! Local arrays for work.
+    REAL(KIND=R8), DIMENSION(4*SIZE(MATRIX,2)) :: WORK
+    INTEGER,       DIMENSION(  SIZE(MATRIX,2)) :: IWORK
+    ! Use LAPACK to compue recirpocal of matrix codition number.
+    CALL DGECON('I', SIZE(MATRIX,2), MATRIX, SIZE(MATRIX,1),&
+         SUM(ABS(MATRIX)), RCOND, WORK, IWORK, INFO)
+    ! Check for errors during exeuction.
+    IF (INFO .NE. 0) ERROR = 100 * INFO + 55
+  END FUNCTION MATRIX_CONDITION_INV
+
+  ! ==================================================================
+  FUNCTION MATRIX_RANK(MATRIX)
+    ! 6) MATRIX_RANK
+    ! 
+    !   Get the rank of the provided matrix using the SVD.
+    ! 
+    ! Input:
+    !   MATRIX(:,:) -- Real dense matrix.
+    ! 
+    ! Output:
+    !   MATRIX_RANK -- The integer rank of MATRIX.
+    ! 
+    REAL(KIND=R8), INTENT(IN), DIMENSION(:,:) :: MATRIX
+    ! Local variables for computing the orthogonal vector.
+    INTEGER :: IDX, MATRIX_RANK
+    REAL(KIND=R8) :: TOL
+    ! Unused DGESVD parameters.
+    REAL(KIND=R8), DIMENSION(1) :: U, VT
+    ! Early return if possible, when we know the rank must be low.
+    IF (SIZE(MATRIX,1) .LT. SIZE(SING_VALS)) THEN; MATRIX_RANK = 0; RETURN; END IF
+    ! Use the SVD to get the orthogonal vectors.
+    CALL DGESVD('N', 'N', SIZE(MATRIX,1), SIZE(MATRIX,2), MATRIX, SIZE(MATRIX,1), SING_VALS,&
+         U, SIZE(U), VT, SIZE(VT), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 63; RETURN; END IF
+    ! Compute a reasonable singular value tolerance based on expected
+    ! numerical error ["Numerical Recipes" by W. H. Press et al., Matlab].
+    TOL = EPSILON(1._R8) * MAXVAL(SHAPE(MATRIX)) * MAXVAL(SING_VALS)
+    ! Find the first near-0 singular value starting from smallest
+    ! value, assumes high rank is more likely than low rank.
+    find_null : DO IDX = SIZE(SING_VALS), 1, -1
+       IF (SING_VALS(IDX) .GT. TOL) THEN
+          MATRIX_RANK = IDX
+          EXIT find_null
+       END IF
+    END DO find_null
+  END FUNCTION MATRIX_RANK
+
+  ! ==================================================================
+  FUNCTION MATRIX_DET(MATRIX)
+    ! 7) MATRIX_DET
+    ! 
+    !   Compute the determinant of a matrix using the LU decomposition.
+    ! 
+    ! Input:
+    !   MATRIX(:,:) -- Real dense matrix.
+    ! 
+    ! Output:
+    !   MATRIX_DET -- The real-valued determinant of MATRIX.
+    ! 
+    REAL(KIND=R8), INTENT(IN), DIMENSION(:,:) :: MATRIX
+    REAL(KIND=R8) :: MATRIX_DET
+    INTEGER :: IDX
+    ! Do the LU decomposition.
+    CALL DGETRF(SIZE(MATRIX,1), SIZE(MATRIX,2), MATRIX, SIZE(MATRIX,1), DET_WORK, INFO)
+    ! Check for errors.
+    IF (INFO .NE. 0) THEN
+       MATRIX_DET = 1._R8 ! <- Set a value that will not break caller.
+       ERROR = 100*INFO + 74
+       RETURN
+    END IF
+    ! Compute the determinant (product of diagonal of U).
+    MATRIX_DET = 1.
+    DO IDX = 1, MIN(SIZE(MATRIX,1), SIZE(MATRIX,2))
+       MATRIX_DET = MATRIX_DET * MATRIX(IDX,IDX)
+    END DO
+  END FUNCTION MATRIX_DET
+
+  ! ==================================================================
   SUBROUTINE RESERVE_MEMORY()
     ! 8) RESERVE_MEMORY
     ! 
-    ! Return an allocated real array that has a size equal to the
-    ! maximum requested LAPACK work array size across all routines
-    ! that will be executed in the evaluation of a box-spline.
-    ! 
-    ! Output:
-    !   WORK -- Real array with size large enough to accommodate all
-    !           LAPACK subroutines that will be used to evaluated a
-    !           box-spline given the dimension and number of vectors.
+    !   Allocate a real array that has a size equal to the
+    !   maximum requested LAPACK work array size across all routines
+    !   that will be executed in the evaluation of a box-spline.
+    !   Allocate all global arrays for recursive evaluation of box-spline.
     ! 
     REAL(KIND=R8), DIMENSION(:), ALLOCATABLE :: WORK
     REAL(KIND=R8), DIMENSION(3) :: SIZES
     ! Initialize all sizes to 0.
     SIZES = 0._R8
-    ! Retrieve expected size from each of the LAPACK routines.
-
-    ! Query the size of the work array for DGESVD. (MATRIX_ORTHOGONAL)
-    CALL DGESVD('N', 'A', NUM_DVECS, DIM, LAPACK_WORK, NUM_DVECS, &
-         LAPACK_WORK, LAPACK_WORK, 1, LAPACK_WORK, NUM_DVECS, &
-         SIZES(1:), -1, INFO)
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
-
-    ! Query the size of the work array to (MATRIX_RANK).
-    CALL DGESVD('N', 'N', NUM_DVECS, DIM, LAPACK_WORK, NUM_DVECS, &
-         LAPACK_WORK, LAPACK_WORK, 1, LAPACK_WORK, 1, SIZES(2:), -1, INFO)
-    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
+    ! Compute storage needed by each of the LAPACK routines.
 
     ! Get the size of the work array for DGELS (MAKE_DVECS_MIN_NORM).
     CALL DGELS('T', DIM, NUM_DVECS, NUM_DVECS, LAPACK_WORK, DIM, &
          LAPACK_WORK, NUM_DVECS, SIZES(3:), -1, INFO)
     IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
-
+    ! Query the size of the work array to (MATRIX_RANK).
+    CALL DGESVD('N', 'N', NUM_DVECS, DIM, LAPACK_WORK, NUM_DVECS, &
+         LAPACK_WORK, LAPACK_WORK, 1, LAPACK_WORK, 1, SIZES(2:), -1, INFO)
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
+    ! Query the size of the work array for DGESVD. (COMPUTE_ORTHOGONAL)
+    CALL DGESVD('N', 'A', NUM_DVECS, DIM, LAPACK_WORK, NUM_DVECS, &
+         LAPACK_WORK, LAPACK_WORK, 1, LAPACK_WORK, NUM_DVECS, &
+         SIZES(1:), -1, INFO)
+    IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 81; RETURN; END IF
     ! Allocate the work array by rounding the max value in 'SIZES'.
     ALLOCATE(LAPACK_WORK(1:INT(.5_R8 + MAXVAL(SIZES))))
 
-    ! Allocate various global variables for working.
+    ! Allocate various global variables.
     DEPTH = SUM(DVEC_MULTS) - DIM + 1 ! <- Max recursion depth.
     ALLOCATE(&
          SHIFTED_EVAL_PTS (NUM_DVECS, NUM_PTS,   DEPTH+1), &
@@ -583,12 +579,14 @@ CONTAINS
          NORMAL_VECTOR    (DIM),                           &
          PT_SHIFT         (DIM),                           &
          )
-
   END SUBROUTINE RESERVE_MEMORY
 
   ! ==================================================================
   SUBROUTINE FREE_MEMORY()
-    ! Deallocate storage reserved for box-spline evaluation.
+    ! 9) FREE_MEMORY
+    ! 
+    !   Deallocate storage reserved for box-spline evaluation.
+    ! 
     IF (ALLOCATED(LAPACK_WORK))      DEALLOCATE(LAPACK_WORK)
     IF (ALLOCATED(SHIFTED_EVAL_PTS)) DEALLOCATE(SHIFTED_EVAL_PTS)
     IF (ALLOCATED(DVECS))            DEALLOCATE(DVECS)
@@ -605,4 +603,3 @@ CONTAINS
 
 
 END SUBROUTINE BOXSPLEV
-

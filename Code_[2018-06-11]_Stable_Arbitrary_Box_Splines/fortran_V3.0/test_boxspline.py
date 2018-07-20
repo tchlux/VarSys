@@ -15,6 +15,7 @@ if TEST: PLOT = False
 # ====================================================================
 
 mult = (2 if (TIME or TEST) else 1)
+mult = 2
 
 # # Bi-linear / bi-quadratic / bi-cubic function
 # dvecs = np.array([[1.,0.],
@@ -85,7 +86,7 @@ if PLOT:
     # Create the plot
     p.add_func("Box Spline", f, x_min_max, y_min_max, vectorized=True,
                use_gradient=True, plot_points=4000)
-    p.show(z_range=[-.05,2.05], file_name="result.html")
+    p.show(z_range=[-.05,2.05], file_name="result.html", show=False)
 
 # ====================================================================
 

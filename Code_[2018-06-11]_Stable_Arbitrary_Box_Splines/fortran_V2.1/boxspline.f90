@@ -480,7 +480,6 @@ CONTAINS
     !   SIZE(WORK) -- Size of the work array
     !   INFO       -- Info message parameter
     IF (INFO .NE. 0) THEN; ERROR = 55; RETURN; END IF
-
     MATRIX_RANK = SIZE(S)
     ! Find the first singular value in the orthonormal basis for the null
     ! space of A (a vector with an extremely small singular value)
