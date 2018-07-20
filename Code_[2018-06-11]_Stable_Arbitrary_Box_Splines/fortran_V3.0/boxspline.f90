@@ -1,5 +1,3 @@
-! - Allocate all necessary storage for vectors and add an integer to
-!   the recursion for "DEPTH" use that to determine storage slices.
 ! - Remove all local variable allocation from all functions and
 !   subroutines
 
@@ -125,10 +123,11 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   REAL(KIND=R8), INTENT(OUT), DIMENSION(:)   :: BOX_EVALS
   INTEGER,       INTENT(OUT)                 :: ERROR
   ! Single-usage recursion variables and global variables.
-  INTEGER :: DIM, NUM_DVECS, NUM_PTS, DEPTH, INFO, IDX, IDX_1, IDX_2
+  INTEGER :: DIM, NUM_DVECS, NUM_PTS, DEPTH, INFO, IDX_1, IDX_2
   INTEGER,       DIMENSION(SIZE(UNIQUE_DVECS,2),SIZE(UNIQUE_DVECS,2))  :: IDENTITY
   REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,2),SIZE(UNIQUE_DVECS,2))  :: ORTHO_MIN_WORK
-  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,1) - 1)                   :: ORTHO_S
+  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,1),SIZE(UNIQUE_DVECS,1))  :: TRANS_DVECS
+  REAL(KIND=R8), DIMENSION(SIZE(UNIQUE_DVECS,1))                       :: SING_VALS
   REAL(KIND=R8), PARAMETER :: SQRTEPS = SQRT(EPSILON(1.0_R8))
   REAL(KIND=R8), PARAMETER :: ONE  = 1.0_R8
   REAL(KIND=R8), PARAMETER :: ZERO = 0.0_R8
@@ -139,7 +138,7 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   real(KIND=R8), DIMENSION(:,:),   ALLOCATABLE :: EVALS_AT_PTS
   REAL(KIND=R8), DIMENSION(:,:,:), ALLOCATABLE :: SHIFTED_EVAL_PTS
   ! Single-usage variables for evaluating the box-spline.
-  REAL(KIND=R8) :: POSITION
+  REAL(KIND=R8) :: POSITION, TOL
   REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE :: TEMP_EVAL_PTS
   REAL(KIND=R8), DIMENSION(:),   ALLOCATABLE :: PT_SHIFT, NORMAL_VECTOR
   REAL(KIND=R8), DIMENSION(:),   ALLOCATABLE :: LAPACK_WORK
@@ -152,6 +151,7 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   DIM       = SIZE(UNIQUE_DVECS, 1)
   NUM_DVECS = SIZE(UNIQUE_DVECS, 2)
   NUM_PTS   = SIZE(EVAL_PTS, 2)
+  TOL = EPSILON(0._R8) * SIZE(SING_VALS) ! <- Compute tolerance for considering a singular value '0'
   ! Check for usage errors (dimension mismatches, invalid multiplicity)
   IF (SIZE(DVEC_MULTS)   .NE. NUM_DVECS) THEN; ERROR = 1; RETURN; END IF
   IF (SIZE(EVAL_PTS,1)   .NE. DIM)       THEN; ERROR = 2; RETURN; END IF
@@ -180,7 +180,7 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   IF (ERROR .NE. 0) THEN; CALL FREE_MEMORY(); RETURN; END IF
   ! Create an identity matrix (for easy matrix-vector multiplication).
   IDENTITY = 0
-  FORALL (IDX = 1:NUM_DVECS) IDENTITY(IDX,IDX) = 1
+  FORALL (IDX_1 = 1:NUM_DVECS) IDENTITY(IDX_1,IDX_1) = 1
   ! Calculate the DVECS for the beginning of box-spline evaluation.
   DEPTH = 0; DVECS(:,:,1) = UNIQUE_DVECS(:,:);
   CALL MAKE_DVECS_MIN_NORM()
@@ -209,9 +209,14 @@ CONTAINS
     INTEGER :: IDX_1, IDX_2, IDX_3, LOCAL_COUNT
     ! Adjust the global variable "DEPTH" to use appropriate memory slices.
     DEPTH = DEPTH + 1
+    PRINT *, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+    PRINT *, "DVECS:            ", DVECS(1,:NUM_DVECS,DEPTH)
+    PRINT *, "                  ", DVECS(2,:NUM_DVECS,DEPTH)
+    PRINT *, "SHIFTED_EVAL_PTS: ", SHIFTED_EVAL_PTS(:NUM_DVECS,1,DEPTH)
+
     ! Recursion case ...
     IF (SUM(MULTS(:,DEPTH)) > DIM) THEN
-       EVALS_AT_PTS(:,DEPTH) = 0_R8
+       EVALS_AT_PTS(:,DEPTH) = 0._R8
        IDX_2 = 1
        ! Sum over all direction vectors.
        DO IDX_1 = 1, SIZE(MULTS,1)
@@ -223,6 +228,7 @@ CONTAINS
              LOC(:,DEPTH+1)     = LOC(:,DEPTH)
              DVECS(:,:,DEPTH+1) = DVECS(:,:,DEPTH) ! Pass the DVECS down
              SHIFTED_EVAL_PTS(:,:,DEPTH+1) = SHIFTED_EVAL_PTS(:,:,DEPTH)
+             PRINT *, "A", DEPTH, NUM_DVECS
              ! Perform recursion with only reduced multiplicity.
              CALL EVALUATE_BOX_SPLINE()
              IF (ERROR .NE. 0) RETURN
@@ -237,6 +243,7 @@ CONTAINS
              END DO compute_shift_1
              ! Update location for next level of recursion.
              LOC(:,DEPTH+1) = LOC(:,DEPTH) + IDENTITY(:,IDX_1) 
+             PRINT *, "B", DEPTH, NUM_DVECS
              CALL EVALUATE_BOX_SPLINE()
              IF (ERROR .NE. 0) RETURN
              EVALS_AT_PTS(:,DEPTH) = EVALS_AT_PTS(:,DEPTH) + &
@@ -244,14 +251,13 @@ CONTAINS
                   (MULTS(IDX_1,DEPTH) - SHIFTED_EVAL_PTS(IDX_2,:,DEPTH))
              IDX_2 = IDX_2 + 1
           ELSE IF (MULTS(IDX_1,DEPTH) .GT. 0) THEN
-             ! Find the next direction vectors (ones with nonzero multiplicities).
-             CALL NONZERO(MULTS(:,DEPTH+1), NONZERO_DVECS)
-             IF (ERROR .NE. 0) RETURN
-             ! Initialize next DVECS to only those active direction vectors.
-             DVECS(:,:NUM_DVECS,DEPTH+1) = UNIQUE_DVECS(:,NONZERO_DVECS(:NUM_DVECS))
-             LOCAL_COUNT = NUM_DVECS
+             ! Get the remaining direction vectors.
+             CALL PACK_DVECS(MULTS(:,DEPTH+1), UNIQUE_DVECS, DVECS(:,:,DEPTH+1))
+             IF (ERROR .NE. 0) RETURN             
              IF (MATRIX_RANK(TRANSPOSE(DVECS(:,:NUM_DVECS,DEPTH+1))) .EQ. DIM) THEN
                 IF (ERROR .NE. 0) RETURN
+                ! Store the number of direction vectors at this level before recursion.
+                LOCAL_COUNT = NUM_DVECS
                 ! Assign location for next recursion level to be unchanged.
                 LOC(:,DEPTH+1) = LOC(:,DEPTH)
                 ! Update Least norm representation of the direction vectors.
@@ -266,6 +272,7 @@ CONTAINS
                 CALL DGEMM('T', 'N', NUM_DVECS, SIZE(EVAL_PTS,2), SIZE(DVECS,1), &
                      ONE, DVECS(:,:NUM_DVECS,DEPTH+1), SIZE(DVECS,1), TEMP_EVAL_PTS, SIZE(EVAL_PTS,1), &
                      ZERO, SHIFTED_EVAL_PTS(:NUM_DVECS,:,DEPTH+1), NUM_DVECS)
+                PRINT *, "C", DEPTH, NUM_DVECS
                 ! Perform recursion with only reduced multiplicity.
                 CALL EVALUATE_BOX_SPLINE()
                 IF (ERROR .NE. 0) RETURN
@@ -283,6 +290,7 @@ CONTAINS
                 CALL DGEMM('T', 'N', NUM_DVECS, SIZE(EVAL_PTS,2), SIZE(DVECS,1), &
                      ONE, DVECS(:,:NUM_DVECS,DEPTH+1), SIZE(DVECS,1), TEMP_EVAL_PTS, SIZE(EVAL_PTS,1), &
                      ZERO, SHIFTED_EVAL_PTS(:NUM_DVECS,:,DEPTH+1), NUM_DVECS)
+                PRINT *, "D", DEPTH, NUM_DVECS
                 ! Perform recursion with transformed set of direction vectors.
                 CALL EVALUATE_BOX_SPLINE()
                 IF (ERROR .NE. 0) RETURN
@@ -299,50 +307,42 @@ CONTAINS
     ELSE
        ! Base case ... compute characteristic function.
        EVALS_AT_PTS(:,DEPTH) = 1_R8
-
-       ! -------------------------------------------------------------
-       ! Get the set of remaining direction vectors
-       CALL NONZERO(MULTS(:,DEPTH), REMAINING_DVECS)
-       ! 
-       ! This should be more efficient. Pack the remaining direction
-       ! vectors into an array (that has them transposed). Then when
-       ! the iterations are performed below, simply cycle out single
-       ! direction vectors at a time.
-       ! -------------------------------------------------------------
-
-       ! Delayed translations (this is what makes the algorithm more stable).
+       ! Pack the unique direction vectors into the memory location
+       ! for the current set of direction vectors (since the 'current'
+       ! are not needed for base case evaluation).
+       CALL PACK_DVECS(MULTS(:,DEPTH), UNIQUE_DVECS, DVECS(:,:,DEPTH+1))
        IF (ERROR .NE. 0) RETURN
+       ! Delayed translations (this is what makes the algorithm more stable).
        PT_SHIFT(:) = MATMUL(UNIQUE_DVECS(:,:), LOC(:,DEPTH))
        compute_shift_4 : DO IDX_1 = 1, NUM_PTS
-          SHIFTED_EVAL_PTS(:DIM,IDX_1,DEPTH) = EVAL_PTS(:,IDX_1) - PT_SHIFT(:)
+          SHIFTED_EVAL_PTS(:DIM,IDX_1,DEPTH+1) = EVAL_PTS(:,IDX_1) - PT_SHIFT(:)
        END DO compute_shift_4
+       PRINT *, ""
+       PRINT *, "BASE CASE"
+       PRINT *, "DVECS: ", DVECS(1,:NUM_DVECS,DEPTH+1)
+       PRINT *, "       ", DVECS(2,:NUM_DVECS,DEPTH+1)
+       PRINT *, "TEMP_PTS: ", SHIFTED_EVAL_PTS(:DIM,:,DEPTH+1)
        ! Check evaluation point locations against all remaining direction vectors.
        DO IDX_1 = 1, DIM
-
-          ! ----------------------------------------------------------
-          ! Identify the only nonzero direction vectors (except 'current').
-          CALL NONZERO(MULTS(:,DEPTH) - IDENTITY(:,REMAINING_DVECS(IDX_1)), &
-               NONZERO_DVECS)
+          PRINT *, "IDX: ", IDX_1
+          ! Swap "current" direction with the last direction
+          TRANS_DVECS = TRANSPOSE(DVECS(:,:DIM,DEPTH+1))
+          TRANS_DVECS(IDX_1,:) = DVECS(:,DIM,DEPTH+1)
+          ! Calculate the orthogonal to the remaining direction vectors.
+          CALL MATRIX_ORTHOGONAL(TRANS_DVECS(:DIM-1,:), NORMAL_VECTOR)
           IF (ERROR .NE. 0) RETURN
-          ! Calculate normal vector to current selection of direction vectors.
-          CALL MATRIX_ORTHOGONAL( &
-               TRANSPOSE(UNIQUE_DVECS(:,NONZERO_DVECS(:NUM_DVECS))), NORMAL_VECTOR)
-          IF (ERROR .NE. 0) RETURN
-          ! 
-          !  This needs to be rewritten to conserve more memory. The
-          !  operation is, find a normal vector to a selection of the
-          !  original direction vectors.
-          ! ----------------------------------------------------------
-
+          PRINT *, "  NORMAL_VECTOR: ", NORMAL_VECTOR
           ! Compute shifted position (relative to normal vector).
-          POSITION = DOT_PRODUCT(UNIQUE_DVECS(:,REMAINING_DVECS(IDX_1)), NORMAL_VECTOR(:))
+          POSITION = DOT_PRODUCT(DVECS(:,IDX_1,DEPTH+1), NORMAL_VECTOR(:))
+          PRINT *, "  POSITION: ", POSITION
           ! Compute shifted evaluation locations. (NUM_PTS, DIM) x (DIM, 1)
-          EVALS_AT_PTS(:,DEPTH+1) = MATMUL(NORMAL_VECTOR, SHIFTED_EVAL_PTS(:DIM,:,DEPTH))
+          EVALS_AT_PTS(:,DEPTH+1) = MATMUL(NORMAL_VECTOR, SHIFTED_EVAL_PTS(:DIM,:,DEPTH+1))
+          PRINT *, "  LOCATIONS (1): ", EVALS_AT_PTS(:,DEPTH+1)
           ! Identify those points that are outside of this box (0-side).
           IF (POSITION .GT. 0) THEN
-             WHERE (EVALS_AT_PTS(:,DEPTH+1) .LT. 0) EVALS_AT_PTS(:,DEPTH) = 0_R8
+             WHERE (EVALS_AT_PTS(:,DEPTH+1) .LT. 0) EVALS_AT_PTS(:,DEPTH) = 0._R8
           ELSE IF (POSITION .LT. 0) THEN
-             WHERE (EVALS_AT_PTS(:,DEPTH+1) .GE. 0) EVALS_AT_PTS(:,DEPTH) = 0_R8
+             WHERE (EVALS_AT_PTS(:,DEPTH+1) .GE. 0) EVALS_AT_PTS(:,DEPTH) = 0._R8
           END IF
           ! Recompute shifted location (other side of box) based on selected direction vector.
           LOC(:,DEPTH+1) = LOC(:,DEPTH) + IDENTITY(:,REMAINING_DVECS(IDX_1))
@@ -351,24 +351,22 @@ CONTAINS
              EVALS_AT_PTS(IDX_2,DEPTH+1) = SUM((EVAL_PTS(:,IDX_2) - PT_SHIFT(:)) * &
                   NORMAL_VECTOR(:))
           END DO compute_shifted_point_2
+          PRINT *, "  LOCATIONS (2): ", EVALS_AT_PTS(:,DEPTH+1)
           ! Identify those shifted points that are outside of this box on REMAINING_DVEC(IDX_1)-side.
           IF (POSITION .GT. 0) THEN
-             WHERE (EVALS_AT_PTS(:,DEPTH+1) .GE. 0) EVALS_AT_PTS(:,DEPTH) = 0_R8
+             WHERE (EVALS_AT_PTS(:,DEPTH+1) .GE. 0) EVALS_AT_PTS(:,DEPTH) = 0._R8
           ELSE IF (POSITION .LT. 0) THEN
-             WHERE (EVALS_AT_PTS(:,DEPTH+1) .LT. 0) EVALS_AT_PTS(:,DEPTH) = 0_R8
+             WHERE (EVALS_AT_PTS(:,DEPTH+1) .LT. 0) EVALS_AT_PTS(:,DEPTH) = 0._R8
           END IF
        END DO
-       ! -------------------------------------------------------------
+       PRINT *, "DIVISOR", ABS(MATRIX_DET(TRANSPOSE(DVECS(:,:DIM,DEPTH+1))))
        ! Normalize evaluations by determinant of box.
-       EVALS_AT_PTS(:,DEPTH) = EVALS_AT_PTS(:,DEPTH) / ABS( &
-            MATRIX_DET(TRANSPOSE(UNIQUE_DVECS(:,REMAINING_DVECS(1:DIM)))) )
+       EVALS_AT_PTS(:,DEPTH) = EVALS_AT_PTS(:,DEPTH) / ABS(MATRIX_DET(TRANSPOSE(DVECS(:,:DIM,DEPTH+1))))
        IF (ERROR .NE. 0) RETURN
-       ! 
-       ! This needs to be cleaned up. We want the determinant of the
-       ! remaining direction vectors. If packed correctly (as
-       ! suggested before), then this operation will be simple.
-       ! -------------------------------------------------------------
     END IF
+    PRINT *, "EVALS_AT_PTS: ", EVALS_AT_PTS(:,DEPTH)
+    PRINT *, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+    ERROR = -1
     DEPTH = DEPTH - 1
   END SUBROUTINE EVALUATE_BOX_SPLINE
 
@@ -394,46 +392,25 @@ CONTAINS
     ! 
     REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:)       :: A
     REAL(KIND=R8), INTENT(OUT), DIMENSION(SIZE(A,2)) :: ORTHOGONAL
-    ! Local variables for computing the orthogonal vector
-    INTEGER :: IDX
-    LOGICAL :: FOUND_ZERO
-    REAL(KIND=R8) :: TOL
     ! Unused DGESVD parameter
     REAL(KIND=R8), DIMENSION(1) :: U
 
     ! Use the SVD to get the orthogonal vectors.
     CALL DGESVD('N', 'A', SIZE(A,1), SIZE(A,2), A, SIZE(A,1), &
-         ORTHO_S, U, SIZE(U), ORTHO_MIN_WORK(:SIZE(A,2),:SIZE(A,2)), &
+         SING_VALS, U, SIZE(U), ORTHO_MIN_WORK(:SIZE(A,2),:SIZE(A,2)), &
          SIZE(A,2), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
-    !   'N'        -- No columns of U are computed
-    !   'A'        -- All N rows of V**T are returned in the array VT
-    !   SIZE(A,1)  -- M, number of rows in A
-    !   SIZE(A,2)  -- N, number of cols in A
-    !   A          -- Inputs matrix A (destroyed during computation)
-    !   SIZE(A,1)  -- Leading dimension of A
-    !   S          -- Container for singular values of A
-    !   U          -- Double precision array for storing U
-    !   SIZE(U,1)  -- Leading dimension of U
-    !   VT         -- Double precision array for storing V^T
-    !   SIZE(VT,1) -- Leading dimension of V^T
-    !   WORK       -- Work array for computing SVD
-    !   SIZE(WORK) -- Size of the work array
-    !   INFO       -- Info message parameter
-
     IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 23; RETURN; END IF
 
     ORTHOGONAL(:) = 0._R8
-    TOL = EPSILON(0._R8) * SIZE(ORTHO_S) ! <- Compute tolerance for considering a singular value '0'
     ! Find a vector in the orthonormal basis for the null
     ! space of A (a vector with an extremely small singular value).
-    IF (ORTHO_S(SIZE(ORTHO_S)) .LE. TOL) THEN
-       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(ORTHO_S),:SIZE(A,2))
-       FOUND_ZERO = .TRUE.
+    IF (SING_VALS(SIZE(SING_VALS)-1) .LE. TOL) THEN
+       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(SING_VALS)-1,:SIZE(A,2))
     ! If no orthogonal vector was found and the matrix does not contain
     ! enough vectors to span the space, use the first vector in VT at
     ! (RANK(A) + 1).
-    ELSE IF ((SIZE(A,2) > SIZE(ORTHO_S)) .AND. (.NOT. FOUND_ZERO))THEN
-       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(ORTHO_S)+1,:SIZE(A,2))
+    ELSE IF (SIZE(A,2) > SIZE(SING_VALS)-1) THEN
+       ORTHOGONAL = ORTHO_MIN_WORK(SIZE(SING_VALS),:SIZE(A,2))
     END IF
   END SUBROUTINE MATRIX_ORTHOGONAL
 
@@ -445,9 +422,9 @@ CONTAINS
     !   it in 'MIN_NORM', use DGELS to find the least squares
     !   solution to the problem (AX = I). This is a more numerically
     !   stable solution to the linear system (A^T A) X = A^T.
-
+    INTEGER :: IDX
     ! Make "ORTHO_MIN_WORK" the identity matrix
-    ORTHO_MIN_WORK(:,:) = 0_R8
+    ORTHO_MIN_WORK(:,:) = 0._R8
     FORALL (IDX = 1:NUM_DVECS) ORTHO_MIN_WORK(IDX,IDX) = 1_R8
     ! Call DGELS for actual solve.
     CALL DGELS('T', SIZE(DVECS,1), NUM_DVECS, SIZE(DVECS,2),&
@@ -471,39 +448,25 @@ CONTAINS
     ! Output:
     !   MATRIX_RANK -- The integer rank of MATRIX.
     ! 
-    REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: MATRIX
+    REAL(KIND=R8), INTENT(IN), DIMENSION(:,:) :: MATRIX
     ! Local variables for computing the orthogonal vector.
-    REAL(KIND=R8), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2))      :: A
-    REAL(KIND=R8), DIMENSION(MIN(SIZE(MATRIX,1),SIZE(MATRIX,2))) :: S
+    REAL(KIND=R8), DIMENSION(SIZE(MATRIX,1),SIZE(MATRIX,2)) :: A
+
     INTEGER :: IDX, MATRIX_RANK
     ! Unused DGESVD parameters.
     REAL(KIND=R8), DIMENSION(1) :: U, VT
 
     A = MATRIX
     ! Use the SVD to get the orthogonal vectors.
-    CALL DGESVD('N','N',SIZE(A,1),SIZE(A,2),A,SIZE(A,1),S,U,SIZE(U), &
-         VT, SIZE(VT), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
-    !   'N'        -- No columns of U are computed
-    !   'N'        -- No vectors in V**T are computed
-    !   SIZE(A,1)  -- M, number of rows in A
-    !   SIZE(A,2)  -- N, number of cols in A
-    !   A          -- Inputs matrix A
-    !   SIZE(A,1)  -- Leading dimension of A
-    !   S          -- Container for singular values of A
-    !   U          -- Double precision array for storing U
-    !   SIZE(U,1)  -- Leading dimension of U
-    !   VT         -- Double precision array for storing V^T
-    !   SIZE(VT)   -- Leading dimension of V^T
-    !   WORK       -- Work array for computing SVD
-    !   SIZE(WORK) -- Size of the work array
-    !   INFO       -- Info message parameter
+    CALL DGESVD('N', 'N', SIZE(A,1), SIZE(A,2), A, SIZE(A,1), SING_VALS,&
+         U, SIZE(U), VT, SIZE(VT), LAPACK_WORK, SIZE(LAPACK_WORK), INFO)
     IF (INFO .NE. 0) THEN; ERROR = 100*INFO + 43; RETURN; END IF
 
-    MATRIX_RANK = SIZE(S)
+    MATRIX_RANK = MIN(SIZE(A,2), SIZE(A,1))
     ! Find the first singular value in the orthonormal basis for the null
     ! space of A (a vector with an extremely small singular value)
-    find_null : DO IDX = 1, SIZE(S)
-       IF (S(IDX) .LE. (EPSILON(U(1)) * MIN(SIZE(A,1),SIZE(A,2)))) THEN
+    find_null : DO IDX = 1, SIZE(A,2)
+       IF (SING_VALS(IDX) .LE. TOL) THEN
           MATRIX_RANK = IDX - 1
           EXIT find_null
        END IF
@@ -535,7 +498,7 @@ CONTAINS
     CALL DGETRF(SIZE(M,1), SIZE(M,2), M, SIZE(M,1), IPIV, INFO)
 
     IF (INFO .NE. 0) THEN
-       MATRIX_DET = 1.
+       MATRIX_DET = 1._R8
        ERROR = 100*INFO + 54
        RETURN
     END IF
@@ -573,34 +536,24 @@ CONTAINS
   END FUNCTION MATRIX_CONDITION_INV
 
   ! ==================================================================
-  SUBROUTINE NONZERO(ARRAY, NE_ZERO)
-    ! 7) NONZERO
+  SUBROUTINE PACK_DVECS(MULTS, SRCE_DVECS, DEST_DVECS)
+    ! Given multiplicities, the source direction vectors, and the
+    ! storage location for the remaining direction vectors, pack all
+    ! of the nonzero source dvecs into the output dvecs. Update global
+    ! variable "NUM_DVECS" in the process.
     ! 
-    ! Return a new array of the indices of 'ARRAY' that contain
-    ! nonzero elements. Set error and return array with 1 if ALL(ARRAY==0).
-    ! 
-    ! Input:
-    !   ARRAY(:)   -- Integer array of numbers.
-    ! 
-    ! Output:
-    !   NE_ZERO(:)    -- Integer array corresponding to those indices of
-    !                    ARRAY that contain nonzero elements.
-    ! 
-    INTEGER, INTENT(IN), DIMENSION(:) :: ARRAY
-    INTEGER, INTENT(OUT), DIMENSION(:) :: NE_ZERO
-    ! Local variables
+    INTEGER,       INTENT(IN),  DIMENSION(:)   :: MULTS
+    REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: SRCE_DVECS
+    REAL(KIND=R8), INTENT(OUT), DIMENSION(:,:) :: DEST_DVECS
     INTEGER :: IDX
-    ! Identify nonzero elements of ARRAY.
-    NE_ZERO = 0
     NUM_DVECS = 0
-    DO IDX = 1, SIZE(ARRAY)
-       IF (ARRAY(IDX) .NE. 0) THEN
+    DO IDX = 1, SIZE(MULTS)
+       IF (MULTS(IDX) .GT. 0) THEN
           NUM_DVECS = NUM_DVECS + 1
-          NE_ZERO(NUM_DVECS) = IDX
+          DEST_DVECS(:,NUM_DVECS) = SRCE_DVECS(:,IDX)
        END IF
     END DO
-    IF (NUM_DVECS .LE. 0) THEN; ERROR = 70; END IF
-  END SUBROUTINE NONZERO
+  END SUBROUTINE PACK_DVECS
 
   ! ==================================================================
   SUBROUTINE RESERVE_MEMORY()
@@ -618,7 +571,7 @@ CONTAINS
     REAL(KIND=R8), DIMENSION(:), ALLOCATABLE :: WORK
     REAL(KIND=R8), DIMENSION(3) :: SIZES
     ! Initialize all sizes to 0.
-    SIZES = 0_R8
+    SIZES = 0._R8
     ! Retrieve expected size from each of the LAPACK routines.
 
     ! Query the size of the work array for DGESVD. (MATRIX_ORTHOGONAL)
@@ -643,11 +596,11 @@ CONTAINS
     ! Allocate various global variables for working.
     DEPTH = SUM(DVEC_MULTS) - DIM + 1 ! <- Max recursion depth.
     ALLOCATE(&
-         SHIFTED_EVAL_PTS (NUM_DVECS, NUM_PTS,   DEPTH), &
-         DVECS            (DIM,       NUM_DVECS, DEPTH),&
+         SHIFTED_EVAL_PTS (NUM_DVECS, NUM_PTS,   DEPTH+1), &
+         DVECS            (DIM,       NUM_DVECS, DEPTH+1),&
+         EVALS_AT_PTS     (NUM_PTS,   DEPTH+1), &
          LOC              (NUM_DVECS, DEPTH+1), &
          MULTS            (NUM_DVECS, DEPTH), &
-         EVALS_AT_PTS     (NUM_PTS,   DEPTH+1), &
          TEMP_EVAL_PTS    (DIM, NUM_PTS), &
          REMAINING_DVECS  (NUM_DVECS), &
          NONZERO_DVECS    (NUM_DVECS), &

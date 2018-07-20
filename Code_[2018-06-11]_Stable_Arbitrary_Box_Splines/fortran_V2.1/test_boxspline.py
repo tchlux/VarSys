@@ -3,24 +3,27 @@ import fmodpy
 boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
     module_link_args=["-lblas", "-llapack", "-lgfortran"])
 
+mult = 1
+
 # dvecs = np.array([[1.,0.],
 #                   [0.,1.]], order="F")
-# mults = np.array([1 ,1 ], order="F", dtype=np.int32) * 2
+# mults = np.array([1 ,1 ], order="F", dtype=np.int32) * mult
 
 # dvecs = np.array([[1.,0.,1.],
-#                   [0.,1.,1.]], order="F")
-# mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * 1
+#                   [0.,1.,1.]], order="F") 
+# mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * mult
 
 dvecs = np.array([[1.,0., 1., 1.],
                   [0.,1.,-1., 1.]], order="F")
-mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
+mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * mult
 
 # ====================================================================
 
 eval_pts = np.meshgrid(list(range(50)), list(range(50)))
 eval_pts = np.vstack((eval_pts[0].flatten(), eval_pts[1].flatten())).T
 eval_pts = np.asarray(eval_pts, order='F', dtype=np.float64)
-# eval_pts = np.asarray([[1.5, .5]], order='F', dtype=np.float64)
+
+eval_pts = np.asarray([np.sum(dvecs*mult,axis=1)/2], order='F', dtype=np.float64)
 
 import time
 start = time.time()
@@ -28,8 +31,8 @@ box_evals, error = boxspline.boxsplev(dvecs, mults, eval_pts)
 total = time.time() - start
 print(box_evals, error)
 print(f" {total:.2e} second evaluation time at {eval_pts.shape[0]} points..")
-print()
-print((58.4973 - 0.00644803) / total) # Matlab execution time minus allocation time.
+# print()
+# print((58.4973 - 0.00644803) / total) # Matlab execution time minus allocation time.
 exit()
 
 # ====================================================================
