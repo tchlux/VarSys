@@ -209,10 +209,6 @@ CONTAINS
     REAL(KIND=REAL64), DIMENSION(SIZE(DVECS,1))    :: PT_SHIFT, NORMAL_VECTOR
     REAL(KIND=REAL64) :: POSITION
     INTEGER :: IDX_1, IDX_2, IDX_3
-    PRINT *, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
-    PRINT *, "DVECS:            ", SUB_DVECS(1,:)
-    PRINT *, "                  ", SUB_DVECS(2,:)
-    PRINT *, "SHIFTED_EVAL_PTS: ", SHIFTED_EVAL_PTS(1,:)
     ! Recursion case ...
     IF (SUM(MULTS) > DIM) THEN
        EVALS_AT_PTS = 0.
@@ -224,7 +220,6 @@ CONTAINS
           NEXT_LOC(:)   = LOC(:)   + IDENTITY(:, IDX_1) ! Track recursion position.
           ! Make recursive calls.
           IF (MULTS(IDX_1) .GT. 1) THEN
-             PRINT *, "A"
              ! Perform recursion with only reduced multiplicity.
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, SUB_DVECS, &
                   SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
@@ -237,7 +232,6 @@ CONTAINS
                 TEMP_SHIFTED_EVAL_PTS(:,IDX_3) = SHIFTED_EVAL_PTS(:,IDX_3) - &
                      SUM(DVECS(:,IDX_1) * SUB_DVECS(:,IDX_3))
              END FORALL compute_shift_1
-             PRINT *, "B"
              CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, SUB_DVECS, &
                   TEMP_SHIFTED_EVAL_PTS, TEMP_EVALS_AT_PTS)
              IF (ERROR .NE. 0) RETURN
@@ -257,7 +251,6 @@ CONTAINS
                 compute_shift_2 : FORALL (IDX_3 = 1:DIM)
                    TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SUM(LOC * DVECS(IDX_3,:))
                 END FORALL compute_shift_2
-                PRINT *, "C"
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
                 IF (ERROR .NE. 0) RETURN
@@ -267,7 +260,6 @@ CONTAINS
                 compute_shift_3 : FORALL (IDX_3 = 1:DIM)
                    TEMP_EVAL_PTS(:,IDX_3) = EVAL_PTS(:,IDX_3) - SUM(NEXT_LOC * DVECS(IDX_3,:))
                 END FORALL compute_shift_3
-                PRINT *, "D"
                 CALL EVALUATE_BOX_SPLINE(NEXT_MULTS, NEXT_LOC, NEXT_DVECS,&
                      MATMUL(TEMP_EVAL_PTS, NEXT_DVECS), TEMP_EVALS_AT_PTS)
                 IF (ERROR .NE. 0) RETURN
@@ -288,27 +280,18 @@ CONTAINS
        compute_shift_4 : FORALL (IDX_1 = 1:DIM)
           TEMP_EVAL_PTS(:,IDX_1) = EVAL_PTS(:,IDX_1) - SUM(LOC * DVECS(IDX_1,:))
        END FORALL compute_shift_4
-       PRINT *, ""
-       PRINT *, "BASE CASE"
-       PRINT *, "DVECS: ", DVECS(1,REMAINING_DVECS)
-       PRINT *, "       ", DVECS(2,REMAINING_DVECS)
-       PRINT *, "TEMP_PTS: ", TEMP_EVAL_PTS(:,:)
        ! Check against all *precomputed* hyperplanes (also contributes to stability).
        DO IDX_1 = 1, DIM
-          PRINT *, "IDX: ", IDX_1
           ! Calculate normal vector to current hyperplane.
           CALL MATRIX_ORTHOGONAL(TRANSPOSE(DVECS(:, &
                NONZERO(MULTS - IDENTITY(:,REMAINING_DVECS(IDX_1))))), &
                NORMAL_VECTOR)
-          PRINT *, "  NORMAL_VECTOR: ", NORMAL_VECTOR
           ! Compute shifted position (relative to normal ector).
           POSITION = SUM(DVECS(:,REMAINING_DVECS(IDX_1)) * NORMAL_VECTOR(:))
-          PRINT *, "  POSITION: ", POSITION
           ! Compute shifted evaluation locations. (NUM_PTS, DIM) x (DIM, 1)
           compute_shifted_point_1 : FORALL (IDX_2 = 1:NUM_PTS)
              LOCATIONS(IDX_2) = SUM(TEMP_EVAL_PTS(IDX_2,:) * NORMAL_VECTOR(:))
           END FORALL compute_shifted_point_1
-          PRINT *, "  LOCATIONS (1): ", LOCATIONS
           ! Identify those points that are outside of this box (0-side).
           IF (POSITION .GT. 0) THEN
              WHERE (LOCATIONS .LT. 0) EVALS_AT_PTS = 0.
@@ -324,7 +307,6 @@ CONTAINS
              LOCATIONS(IDX_2) = SUM((EVAL_PTS(IDX_2,:) - PT_SHIFT) * &
                   NORMAL_VECTOR(:))
           END FORALL compute_shifted_point_2
-          PRINT *, "  LOCATIONS (2): ", LOCATIONS
           ! Identify those shifted points that are outside of this box (DVEC-side).
           IF (POSITION .GT. 0) THEN
              WHERE (LOCATIONS .GE. 0) EVALS_AT_PTS = 0.
@@ -332,18 +314,11 @@ CONTAINS
              WHERE (LOCATIONS .LT. 0) EVALS_AT_PTS = 0.
           END IF
        END DO
-       PRINT *, "TRANS_DVECS: ", DVECS(1,REMAINING_DVECS(1:DIM))
-       PRINT *, "             ", DVECS(2,REMAINING_DVECS(1:DIM))
-       PRINT *, "DIVISOR", ABS( &
-            MATRIX_DET(TRANSPOSE(DVECS(:,REMAINING_DVECS(1:DIM)))) )
        ! Normalize evaluations by determinant of box.
        EVALS_AT_PTS = EVALS_AT_PTS / ABS( &
             MATRIX_DET(TRANSPOSE(DVECS(:,REMAINING_DVECS(1:DIM)))) )
        IF (ERROR .NE. 0) RETURN
     END IF
-    PRINT *, "EVALS_AT_PTS: ", EVALS_AT_PTS(:)
-    PRINT *, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-    ERROR = -1
   END SUBROUTINE EVALUATE_BOX_SPLINE
 
   !===============================================================

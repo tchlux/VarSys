@@ -4,8 +4,8 @@ boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
     module_link_args=["-lblas", "-llapack", "-lgfortran"])
 
 # Control flot logic
-TEST = True
-TIME = False
+TEST = False
+TIME = True
 PLOT = not TIME
 
 # Turn off plotting and timing if testing is being done
@@ -15,7 +15,6 @@ if TEST: PLOT = False
 # ====================================================================
 
 mult = (2 if (TIME or TEST) else 1)
-mult = 1
 
 # # Bi-linear / bi-quadratic / bi-cubic function
 # dvecs = np.array([[1.,0.],
@@ -37,7 +36,6 @@ mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * mult
 if (TIME or TEST):
     if (TEST):
         eval_pts = np.asarray(np.asarray([np.sum(dvecs*mult,axis=1)/2]).T, order='F', dtype=np.float64)
-        print(eval_pts)
     else:
         eval_pts = np.meshgrid(list(range(50)), list(range(50)))
         eval_pts = np.vstack((eval_pts[0].flatten(), eval_pts[1].flatten())).T
