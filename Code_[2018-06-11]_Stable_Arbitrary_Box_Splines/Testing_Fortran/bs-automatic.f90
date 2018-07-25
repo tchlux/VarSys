@@ -120,8 +120,7 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   INTEGER,       INTENT(OUT)                 :: ERROR
   ! Reusable recursion variables and global variables.
   INTEGER :: DIM, NUM_DVECS, NUM_PTS, DEPTH, INFO
-  REAL(KIND=R8) :: POSITION
-  REAL(KIND=R8), PARAMETER :: SQRTEPS = SQRT(EPSILON(1.0_R8))
+  REAL(KIND=R8) :: POSITION, SQRTEPS
   REAL(KIND=R8), PARAMETER :: ONE  = 1.0_R8
   REAL(KIND=R8), PARAMETER :: ZERO = 0.0_R8
   INTEGER,       PARAMETER :: BLOCK_SIZE = 32
@@ -148,6 +147,7 @@ SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   ! Local variables for preparation.
   INTEGER :: IDX_1, IDX_2
 
+  SQRTEPS = SQRT(EPSILON(1.0_R8))
   ! Initialize error and info flags.
   ERROR = 0; INFO = 0; 
   ! Initialize parameters 

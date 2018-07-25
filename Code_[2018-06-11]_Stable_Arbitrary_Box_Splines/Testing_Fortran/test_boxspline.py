@@ -2,6 +2,9 @@ import numpy as np
 import sys, subprocess
 
 
+# It's happy hour time, we need to leave, this is out of
+# hand. (Handle?, grey hair, tanned skin)
+
 
 # Execute a blocking command with a subprocess, on completion provide
 # the return code, stdout as string, and stderr as string. This should
@@ -50,7 +53,8 @@ for mult in multiplicities:
         for num_points in numbers_of_points:
             if (mult > 2) and (element == "ZP"): continue
             if (mult > 3) and (element == "Diag"): continue
-            name = f"_{num_points}_{element}_{mult}.csv"
+            name = "_{num_points}_{element}_{mult}.csv".format(**{
+                "num_points":num_points, "element":element, "mult":mult})
             # print(f"Starting {name}", end="  ...   ")
             # ====================================================================
             if element == "TenP":
@@ -77,13 +81,6 @@ for mult in multiplicities:
                 eval_pts = np.vstack((eval_pts[0].flatten(), eval_pts[1].flatten())).T
                 eval_pts = np.asarray(eval_pts.T, order='F', dtype=np.float64)
             if num_points == "4K":
-                def f(x):
-                    global eval_pts
-                    eval_pts = np.asarray(x.T, order='F')
-                    return np.sum(eval_pts, axis=0)
-
-                from util.plot import Plot
-                p = Plot()                             
                 padding = .05
                 # Get the x min and max
                 x_min_max = [sum(np.where(mults*dvecs[0,:] < 0, mults*dvecs[0,:], 0)), 
@@ -95,15 +92,19 @@ for mult in multiplicities:
                              sum(np.where(mults*dvecs[1,:] > 0, mults*dvecs[1,:], 0))]
                 y_min_max[0] -= (y_min_max[1] - y_min_max[0]) * padding
                 y_min_max[1] += (y_min_max[1] - y_min_max[0]) * padding
-                # Create the plot
-                p.add_func("Box Spline", f, x_min_max, y_min_max, vectorized=True,
-                           use_gradient=True, plot_points=4000)
+                plot_points = int(4000**(0.5) + 0.5)
+
+                x_vals = (np.linspace(*x_min_max, num=plot_points),)
+                x_vals += (np.linspace(*y_min_max, num=plot_points),)
+                x_vals = tuple(x.flatten() for x in np.meshgrid(*x_vals))
+                x_vals = np.vstack(x_vals).T
+                eval_pts = np.asarray(x_vals.T, order='F')
 
             # ====================================================================
 
-            np.savetxt(f"dvecs"    +name, dvecs.T,    delimiter=",", header=",".join(map(str,dvecs.shape)),    comments="")
-            np.savetxt(f"mults"    +name, mults,      delimiter=",", header=",".join(map(str,mults.shape)),    comments="", fmt="%d")
-            np.savetxt(f"eval_pts" +name, eval_pts.T, delimiter=",", header=",".join(map(str,eval_pts.shape)), comments="")
+            np.savetxt("dvecs"    +name, dvecs.T,    delimiter=",", header=",".join(map(str,dvecs.shape)),    comments="")
+            np.savetxt("mults"    +name, mults,      delimiter=",", header=",".join(map(str,mults.shape)),    comments="", fmt="%d")
+            np.savetxt("eval_pts" +name, eval_pts.T, delimiter=",", header=",".join(map(str,eval_pts.shape)), comments="")
             # print("done.")
 
 
@@ -114,6 +115,9 @@ for mult in multiplicities:
 
 program_body = """
 PROGRAM TEST_BOXSPLINE
+  ! Define local variables for testing the box-spline code.
+  INTEGER :: DIM, NUM_DVECS, NUM_PTS
+  REAL :: START, FINISH
   ! Define local variables for reading direction vectors,
   ! multiplicities, and evaluation points.
   INTEGER, PARAMETER :: R8=SELECTED_REAL_KIND(13)
@@ -121,7 +125,7 @@ PROGRAM TEST_BOXSPLINE
   INTEGER,       DIMENSION(:),   ALLOCATABLE :: DVEC_MULTS
   REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE :: EVAL_PTS
   REAL(KIND=R8), DIMENSION(:),   ALLOCATABLE :: BOX_EVALS
-  INTEGER :: ERROR, DIM, NUM_DVECS, NUM_PTS
+  INTEGER :: ERROR
   ! Define an interface for the BOXSPLEV subroutine.
   INTERFACE 
     SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
@@ -183,7 +187,8 @@ for mult in multiplicities:
         for num_points in numbers_of_points:
             if (mult > 2) and (element == "ZP"): continue
             if (mult > 3) and (element == "Diag"): continue
-            name = f"_{num_points}_{element}_{mult}.csv"
+            name = "_{0}_{1}_{2}.csv".format(
+                num_points, element, mult)
             # Generate the calling code for the box spline program.
             all_calls += call_code_to_format.format(name=name,
                 mult=mult, element=element, num_points=num_points)
@@ -193,12 +198,14 @@ with open("test_boxspline.f90", "w") as f:
 
 
 
-comp_comm = "{compiler} -lblas -llapack {opt} -o test test_boxspline.f90 {version}"
-clean_comm = "rm *.o test"
+comp_comm = "{compiler} -lblas -llapack {opt} -o test real_precision.f90 test_boxspline.f90 {version}"
+clean_comm = "rm *.o *.mod test"
 run_comm = "./test"
 
 compilers = [
-    "gfortran"]
+    "gfortran",
+    "/home/f/ltw/bin/ftn95.sun",
+]
 
 versions = [
     "bs-dynamic.f90",
@@ -211,8 +218,6 @@ optimizations = [
     "-O3",
     "-Os"]
 
-from util.system import run
-
 print("Compiler,Version,Optimization,Multiplicity,Element,Num Points,Error,Time")
 for compiler in compilers:
     for v in versions:
@@ -222,11 +227,13 @@ for compiler in compilers:
             code, out, err = run(clean_comm.split())
             # Compile new code.
             code, out, err = run(command.split())
-            # Run new code.
-            code, out, err = run([run_comm])
-            for row in out:
-                if len("".join(row).strip()) == 0: continue
-                values = [compiler, v, opt] + row.split(',')
-                values = [val.strip() for val in values]
-                print(",".join(values))
+            for test in range(20):
+                # Run new code.
+                code, out, err = run([run_comm])
+
+                for row in out:
+                    if len("".join(row).strip()) == 0: continue
+                    values = [compiler, v, opt] + row.split(',')
+                    values = [val.strip() for val in values]
+                    print(",".join(values))
 

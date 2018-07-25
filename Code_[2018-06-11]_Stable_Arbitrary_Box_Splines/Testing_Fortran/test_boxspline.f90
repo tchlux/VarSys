@@ -1,5 +1,8 @@
 
 PROGRAM TEST_BOXSPLINE
+  ! Define local variables for testing the box-spline code.
+  INTEGER :: DIM, NUM_DVECS, NUM_PTS
+  REAL :: START, FINISH
   ! Define local variables for reading direction vectors,
   ! multiplicities, and evaluation points.
   INTEGER, PARAMETER :: R8=SELECTED_REAL_KIND(13)
@@ -7,7 +10,7 @@ PROGRAM TEST_BOXSPLINE
   INTEGER,       DIMENSION(:),   ALLOCATABLE :: DVEC_MULTS
   REAL(KIND=R8), DIMENSION(:,:), ALLOCATABLE :: EVAL_PTS
   REAL(KIND=R8), DIMENSION(:),   ALLOCATABLE :: BOX_EVALS
-  INTEGER :: ERROR, DIM, NUM_DVECS, NUM_PTS
+  INTEGER :: ERROR
   ! Define an interface for the BOXSPLEV subroutine.
   INTERFACE 
     SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
