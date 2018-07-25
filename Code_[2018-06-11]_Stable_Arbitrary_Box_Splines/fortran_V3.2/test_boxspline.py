@@ -15,6 +15,7 @@ if TEST: PLOT = False
 # ====================================================================
 
 mult = (2 if (TIME or TEST) else 1)
+# mult = 3
 
 # # Bi-linear / bi-quadratic / bi-cubic function
 # dvecs = np.array([[1.,0.],

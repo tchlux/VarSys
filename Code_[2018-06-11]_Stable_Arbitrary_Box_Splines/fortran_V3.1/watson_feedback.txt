@@ -1,0 +1,154 @@
+I'll read your new code over the next few days.  In the meantime, could 
+you do timings with different compilers (Intel ifort on pima, and 
+Sun/Oracle f90 on Ojibwa or Navajo) and with different optimization levels
+(option -O) on all the compilers?  Am I incorrect that all your data about 
+execution times is based on gfortran?
+
+I will ask Rob to get you accounts on Ojibwa and Navajo, but perhaps Tyler 
+can make your timing runs on Ojibwa for you until you have your own 
+accounts.
+
+On Ojibwa, use the compilation script  /home/f/ltw/bin/ftn95.sun  with
+possibly different -O and -xmodel options.  On Pima, use the script
+/Users/ltw/bin/ftn03.ifort    again with possibly different -O values.
+
+There are debugging tools (different for all the compilers) that can give 
+you the execution time spent in each subroutine, which should give you 
+some insight into efficiency.  I would not be surprised at all if the
+relative efficiencies are compiler dependent.
+
+The interaction of recursion and memory allocation is complicated, and 
+some minor tweak to your code could make a huge difference.  Your relative
+times (outer loop allocation vs. inner loop dynamic allocation) could also 
+be problem size dependent.  e.g., recall that in Fortran 90 (unlike C and
+FORTRAN 77) arrays are NOT stored contiguously in memory (the SEQUENCE
+statement does NOT force contiguous storage).  Compilers decide when to
+allocate contiguous storage or (much more expensive to manipulate)
+noncontiguous storage.  It's quite possible that the large reused work 
+arrays were allocated with NONCONTIGUOUS storage (making them expensive to 
+work with), but "most" of the small dynamically allocated arrays in your
+previous version were allocated with contiguous storage (making them
+relatively cheap to work with).  This is totally dependent on the compiler
+(vendor and version) and the problem size.
+
+Use of LAPACK and BLAS further complicates the situation, since they
+are FORTRAN 77 code that expects contiguous (C style) arrays.  This is why
+Brandon Amos (in the QNSTOP code, e.g.) passed array segments X(1:N) 
+rather than just array names X to LAPACK, if X were allocated.  The 
+allocated X might not be contiguously stored (which is why the called
+suboutine needs to know if the array has the attribute ALLOCATABLE), but
+array segments (like static arrays) are ALWAYS stored contiguously (a la
+C and FORTRAN 77).  If you're thinking, "but I passed an allocated WORK
+to LAPACK and it worked just fine", you were lucky!  For large enough
+WORK, LAPACK would have crashed (every Fortran 90 programmer learns this 
+the hard way!!!).
+
+So I fully believe your factor of 2 worse for the "new" code, but the 
+reasons are subtle, dependent on the compilers and problem, and you were 
+just lucky before.
+
+Beyond testing with different compilers and different optimization levels,
+you can experiment with a mix of outer loop allocation and inner loop
+dynamic allocation, to see exactly where the inefficiency arises.  The
+bigger point is that EVENTUALLY (and when depends on the compiler and
+problem) the inner loop allocation (dynamic or explicit) will kill you
+(and I guess you'll just have to trust my 25+ years of experience with
+Fortran 90/XX on that).
+
+A final thought: if you use multiple work arrays, you might try allocating
+them as separate work arrays of different shapes (as Brandon did in
+QSTOP), rather than allocating one huge array and passing different shaped 
+segments of it.  You could also try, as an experiment, having your work
+arrays automatic (meaning not in the argument list and not allocated) at 
+the outer level
+(so they would be stored contiguously, as LAPACK expects) and then passing 
+just the array name WORK rather than an array segment WORK(1:?).
+Every time an array segment WORK(1:N) is passed, the compiler makes a
+contiguous copy of the first N elements of WORK and passes that copy,
+which can be expensive.  (So why did Brandon do that?  Because he used
+the work arrays for other things than just scratch space, saving the 
+contents of pieces of them.)
+
+Sorry for the long reply---buried in it are some action items...
+
+----------------------------------------------------------------------
+
+The argument list has UNIQUE_DVECS but the comments have DVECS.  The 
+comments are very clear, and I don't think it is necessary to have the 
+long name UNIQUE_DVECS throughout the code.  While allowing 63 characters 
+for variable names is nice, having many (or frequently used) long names
+makes the source code hard to read (viz. COBOL).  I think just "DVECS"
+is fine.
+
+While any variable name can have any type, ignoring the default name 
+typing makes Fortran harder to read.  Thus using ERROR for an integer
+variable is not advisable, besides the frequent appearance in the code.
+I suggest using IERR instead, which is common in math software.
+
+On allocation of work arrays, the sizes of work arrays in LAPACK are based 
+on a formula in terms of the dimensions of the inputs, and need not be
+found "dynamically" by calling LAPACK routines.  The LAPACK comments give 
+these formulas; the option to get the work array sizes by a call is 
+because too many people were too lazy to carefully read the comments!
+And given s, k, m, n (your notation), you likely know a priori all the 
+sizes of all your working arrays.  So, just a question, is it really 
+necessary to ALLOCATE (using the Fortran statement) anything?  Could not
+all of your working storage be automatic arrays (declared at outer, not
+inner loop levels)?  Give me your thoughts on this.
+
+I guess the recursive routine requires local storage for each level of the 
+recursion (or does it?), so its arrays would have to be automatic.
+
+I'm not arguing for ALLOCATABLE, automatic, or static arrays, just 
+concerned that C style programming and unawareness of how Fortran 
+compilers work can be disastrously inefficient.  Here are the facts:
+
+(1)
+allocation and deallocation (explicit (ALLOCATE) or implicit (automatic
+arrays) in Fortran 90 is expensive,
+
+(2)
+static (FORTRAN 77) and automatic arrays are stored contiguously (as in 
+C),
+
+(3)
+explicitly allocated arrays are NOT (always) stored contiguously,
+
+(4)
+array segments in computations (right hand side expressions) and in
+procedure calls are handled by making a copy of the data,
+
+(5)
+expensive operations done in inner loops are BAD, if those operations
+could be moved outside the loop.
+
+(6) making decisions based on timing runs rather than (1)--(5) is NOT a
+good idea, since performance is both compiler and problem dependent.
+
+Given all the above, before I go through the code line by line again,
+would you rethink the code, and also check the comments for consistency?
+
+UNIQUE_DVECS vs. DVECS, "m" vs. "L", and ...  These little "typos" will
+incur scathing reviews from TOMS reviewers, with words like "sloppy"
+and "careless".  I know this is a problem you're working on, but it
+isn't getting much better.
+
+Get back to me with your results from other compilers, optimization 
+options, and thoughts on the above facts as they pertain to your code.
+
+======================================================================
+
+Action items:
+
+- Write timing test purely in Fortran.
+- Use ifort and sun fortran compilers for timings.
+  /Users/ltw/bin/ftn03.ifort (Pima)
+  /home/f/ltw/bin/ftn95.sun  (Navajo / Ojibwa)
+- Look for debugging tools that show the amount of time spent in each subroutine.
+- Try allocating all memory in the declaration of the subroutines.
+- Respond to renaming "DVECS" comment.
+- Change "ERROR" to "IERR".
+- Look up LAPACK allocation formula, use those to know size beforehand.
+- Respond to work allocation at outer level comment.
+- Respond to recursive subroutine comment.
+- Respond with optimization results from all compilers.
