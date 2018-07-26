@@ -1,6 +1,4 @@
 import numpy as np
-import sys, subprocess
-
 
 # It's happy hour time, we need to leave, this is out of
 # hand. (Handle?, grey hair, tanned skin)
@@ -20,6 +18,7 @@ import sys, subprocess
 #   stderr      -- A list of strings that are the lines of stderr
 #                  produced by the execution of <command>
 def run(command, **popen_kwargs):
+    import sys, subprocess
     # For Python 2.x the encoding is a string by default
     # For Python 3.6 and later the encoding can be given as an arguemnt
     if sys.version_info >= (3,6):
@@ -205,6 +204,7 @@ run_comm = "./test"
 compilers = [
     "gfortran",
     "/home/f/ltw/bin/ftn95.sun",
+#    "ifort",
 ]
 
 versions = [

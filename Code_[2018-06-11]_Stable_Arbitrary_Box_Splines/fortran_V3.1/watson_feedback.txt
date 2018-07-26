@@ -140,12 +140,12 @@ options, and thoughts on the above facts as they pertain to your code.
 
 Action items:
 
-- Write timing test purely in Fortran.
-- Use ifort and sun fortran compilers for timings.
+x Write timing test purely in Fortran.
+x Use ifort and sun fortran compilers for timings.
   /Users/ltw/bin/ftn03.ifort (Pima)
   /home/f/ltw/bin/ftn95.sun  (Navajo / Ojibwa)
 - Look for debugging tools that show the amount of time spent in each subroutine.
-- Try allocating all memory in the declaration of the subroutines.
+x Try allocating all memory in the declaration of the subroutines.
 - Respond to renaming "DVECS" comment.
 - Change "ERROR" to "IERR".
 - Look up LAPACK allocation formula, use those to know size beforehand.
