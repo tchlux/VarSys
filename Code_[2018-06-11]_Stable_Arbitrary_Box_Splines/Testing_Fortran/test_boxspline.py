@@ -202,21 +202,24 @@ clean_comm = "rm *.o *.mod test"
 run_comm = "./test"
 
 compilers = [
-    "gfortran",
+#    "gfortran",
     "/home/f/ltw/bin/ftn95.sun",
-#    "ifort",
+    "ifort",
 ]
 
 versions = [
-    "bs-dynamic.f90",
-    "bs-automatic.f90",
-    "bs-manual.f90"]
+    # "bs-dynamic.f90",
+    # "bs-automatic.f90",
+    "bs-manual.f90",]
 
 optimizations = [
     "",
     "-O2",
     "-O3",
-    "-Os"]
+    "-Os",]
+
+num_trials = 20
+import sys
 
 print("Compiler,Version,Optimization,Multiplicity,Element,Num Points,Error,Time")
 for compiler in compilers:
@@ -227,10 +230,11 @@ for compiler in compilers:
             code, out, err = run(clean_comm.split())
             # Compile new code.
             code, out, err = run(command.split())
-            for test in range(20):
+            for test in range(num_trials):
+                print(command, sys.stderr)
                 # Run new code.
                 code, out, err = run([run_comm])
-
+                # Print output in CSV format.
                 for row in out:
                     if len("".join(row).strip()) == 0: continue
                     values = [compiler, v, opt] + row.split(',')
