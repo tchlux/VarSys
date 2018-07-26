@@ -202,9 +202,9 @@ clean_comm = "rm *.o *.mod test"
 run_comm = "./test"
 
 compilers = [
-#    "gfortran",
-    "/home/f/ltw/bin/ftn95.sun",
-    "ifort",
+    "gfortran",
+    # "/home/f/ltw/bin/ftn95.sun",
+    # "ifort",
 ]
 
 versions = [
@@ -231,7 +231,7 @@ for compiler in compilers:
             # Compile new code.
             code, out, err = run(command.split())
             for test in range(num_trials):
-                print(command, sys.stderr)
+                sys.stderr.write(command + "\n")
                 # Run new code.
                 code, out, err = run([run_comm])
                 # Print output in CSV format.
