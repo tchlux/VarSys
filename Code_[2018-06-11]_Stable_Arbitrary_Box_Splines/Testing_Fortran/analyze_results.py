@@ -5,19 +5,10 @@ all_data_file = "performance_data.pkl"
 if not os.path.exists(all_data_file):
     d1 = Data.load("Pima.csv")
     d2 = Data.load("Navajo.csv")
-    d3 = Data.load("Navajo-Extra.csv")
-    d4 = Data.load("Navajo-Extra-1.csv")
-    d5 = Data.load("Navajo-Extra-2.csv")
     d1["Computer"] = ("Pima" for row in d1)
     d2["Computer"] = ("Navajo" for row in d2)
-    d3["Computer"] = ("Navajo" for row in d3)
-    d4["Computer"] = ("Navajo" for row in d4)
-    d5["Computer"] = ("Navajo" for row in d5)
     d = d1[:]
     d += d2
-    d += d3
-    d += d4
-    d += d5
     d.save("performance_data.csv")
     d.save("performance_data.pkl")
 
