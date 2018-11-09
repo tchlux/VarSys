@@ -71,6 +71,8 @@ sun95 = d[d["Compiler"] == "/home/f/ltw/bin/ftn95.sun"]
 ifort.compiler = "ifort"
 gfort.compiler = "gfortran"
 sun95.compiler = "sun95"
+# Set the dash patterns.
+dashes = ("solid", "dot", "dash", "dashdot")
 
 # Order the different comparitors by which is best.
 compilers = [gfort, ifort, sun95]
@@ -83,16 +85,38 @@ plots = []
 for c in compilers:
     p = Plot(f"Aggregate Runtime CDFs for Different Optimizations on Each Compiler for {len(c)//4} Tests", 
              "Execution Time (sec)", c.compiler)
-    for i,opt in enumerate(optimizations):
+    for i,(opt,dash) in enumerate(zip(optimizations,dashes)):
         perf_data = [v for t in c[c["Optimization"]==opt, "Time"] for v in t[0]]
         cdf = cdf_fit_func(perf_data)
         if (opt.strip() == ""): opt = "No Optimization"
-        p.add_function(opt, cdf, cdf(), group=opt, show_in_legend=(c==compilers[0]))
+        p.add_function(opt, cdf, cdf(), group=opt, dash=dash,
+                       show_in_legend=(c==compilers[0]))
     plots.append(p.plot(html=False, y_range=[.5,1], 
                         legend=legend_settings))
-multiplot([[p] for p in plots], show=False, append=True, shared_x=True)
+multiplot([[p] for p in plots], show=False, shared_x=True, file_name="performance_aggregate.html")
 
-# 
+# Plots with 1 evaluation point
+plots = []
+for c in compilers:
+    name = c.compiler
+    # Plot by code version for Sun.
+    c = c[ c["Optimization"] == "-O3" ]
+    c = c[ c["Num Points"] == "1" ]
+    first = (name==compilers[0].compiler)
+    p = Plot(f"'O3' Runtime CDFs for Different Box-Spline Versions on Each Compiler<br>over {len(c)//3} Tests, Each with 1 Evaluation Point", 
+             "Execution Time (sec)", f"{name}")
+    for i,(version,dash) in enumerate(zip(versions,dashes)):
+        temp_data = c[c["Version"]==version]
+        perf_data = [v for t in temp_data["Time"] for v in t]
+        cdf = cdf_fit_func(perf_data)
+        if ("manual" in version): version = version.replace("manual", "allocate")
+        version = version.replace("bs-","").replace(".f90","")
+        p.add_function(version, cdf, cdf(), color=p.color(i), dash=dash,
+                       group=version, show_in_legend=first)
+    plots.append( p.plot(html=False, legend=legend_settings, y_range=[.4,1]) )
+multiplot([[p] for p in plots], shared_x=True, show=False, file_name="performance_version_1.html")
+
+# Plots with 4K evaluation points
 plots = []
 for c in compilers:
     name = c.compiler
@@ -102,13 +126,23 @@ for c in compilers:
     first = (name==compilers[0].compiler)
     p = Plot(f"'O3' Runtime CDFs for Different Box-Spline Versions on Each Compiler<br>over {len(c)//3} Tests, Each with 4K Evaluation Points", 
              "Execution Time (sec)", f"{name}")
-    for i,version in enumerate(versions):
-        perf_data = [v for t in c[c["Version"]==version, "Time"] for v in t[0]]
+    for i,(version,dash) in enumerate(zip(versions,dashes)):
+        temp_data = c[c["Version"]==version]
+        perf_data = [v for t in temp_data["Time"] for v in t]
         cdf = cdf_fit_func(perf_data)
         if ("manual" in version): version = version.replace("manual", "allocate")
         version = version.replace("bs-","").replace(".f90","")
-        p.add_function(version, cdf, cdf(), color=p.color(i), group=version,
-                       show_in_legend=first)
+        p.add_function(version, cdf, cdf(), color=p.color(i), dash=dash,
+                       group=version, show_in_legend=first)
     plots.append( p.plot(html=False, legend=legend_settings, y_range=[.4,1]) )
-multiplot([[p] for p in plots], append=True, shared_x=True)
+multiplot([[p] for p in plots], shared_x=True, show=False, file_name="performance_version_4K.html")
 
+# # Check out some of the specific data.
+# d["Median Time"] = (np.median(t) for t in d["Time"])
+# d = d[d["Compiler"] == "gfortran"]
+# d = d[d["Optimization"] == "-O3"]
+# d = d[d["Num Points"] == "4K"]
+# d = d[d["Median Time"] > 8]
+# d = d[d["Version"] == "bs-dynamic.f90"]
+# d.summarize()
+# print(d)

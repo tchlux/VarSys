@@ -5,7 +5,7 @@ boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
 
 # Control flot logic
 TEST = False
-TIME = True
+TIME = False
 PLOT = not TIME
 
 # Turn off plotting and timing if testing is being done

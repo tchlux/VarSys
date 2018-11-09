@@ -1,4 +1,14 @@
 
+# d["Median Time"] = (np.median(t) for t in d["Time"])
+# d = d[d["Compiler"] == "gfortran"]
+# d = d[d["Optimization"] == "-O3"]
+# d = d[d["Median Time"] > 14]
+# d = d[d["Median Time"] < 17]
+# d.summarize()
+# print(d)
+
+
+
 # Plot by code version for Intel.
 d = ifort[:]
 d = d[ d["Optimization"] == "-O3" ]

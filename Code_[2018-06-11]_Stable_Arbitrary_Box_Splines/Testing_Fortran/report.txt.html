@@ -1,0 +1,456 @@
+
+    <!doctype html>
+    <meta charset="utf-8">
+
+    
+    <!-- Include Distill -->
+    <!-- <script src="https://distill.pub/template.v1.js"></script> -->
+     <script src="http://people.cs.vt.edu/tchlux/distill.template.v1.no-banner.js"></script> 
+    <!-- <script src="/Users/thomaslux/Git/txt_to_html/resources/distill.template.v1.no-banner.js"></script> -->
+    
+    
+    <!-- Include MathJax -->
+     <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"> </script> 
+    <!-- <script type="text/javascript" async src="/Users/thomaslux/Git/txt_to_html/resources/MathJax-2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML,local/local"></script> -->
+    
+    
+
+    <!-- Script for setting up the author block -->
+    <script type="text/front-matter">
+      title: Efficient Evaluation of <br> Arbitrary Box-Splines
+      description: 
+      authors:
+
+      affiliations:
+
+    </script>
+
+    <style type="text/css">
+      dt-article ol, dt-article ul {
+        padding-left: 50px;
+      }
+
+      dt-article ul {
+        list-style: none;
+      }
+
+      dt-article li {
+        margin-bottom: 10px;
+      }
+
+      ul li:before {
+        content: "–  ";
+        margin-left: -1em
+      }
+
+      td {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+      }
+    </style>
+
+    <dt-article>
+    <h1>Efficient Evaluation of <br> Arbitrary Box-Splines</h1>
+    <p></p>
+    <dt-byline></dt-byline>
+
+    
+<p>
+This brief report aims to study the differences in runtime performance of box-spline evaluation codes. Different problem sizes and compilers are used to isolate the effects of varying memory management styles across three different Fortran implementations of arbitrary box-spline evaluation.</p>
+<h3 id="Box-Spline Definitions"> Box-Spline Definitions</h3>
+
+<p>A box spline in \(\mathbb{R}^s\) is defined by its <i>direction vector set</i> \(A\), composed of \(n\) \(s\)-vectors where \(n \geq s\). Further, \(A\) will be written as a \(s \times n\) matrix. The first \(m\) column vectors of \(A\) are denoted by \(A_m\), \(m \leq n\). \(A_s\) is required to be nonsingular. Consider the unit cube in \(n\) dimensions \(Q_n = [0,1)^n\). \(A_n \bigl( Q_n \bigr)\) is now the image (in \(s\) dimensions) of \(Q_n\) under the linear map \(A_n\). This image is the support of the box spline defined by \(A_n\) in \(s\) dimensions. The box spline function in \(s\) dimensions for \(A_s\) is defined as
+
+$$ B(x \mid A_s) = \begin{cases} 
+(\det(A_s))^{-1}, & x \in A_s(Q_s), \\
+0,                & \text{otherwise.}
+\end{cases} $$</p>
+
+<p>For \(A_n\) when \(n > s\) the box spline is computed as
+
+$$ B(x \mid A_n) = \int_0^1 B(x - t v_n \mid A_{n-1}) dt, $$
+where \(v_n\) is the \(n\)th direction vector of \(A\).</p>
+<h3 id="Evaluating Arbitrary Box-Splines"> Evaluating Arbitrary Box-Splines</h3>
+
+<p>The naive recursive implementation of a box-spline evaluation algorithm is straight forward to implement and has a computational complexity of
+
+$$ \mathcal{O} \bigg(2^{n - s} \frac{n!}{s!}\bigg),$$
+however a naive implementation suffers from numerical instability near the boundaries of the polynomial pieces that compose a box-spline <dt-cite key="de1993evaluation"></dt-cite>. The numerical instability near boundaries of polynomial pieces can be avoided through postponing the translation of points by direction vectors <dt-cite key="kobbelt1997stable"></dt-cite>. A numerically consistent implementation written in <i>Matlab</i> is provided by <dt-cite key="kobbelt1997stable"></dt-cite>. The computational complexity is reduced for box-splines with repeated direction vectors to 
+$$\mathcal{O} \bigg( 2^{n-s} \frac{k!}{s!} k^{n-k} \bigg),$$
+where \(k \leq n\) is the number of <i>unique</i> direction vectors. <dt-cite key="kobbelt1997stable"></dt-cite> also attempts to reduce redundant computations by precomputing all normal vectors defining the boundaries of polynomial pieces with a memory complexity of \(\mathcal{O} \big( 2^k \big)\).</p>
+
+<p>A <i>Fortran</i> implementation of the numerically consistent arbitrary box-spline algorithm is considered here. This implementation does not precompute normal vectors, reducing the memory complexity to \(\mathcal{O}\bigl(s k (n - k) \bigr)\). An analysis of three different Fortran implementations follows.</p>
+<h2 id="Experiment Setup"> Experiment Setup</h2>
+
+<p>Nearly all combinations of the following variables are considered.</p>
+
+<table>
+<tr><td> <b>Variable</b>                 </td><td> <b>Values</b>                   </td></tr>
+
+<tr><td>                              </td><td>                              </td></tr>
+
+<tr><td> Element		       </td><td> <i>TenP</i>, <i>Cour</i>, <i>ZP</i>         </td></tr>
+
+<tr><td> Number of Evaluation Points  </td><td> 1, 2K, 4K                    </td></tr>
+
+<tr><td> Element Multiplicity         </td><td> 1, 2, 3, 4, 5                </td></tr>
+
+<tr><td> Compiler (Computer)	       </td><td> gfortran (Navajo), sun95 (Navajo), ifort (Pima) </td></tr>
+
+<tr><td> Optimization Flag	       </td><td> None, O2, O3, Os             </td></tr>
+
+<tr><td> Box-Spine Version	       </td><td> dynamic, automatic, allocate </td></tr></table>
+
+<p>Each test is repeated 20 times to capture a corresponding distribution of expected evaluation time. The Fortran intrinsic function <i>CPU_TIME</i> is used to time the evaluation of each box-spline. In total 21,600 experiments were conducted. The variable <i>element</i> refers to the following two-dimensional direction vector sets with associated multiplicities listed as exponents.</p>
+<h4 id="Tensor Product B-Spline (TenP)"> Tensor Product B-Spline (TenP)</h4>
+<p>
+$$ \begin{pmatrix}
+1 & 0 \\ 0 & 1
+\end{pmatrix}^{(1,2,3,4,5)} $$</p>
+
+<p><img src='TenP.png' width='90%' style='margin: 20px; display: inline-block;'></p>
+<h4 id="Courant Element (Cour)"> Courant Element (Cour)</h4>
+<p>
+$$ \begin{pmatrix}
+1 & 0 & 1 \\ 0 & 1 & 1
+\end{pmatrix}^{(1,2,3)} $$</p>
+
+<p><img src='Courant.png' width='90%' style='margin: 20px; display: inline-block;'></p>
+<h4 id="Zwart-Powell (ZP)"> Zwart-Powell (ZP)</h4>
+<p>
+$$ \begin{pmatrix}
+1 & 0 & 1 & 1 \\ 0 & 1 & -1 & 1
+\end{pmatrix}^{(1,2)} $$</p>
+
+<p><img src='ZP.png' width='90%' style='margin: 20px; display: inline-block;'></p>
+<h3 id="Different Box-Spline Implementations"> Different Box-Spline Implementations</h3>
+<h4 id="Dynamic"> Dynamic</h4>
+
+<p>Memory allocation is mostly local to subroutines, dynamic allocation is required in order for subroutines to construct their own work arrays of appropriate size.</p>
+<h4 id="Allocate"> Allocate</h4>
+
+<p>Memory allocation is entirely performed (with the exception of constants) during the top-level entry routine <i>BOXSPLEV</i>. No internal routines allocate their own memory, rather they use appropriate slices of initially allocated memory. All allocation sizes are computed at runtime and allocation is performed with the <i>ALLOCATE</i> intrinsic.</p>
+<h4 id="Automatic"> Automatic</h4>
+
+<p>Same as "Allocate", but all of the allocation sizes are expressed in terms of input arrays and are automatically allocated upon entering the top-level subroutine <i>BOXSPLEV</i>.</p>
+<h2 id="Aggregate Results"> Aggregate Results</h2>
+
+<p>First, let's consider the selection of which optimization flag to use when evaluating box-splines. The plot below depicts the aggregate CDFs of all experiment runtimes broken down by compiler and optimization flag.</p>
+
+<p><iframe src='performance_aggregate.html' frameBorder='0' style='height: 60vh; width: 70vw;'></iframe></p>
+
+<p>Note that the Sun compiler does not appear to be affected by (cannot find?) differing optimization levels. The GNU compiler suffers the worst performance under no optimization. Generally, O3 appears to provide reasonably good (or the best) performance for both <i>ifort</i> and <i>gfortran</i>.</p>
+
+<p>Next we consider the performance of the three different box-spline codes using the best optimization on single point evaluation and evaluation at a large number of points.</p>
+
+<p><iframe src='performance_version_1.html' frameBorder='0' style='height: 60vh; width: 70vw;'></iframe></p>
+
+<p>For single-point evaluation, the <i>automatic</i> allocation scheme with the <i>ifort</i> compiler produces results most quickly. The dynamic allocation scheme takes more time likely due to the dominating effect of subroutine calls (and allocations) during computation. This effect will likely be observed for any number of points small enough to fit into cache (\(<2^{10}\)).</p>
+
+<p><iframe src='performance_version_4K.html' frameBorder='0' style='height: 60vh; width: 70vw;'></iframe></p>
+
+<p>For the most compute-intense experiments, Zwart-Powell multiplicity 2, Courant multiplicity 3 with 4K points, the <i>dynamic</i> allocation scheme with the <i>gfortran</i> compiler provides the best results. The global allocation scheme takes more time for all compilers when there are enough points to fill cache (\(>2^{10}\)).</p>
+<h4 id="A Note"> A Note</h4>
+
+<p>The <i>automatic</i> and <i>allocate</i> codes took advantage of a few extra optimizations (other than memory management) not had by <i>dynamic</i>. Pending the future use of the <i>dynamic</i> framework, those extra optimizations can be included to improve single-point evaluation performance.</p>
+<h2 id="Profiling Results"> Profiling Results</h2>
+
+<p>In addition to the large batch test, <i>gprof</i> was used to analyze the performance of the <i>dynamic gfortran</i> code as well as the <i>allocate gfortran</i> code.</p>
+
+<p><br></p>
+<h3 id="Table Legend"> Table Legend</h3>
+
+<p>The upcoming tables have the following columns.</p>
+
+<p><p style='padding-left: 15px; margin-top: 0px; margin-bottom: 0px;'><b>time (%) --</b> the percentage of the total running time of the program used by this function.</p></p>
+
+<p><p style='padding-left: 15px; margin-top: 0px; margin-bottom: 0px;'><b>cumulative seconds --</b> a running sum of the number of seconds accounted for by this function and those listed above it.</p></p>
+
+<p><p style='padding-left: 15px; margin-top: 0px; margin-bottom: 0px;'><b>self seconds --</b> the number of seconds accounted for by this function alone. This is the major sort for this listing.</p></p>
+
+<p><p style='padding-left: 15px; margin-top: 0px; margin-bottom: 0px;'><b>calls --</b> the number of times this function was invoked, if this function is profiled, else blank.</p></p>
+
+<p><p style='padding-left: 15px; margin-top: 0px; margin-bottom: 0px;'><b>self ms/call --</b> the average number of milliseconds spent in this function per call, if this function is profiled, else blank.</p></p>
+
+<p><p style='padding-left: 15px; margin-top: 0px; margin-bottom: 0px;'><b>total ms/call --</b> the average number of milliseconds spent in this function and its descendents per call, if this function is profiled, else blank.</p></p>
+
+<p><p style='padding-left: 15px; margin-top: 0px; margin-bottom: 0px;'><b>name --</b> the name of the function.  This is the minor sort for this listing.</p></p>
+
+<p><br></p>
+<h4 id="Flat Profile for Dynamic Allocate (ZP element, multiplicity 2, 1 point)"> Flat Profile for Dynamic Allocate (ZP element, multiplicity 2, 1 point)</h4>
+
+<table>
+<tr><td><b>time (%)</b> </td><td><b>cumulative seconds</b> </td><td><b>self seconds</b></td><td>  <b>calls</b></td><td> <b>self ms/call</b></td><td> <b>total ms/call</b></td><td><b>name</b>  </td></tr>
+
+<tr><td> <div style='width: 70px;'> </td><td> <div style='width: 150px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td></tr>
+
+<tr><td> 40.01  </td><td>    0.06 </td><td>    0.06 </td><td>       1 </td><td>   60.01 </td><td>  150.03 </td><td> evaluate_box_spline       </td><td> </td></tr>
+
+<tr><td> 26.67  </td><td>    0.10 </td><td>    0.04 </td><td>  249032 </td><td>    0.00 </td><td>    0.00 </td><td> nonzero                   </td><td>  </td></tr>
+
+<tr><td> 20.00  </td><td>    0.13 </td><td>    0.03 </td><td>   69120 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_det                </td><td> </td></tr>
+
+<tr><td> 13.34  </td><td>    0.15 </td><td>    0.02 </td><td>  138240 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_orthogonal         </td><td>  </td></tr>
+
+<tr><td>  0.00  </td><td>    0.15 </td><td>    0.00 </td><td>   41672 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_rank               </td><td>  </td></tr>
+
+<tr><td>  0.00  </td><td>    0.15 </td><td>    0.00 </td><td>   30153 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_minimum_norm       </td><td>  </td></tr>
+
+<tr><td>  0.00  </td><td>    0.15 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> allocate_max_lapack_work  </td><td>  </td></tr>
+
+<tr><td>  0.00  </td><td>    0.15 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>  150.03 </td><td> boxsplev                  </td><td>  </td></tr>
+
+<tr><td>  0.00  </td><td>    0.15 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_condition_inv      </td><td>  </td></tr></table>
+
+<p><br></p>
+<h4 id="Flat Profile for Manual Allocate (ZP element, multiplicity 2, 1 point)"> Flat Profile for Manual Allocate (ZP element, multiplicity 2, 1 point)</h4>
+
+<table>
+<tr><td><b>time (%)</b> </td><td><b>cumulative seconds</b> </td><td><b>self seconds</b></td><td>  <b>calls</b></td><td> <b>self ms/call</b></td><td> <b>total ms/call</b></td><td><b>name</b>  </td></tr>
+
+<tr><td> <div style='width: 70px;'> </td><td> <div style='width: 150px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td></tr>
+
+<tr><td> 60.01 </td><td>     0.09  </td><td>   0.09 </td><td>       1 </td><td>   90.01 </td><td>  150.02 </td><td> evaluate_box_spline </td><td>  </td></tr>
+
+<tr><td> 26.67 </td><td>     0.13  </td><td>   0.04 </td><td>  110792 </td><td>    0.00 </td><td>    0.00 </td><td> pack_dvecs          </td><td> </td></tr>
+
+<tr><td>  6.67 </td><td>     0.14  </td><td>   0.01 </td><td>  138240 </td><td>    0.00 </td><td>    0.00 </td><td> compute_orthogonal  </td><td>  </td></tr>
+
+<tr><td>  6.67 </td><td>     0.15  </td><td>   0.01 </td><td>   69120 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_det          </td><td> </td></tr>
+
+<tr><td>  0.00 </td><td>     0.15  </td><td>   0.00 </td><td>   41672 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_rank         </td><td> </td></tr>
+
+<tr><td>  0.00 </td><td>     0.15  </td><td>   0.00 </td><td>   30153 </td><td>    0.00 </td><td>    0.00 </td><td> make_dvecs_min_norm </td><td>  </td></tr>
+
+<tr><td>  0.00 </td><td>     0.15  </td><td>   0.00 </td><td>       1 </td><td>    0.00 </td><td>  150.02 </td><td> boxsplev            </td><td> </td></tr>
+
+<tr><td>  0.00 </td><td>     0.15  </td><td>   0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_condition_inv</td><td>  </td></tr>
+
+<tr><td>  0.00 </td><td>     0.15  </td><td>   0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> reserve_memory      </td><td>  </td></tr></table>
+
+<p><br></p>
+
+<p>The two tables above show that roughly ~25% of the evaluation time is spent managing memory (subroutines <i>NONZERO</i> and <i>PACK_DVECS</i> have similar function). Notice how that behavior changes once there are 4000 points instead of 1, see below.</p>
+
+<p><br></p>
+<h4 id="Flat Profile for Dynamic Allocate (ZP element, multiplicity 2, 4K points)"> Flat Profile for Dynamic Allocate (ZP element, multiplicity 2, 4K points)</h4>
+
+<table>
+<tr><td><b>time (%)</b> </td><td><b>cumulative seconds</b> </td><td><b>self seconds</b></td><td>  <b>calls</b></td><td> <b>self ms/call</b></td><td> <b>total ms/call</b></td><td><b>name</b>  </td></tr>
+
+<tr><td> <div style='width: 70px;'> </td><td> <div style='width: 150px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td></tr>
+
+<tr><td> 99.53 </td><td>    22.16 </td><td>   22.16 </td><td>       1 </td><td>   22.16 </td><td>   22.27 </td><td> evaluate_box_spline      </td></tr>
+
+<tr><td>  0.22 </td><td>    22.21 </td><td>    0.05 </td><td>  249032 </td><td>    0.00 </td><td>    0.00 </td><td> nonzero                  </td></tr>
+
+<tr><td>  0.13 </td><td>    22.24 </td><td>    0.03 </td><td>  138240 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_orthogonal        </td></tr>
+
+<tr><td>  0.09 </td><td>    22.26 </td><td>    0.02 </td><td>   41672 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_rank              </td></tr>
+
+<tr><td>  0.04 </td><td>    22.27 </td><td>    0.01 </td><td>   69120 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_det               </td></tr>
+
+<tr><td>  0.00 </td><td>    22.27 </td><td>    0.00 </td><td>   30153 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_minimum_norm      </td></tr>
+
+<tr><td>  0.00 </td><td>    22.27 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> allocate_max_lapack_work </td></tr>
+
+<tr><td>  0.00 </td><td>    22.27 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>   22.27 </td><td> boxsplev                 </td></tr>
+
+<tr><td>  0.00 </td><td>    22.27 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_condition_inv     </td></tr></table>
+
+<p><br></p>
+<h4 id="Flat Profile for Manual Allocate (ZP element, multiplicity 2, 4K points)"> Flat Profile for Manual Allocate (ZP element, multiplicity 2, 4K points)</h4>
+
+<table>
+<tr><td><b>time (%)</b> </td><td><b>cumulative seconds</b> </td><td><b>self seconds</b></td><td>  <b>calls</b></td><td> <b>self ms/call</b></td><td> <b>total ms/call</b></td><td><b>name</b>  </td></tr>
+
+<tr><td> <div style='width: 70px;'> </td><td> <div style='width: 150px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 100px;'> </td><td> <div style='width: 70px;'> </td></tr>
+
+<tr><td> 99.86 </td><td>    31.04 </td><td>   31.04 </td><td>       1 </td><td>   31.04 </td><td>   31.09 </td><td> evaluate_box_spline  </td><td>    </td></tr>
+
+<tr><td>  0.10 </td><td>    31.07 </td><td>    0.03 </td><td>  138240 </td><td>    0.00 </td><td>    0.00 </td><td> compute_orthogonal   </td><td>     </td></tr>
+
+<tr><td>  0.03 </td><td>    31.08 </td><td>    0.01 </td><td>  110792 </td><td>    0.00 </td><td>    0.00 </td><td> pack_dvecs           </td><td>    </td></tr>
+
+<tr><td>  0.03 </td><td>    31.09 </td><td>    0.01 </td><td>   30153 </td><td>    0.00 </td><td>    0.00 </td><td> make_dvecs_min_norm  </td><td>   </td></tr>
+
+<tr><td>  0.00 </td><td>    31.09 </td><td>    0.00 </td><td>   69120 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_det           </td><td>   </td></tr>
+
+<tr><td>  0.00 </td><td>    31.09 </td><td>    0.00 </td><td>   41672 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_rank          </td><td>    </td></tr>
+
+<tr><td>  0.00 </td><td>    31.09 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>   31.09 </td><td> boxsplev             </td><td>   </td></tr>
+
+<tr><td>  0.00 </td><td>    31.09 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> matrix_condition_inv </td><td>    </td></tr>
+
+<tr><td>  0.00 </td><td>    31.09 </td><td>    0.00 </td><td>       1 </td><td>    0.00 </td><td>    0.00 </td><td> reserve_memory       </td><td>    </td></tr></table>
+
+<p><br></p>
+
+<p>These two tables show that the vast majority of computation time is spent within the <i>EVALUATE_BOX_SPLINE</i> routine computing the base case (majority) and processing the results in the non base cases (minority).</p>
+
+
+    </dt-article>
+
+    
+<dt-appendix>
+</dt-appendix>
+
+
+    <script type="text/bibliography">
+====
+
+@article{de1993evaluation,
+  title={On the evaluation of box splines},
+  author={de Boor, Carl},
+  journal={Numerical Algorithms},
+  volume={5},
+  number={1},
+  pages={5--23},
+  year={1993},
+  publisher={Springer}
+}
+
+@article{kobbelt1997stable,
+  title={Stable evaluation of box-splines},
+  author={Kobbelt, Leif},
+  journal={Numerical Algorithms},
+  volume={14},
+  number={4},
+  pages={377--382},
+  year={1997},
+  publisher={Springer}
+}
+</script>
+
+    
+<!--
+     ============================================= 
+          DISTILL PROPER USAGE AND FORMATTING      
+     ============================================= 
+
+        Article Foundation (can use h2 for description)    
+    =======================================================
+    <dt-article>
+      <h1> [title text] </h1>
+      <p> [description text] </p>
+      <dt-byline></dt-byline>
+      [article content]
+    </dt-article>
+    <dt-appendix>
+    </dt-appendix>
+    <script type="text/bibliography">
+      @article{,
+      title={},
+      author={},
+      journal={},
+      year={},
+      url={}
+      }
+      ...
+    </script>
+
+        Body and Headers    
+    ========================
+    <p></p>
+    <h1></h1>
+    <h2></h2>
+    <h3></h3>
+    <h4></h4>
+
+        Citations    
+    =================
+    <dt-cite key="[key name]"></dt-cite>
+
+        Code (use block for multiple lines)    
+    ===========================================
+    <dt-code block language="[language]">
+      [code]
+    </dt-code>
+
+        Footnotes    
+    =================
+    <dt-fn> [text] </dt-fn>
+
+        Lists (unordered uses <ul> instead)    
+    ===========================================
+    <p>
+      <ol>
+	<li> [entry text]
+      </ol>
+    </p>
+
+        Math    
+    ============
+    \( [inline math text] \)
+    $$ [newline math text]  $$
+
+        Styling    
+    ===============
+    <i> [italics] </i> 
+    <b> [bold] </b>
+    <br> [line break]
+    <font color="[color]"> [colored text] </font>
+
+        Tables    
+    ==============
+    <table>
+      <tr> [table row]
+	<td> [table column] </td> ...
+      </tr>
+    </table>
+
+         Custom Widths for Tables     
+    ==================================
+    <style type="text/css">
+      td {
+        width: 200px;
+        padding: 0px 0px 0px 50px;
+        background-color: #eee;
+      }
+    </style>
+
+
+    =======================
+        EXAMPLE ARTICLE
+    =======================
+
+    <!doctype html>
+    <meta charset="utf-8">
+    <script src="https://distill.pub/template.v1.js"></script>
+
+    <script type="text/front-matter">
+      title: "Article Title"
+      description: "Description of the post"
+      authors:
+      - Chris Olah: http://colah.github.io
+      - Shan Carter: http://shancarter.com
+      affiliations:
+      - Google Brain: http://g.co/brain
+      - Google Brain: http://g.co/brain
+    </script>
+
+    <dt-article>
+      <h1>Hello World</h1>
+      <h2>A description of the article</h2>
+      <dt-byline></dt-byline>
+      <p>This is the first paragraph of the article.</p>
+      <p>We can also cite <dt-cite key="gregor2015draw"></dt-cite> external publications.</p>
+    </dt-article>
+
+    <dt-appendix>
+    </dt-appendix>
+
+    <script type="text/bibliography">
+      @article{gregor2015draw,
+      title={DRAW: A recurrent neural network for image generation},
+      author={Gregor, Karol and Danihelka, Ivo and Graves, Alex and Rezende, Danilo Jimenez and Wierstra, Daan},
+      journal={arXivreprint arXiv:1502.04623},
+      year={2015},
+      url={https://arxiv.org/pdf/1502.04623.pdf}
+      }
+    </script>
+
+-->
+
+
+    

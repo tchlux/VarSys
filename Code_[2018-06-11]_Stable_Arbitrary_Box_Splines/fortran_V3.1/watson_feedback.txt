@@ -144,11 +144,11 @@ x Write timing test purely in Fortran.
 x Use ifort and sun fortran compilers for timings.
   /Users/ltw/bin/ftn03.ifort (Pima)
   /home/f/ltw/bin/ftn95.sun  (Navajo / Ojibwa)
-- Look for debugging tools that show the amount of time spent in each subroutine.
+x Look for debugging tools that show the amount of time spent in each subroutine.
 x Try allocating all memory in the declaration of the subroutines.
-- Respond to renaming "DVECS" comment.
-- Change "ERROR" to "IERR".
-- Look up LAPACK allocation formula, use those to know size beforehand.
-- Respond to work allocation at outer level comment.
-- Respond to recursive subroutine comment.
-- Respond with optimization results from all compilers.
+x Respond to renaming "DVECS" comment.
+x Change "ERROR" to "IERR".
+x Look up LAPACK allocation formula, use those to know size beforehand.
+x Respond to work allocation at outer level comment.
+x Respond to recursive subroutine comment.
+x Respond with optimization results from all compilers.

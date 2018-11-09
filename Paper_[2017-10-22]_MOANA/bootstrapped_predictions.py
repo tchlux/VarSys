@@ -2,20 +2,20 @@ import pickle, os
 import numpy as np
 from scipy.interpolate import splrep, splev
 from util.algorithms import Delaunay
-from util.data import read_struct
-from util.plotly import Plot, multiplot
+from util.data import Data
+from util.plot import Plot, multiplot
 
 # Path to raw text data
 HOME_DIR = os.path.expanduser("~")
-DATA_PATH = os.path.join(HOME_DIR, *["Git_Analytics", "Analytics-Vis",
-                                     "Data", "VirginiaTech",
-                                     "Many_Trials", "Data",
-                                     "Clean_Data.txt"])
-
-# DATA_PATH = os.path.join(HOME_DIR, *["Git_Analytics", "Analytics-Vis",
+# DATA_PATH = os.path.join(HOME_DIR, *["Git","Git_Analytics", "Analytics-Vis",
 #                                      "Data", "VirginiaTech",
-#                                      "Raw_Sampled", "Full_Data",
+#                                      "Many_Trials", "Data",
 #                                      "Clean_Data.txt"])
+
+DATA_PATH = os.path.join(HOME_DIR, *["Git", "Git_Analytics", "Analytics-Vis",
+                                     "Data", "VirginiaTech",
+                                     "Raw_Sampled", "Full_Data",
+                                     "Clean_Data.txt"])
 
 # Paths to local cache files (for speed of re-execution)
 LOCAL_FILE = "IOzone_data_2016.pkl"
@@ -85,7 +85,7 @@ def bootstrapped_std(values, sample_size=40, num_iters=2000,
 
 if not os.path.exists(LOCAL_FILE):
     print("Reading in the data...")
-    data = read_struct(DATA_PATH, verbose=True)
+    data = Data.load(DATA_PATH, verbose=True).to_struct()
     with open(LOCAL_FILE,"wb") as f:
         print("Writing data to local pickle file..")
         pickle.dump(data,f)
@@ -181,7 +181,7 @@ if COLLECT_RUNS_DATA:
                 annotation_y = convergence[conv_index]
                 p.add_annotation("90% Convergence", annotation_x, annotation_y,
                                  ax=30,ay=20,y_anchor='top')
-                p.plot(show_legend=False, file_name="Convergence_Stoping_Point_%i.html"%(iters[-1]))
+                p.plot(show_legend=False, file_name="NEW Convergence_Stoping_Point_%i.html"%(iters[-1]))
                 exit()
             else:
                 num_runs[key] = conv_index
@@ -290,12 +290,18 @@ if PLOT_CONVERGENCE:
     ordered_names = ["File Size", "Record Size", "Thread Count", "Frequency"]
     ordered_lists = [file_size, record_size, threads, frequencies]
     interest_index = np.argmax(list(map(len,ordered_lists)))
+    print()
+    print("Model Data")
+    print(model_data)
+    print()
     for row in model_data:
         if not ((row[0] in file_size) and
                 (row[1] in record_size) and
                 (row[2] in threads) and
                 (row[3] in frequencies)):
             continue
+        print("Found the right row")
+        print()
         # Produce new data set without this point, generate an
         # estimated target distribution in order to bootstrap a guess
         new_data = np.array([tuple(r) for r in model_data if tuple(r) != tuple(row)])
@@ -307,7 +313,10 @@ if PLOT_CONVERGENCE:
         # Build a model to identify the simplex points
         model = Delaunay()
         model.fit(new_data)
-        points, weights = model.points_and_weights((row-shift)/scale)
+        points, weights = model._predict(((row-shift)/scale)[None,:])
+        # Transform the points and weights into a matrix and single vector
+        points = np.array([new_data[i] for i in points[0]])
+        weights = weights[0]
         # De-normalize the points and extract only if non-zero weight
         points = np.array([[int(round(v)) for v in p*scale+shift]
                            for (p,w) in zip(points,weights) if w > 0])
@@ -341,17 +350,15 @@ if PLOT_CONVERGENCE:
     # =======================================
 
     # Create plot of true convergence
-    p = Plot("", "Sample Size", "I/O Stdev")
+    p = Plot("", "Sample Size", "I/O Stdev", font_family="times", font_size=20)
     guessed_p = Plot("90% Confidence Interval with Increasing Sample Size", 
-                     "", "Predicted I/O Stdev")
+                     "", "Predicted I/O Stdev", font_family="times", font_size=20)
 
     # Calculate some useful values
     min_max = [min(x_values), max(x_values)]
     color = p.color(1)
     annotation_color = p.color(0)
-    annotation_font_size = 10
-    ax = 70
-    ay = 10
+    annotation_font_size = 17
 
     # Add the convergence series
     p.add("", x_values, lower, color=color, mode="markers+lines",
@@ -374,13 +381,17 @@ if PLOT_CONVERGENCE:
         annotation_x = x_values[conv_index]
         annotation_y = lower[conv_index]
 
+        ax = annotation_x + 1
+        ay = annotation_y - 200000
+
         # Add vertical line for convergence
-        p.add("",[annotation_x]*2, [min(lower), max(upper)],
+        p.add("",[annotation_x]*2, [lower[conv_index], upper[conv_index]],
               color=annotation_color, mode="lines")
-        p.add_annotation("%.0f%% Convergence"%(100*(conv_perc)),
+        p.add_annotation("%.0f%% Convergence<br>to observed truth"%(100*(conv_perc)),
                          annotation_x, annotation_y, 
                          ax=ax, ay=ay, y_anchor="top", align="right",
-                         font_size=annotation_font_size)
+                         font_size=annotation_font_size,
+                         font_family="times", x_anchor="left")
 
 
         # Extract the guessed convergence information
@@ -391,16 +402,22 @@ if PLOT_CONVERGENCE:
         guessed_annotation_x = x_values[guessed_conv_index]
         guessed_annotation_y = guessed_lower[guessed_conv_index]
 
+        ax = guessed_annotation_x + .5
+        ay = 14
+
         # Add vertical line for convergence
-        guessed_p.add("",[guessed_annotation_x]*2, [min(guessed_lower), max(guessed_upper)],
-              color=annotation_color, mode="lines")
+        guessed_p.add("",[guessed_annotation_x]*2, 
+                      [guessed_lower[guessed_conv_index], 
+                       guessed_upper[guessed_conv_index]],
+                      color=annotation_color, mode="lines")
         guessed_p.add_annotation("%.0f%% Convergence Guess<br>Error of %.1f%% (%i)"%(
             100*(conv_perc),
             100*(guessed_annotation_x - annotation_x)/x_values[-1], 
             guessed_annotation_x - annotation_x),
                                  guessed_annotation_x, guessed_annotation_y, 
                                  ax=ax, ay=ay, y_anchor="top", align="right",
-                                 font_size=annotation_font_size)
+                                 font_size=annotation_font_size,
+                                 font_family="times", x_anchor="left")
 
     # Create plot
     fig1 = p.plot(show_legend=False,
@@ -412,7 +429,7 @@ if PLOT_CONVERGENCE:
                           html=False)
 
 
-    multiplot([[fig1],[fig2]], shared_x=True, file_name="double_convergence.html")
+    multiplot([[fig1],[fig2]], shared_x=True, file_name="NEW double_convergence.html")
 
 
 
@@ -445,7 +462,7 @@ if PLOT_BOOTSTRAPPED:
         lower.append(low)
         upper.append(upp)
     # Create nice plot
-    p = Plot("90%% Confidence Interval of Standard Deviation versus %s"
+    p = Plot("NEW 90%% Confidence Interval of Standard Deviation versus %s"
              %(ordered_names[interest_index]),
              ordered_names[interest_index], 
              "Standard Deviation of I/O Throughput")
@@ -467,7 +484,7 @@ if PLOT_BOOTSTRAPPED:
         desc.pop(interest_index)
     desc = ",".join(list(map(str,desc)))
     # Create plot
-    p.plot(file_name="SD_90_vs_%s_(%s).html"%(
+    p.plot(file_name="NEW_SD_90_vs_%s_(%s).html"%(
         ordered_names[interest_index].replace(" ","_"), desc),
            show_legend=False, axis_settings=dict(showgrid=False),)
            # layout=dict(plot_bgcolor="#fcfcfc",

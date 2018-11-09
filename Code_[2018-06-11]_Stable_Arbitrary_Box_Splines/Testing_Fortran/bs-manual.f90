@@ -605,7 +605,7 @@ CONTAINS
          PT_SHIFT_R       (NUM_DVECS),                     &
          NORMAL_VECTOR    (DIM),                           &
          SING_VALS        (DIM),                           &
-         PT_SHIFT         (DIM),                           &
+         PT_SHIFT         (DIM)                            &
          )
 
   END SUBROUTINE RESERVE_MEMORY
