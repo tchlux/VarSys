@@ -1,0 +1,51 @@
+Approximation Error Bounds
+
+## Definitions
+
+  We first adopt the *multi-index* notation for multivariate polynomials from *Cheney and Light* [[cheney2009course]].
+
+  When considering functions of $d$ real variables, the variables denoted $\xi_1, \ldots, \xi_d$ can be put into a vector called $x = (\xi_1, \ldots, \xi_d),$ $x \in \mathbb{R}^d$.
+
+  Let $\mathbb{Z}$ denote the set of all integers and $\mathbb{Z}_+$ non-negative integers. The notation $\mathbb{Z}^d_+$ then means the set of all $d$-tuples $\alpha = (\alpha_1,\ldots,\alpha_d),$ where $\alpha_i \in \mathbb{Z}^+$.
+
+  For a *multi-index* we write $|\alpha| = \alpha_1 + \ldots + \alpha_d$. Then for $x = (\xi_1, \ldots, \xi_d)$ and $\alpha = (\alpha_1, \ldots, \alpha_d)$, it follows that
+  $$x^\alpha := \prod_{i=1}^d \xi^{\alpha_i}_i = \xi^{\alpha_1}_1 \cdots \xi^{\alpha_d}_d$$
+
+  Now a polynomial in $\mathbb{R}^d$ can be written as
+  $$p(x) = \sum_\alpha c_\alpha x^\alpha$$
+  in which the sum is finite, the $c_\alpha$ are real numbers, and $\alpha \in \mathbb{Z}^d_+$. The degree of $p$ is
+  $$ \max \{ |\alpha| : c_\alpha \not = 0 \}, $$
+  and when all $c_\alpha$ are $0,$ then $p(x) = 0,$ and we assign the degree $-\infty$ to the polynomial.
+
+  Finally, let $f: \mathbb{R}^d \rightarrow \mathbb{R}$ by a multivariate polynomial function, and let $X = \{x_1, \ldots x_n : x_i \in \mathbb{R}^d\}$ and $Y = \{f(x_i) : x_i \in X\}$. We will now consider the maximum error in various approximations $\hat f$ of the underlying polynomial function.
+
+
+
+# Delaunay Simplicial Mesh
+
+  Let $\{x_1, \ldots, x_d+1\}$ be the set vertices of a simplex $s$ in a Delaunay simplicial mesh, where $s$ has *circumsphere radius* $r$ and center $c_s \in \mathbb{R}^d$.
+
+- If $f$ has degree $k$, then the maximum possible error of $\hat f$ over $s$ occurs at $c_s$ and has value $\cdots$
+
+
+%% ## Theorem
+%%   Suppose the degree of $f$ is $k$, then the maximum error over a Delaunay simplex occurs at the middle of the simplex and is bounded by $\cdots$
+
+%% ## Theorem
+%%   $f$ must be convex if the maximum error over a simplex is bounded by some constant $c \in \mathbb{R}_+$.
+%%     *only true when $c = 0$*
+
+%% ### Writing Proofs
+%% - Make a list of decreasingly useful statements about something
+%% - Disprove by counterexample starting a the top of the list
+%% - When you cannot disprove by counterexample, attempt to prove the statement
+
+====
+
+@book{cheney2009course,
+  title={A course in approximation theory},
+  author={Elliott Ward Cheney and William Allan Light},
+  volume={101},
+  year={2009},
+  publisher={American Mathematical Society}
+}

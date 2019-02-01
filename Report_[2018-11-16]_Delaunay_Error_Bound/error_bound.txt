@@ -1,0 +1,214 @@
+Bounding Linear Interpolant Error
+:: Thomas Lux :: :: 
+
+## Lemma 1
+  Let $S \subset \mathbb{R}^d$ be open and convex, $\ f: \mathbb{R}^d \rightarrow \mathbb{R},$ and $\nabla f \in Lip_{(\gamma,\|\cdot\|_2)}(S)$, the set of $\gamma$-Lipschitz continuous functions in the $2$-norm. Then for all $x,y \in S$
+    $\displaystyle \big|\ f(y) - f(x) - \langle \nabla f(x), y - x \rangle \big| \leq \frac{\gamma \|y - x\|_2^2}{2}.$
+
+* **Proof** *
+  Consider the function $g(t) = f \big((1-t) x + t y \big),$ $0 \leq t \leq 1,$ whose derivative $g'(t) = \big\langle \nabla f \big((1-t) x + t y \big), y - x \big\rangle$ is the directional derivative of $f$ in the direction $(y - x).$
+
+  $\begin{align}
+     \big|\ f(y) - f&(x) - \langle \nabla f(x), y - x \rangle \big| &\\ 
+     &= \big|\ g(1) - g(0) - g'(0) \big| & \\
+     &= \bigg| \int_0^1 g'(t) - g'(0)\ dt \bigg| \\
+     &\leq \int_0^1 \big|g'(t) - g'(0)\big|\ dt \\
+     &= \int_0^1 \bigg| \big \langle \nabla f\big((1-t)x + ty\big) - \nabla f(x), y - x \big \rangle \bigg|\ dt \\
+     &\leq \int_0^1 \big \| \nabla f\big((1-t)x + ty\big) - \nabla f(x) \big \|_2\ \| y - x \|_2\ dt \\
+     &\leq \int_0^1 \big ( \gamma\ \|y-x\|_2 \big) \ \big( \|y-x\|_2 \big) t\ dt \\
+     &= \frac{\gamma \|y - x\|_2^2}{2}.
+   \end{align} $
+
+  $\square$
+
+$ $
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+## Lemma 2
+  Let $x, y, v_i \in \mathbb{R}^d,$ $c_i \in \mathbb{R},$ and $|\langle y - x, v_i \rangle| \leq c_i$ for $i = 1,$ $\ldots,$ $d.$ If $M = (v_1,$ $\ldots,$ $v_d)$ is nonsingular, then
+
+    $\displaystyle \|y - x\|_2^2 \leq \frac{1}{\sigma_d^2} \sum_{i=1}^d c_i^2,$
+
+  where $\sigma_d$ is the smallest singular value of $M.$
+
+* **Proof** *
+  Using the facts that $M$ and $M^t$ have the same singular values, and $\|M^tw\|_2 \geq \sigma_d \|w\|_2,$ gives
+
+    $\begin{align}
+     \|y - x\|_2^2 &\leq \frac{\|M^t (y - x)\|_2^2}{\sigma_d^2} \\
+                   &=    \frac{1}{\sigma_d^2} \sum_{i=1}^d \langle y - x, v_i \rangle^2 \\
+                   &\leq \frac{1}{\sigma_d^2} \sum_{i=1}^d c_i^2.
+     \end{align}$
+
+  $\square$
+
+$ $
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+## Lemma 3
+  Given $\ f,$ $\gamma,$ $S$ as in @@Lemma 1@@, let $X = \{x_0,$ $x_1,$ $\ldots,$ $x_d\}$ $\subset S$ be the vertices of a $d$-simplex, and let $\hat f(x) = \langle c, x - x_0 \rangle + f(x_0),$ $c \in \mathbb{R}^d$ be the linear function interpolating $\ f$ on $X.$
+
+  Let $\sigma_d$ be the smallest singular value of the matrix $M = (x_1 - x_0,$ $\ldots,$ $x_d - x_0),$ and $k = \max\limits_{1\ \leq\ j\ \leq\ d} \|x_j - x_0\|_2.$ Then
+
+    $\displaystyle \big\|\nabla f(x_0) - c\big\|_2 \leq \sqrt{d} \frac{\gamma k^2}{\sigma_d}.$
+
+* **Proof** *
+  Consider $f(x) - \hat f(x)$ along the line segment $z(t) = (1-t)x_0 + t x_j,$ $0 \leq t \leq 1.$ By Rolle's Theorem, for some $0 < \hat t < 1,$ $\big\langle \nabla f\big(z(\ \hat t\ )\big) - c, x_j - x_0 \big\rangle = 0.$ Now
+
+    $\begin{align}
+       \big| \big< \nabla f(x_0) &- c, x_j - x_0 \big \rangle \big| \\
+        &= \big| \big< \nabla f(x_0) - \nabla f\big(z(\ \hat t\ )\big) + \nabla f\big(z(\ \hat t\ )\big) - c, x_j - x_0 \big \rangle \big| \\
+	&= \big| \big\langle \nabla f(x_0) - \nabla f \big(z(\ \hat t\ )\big), x_j - x_0 \big \rangle \big| \\
+	&\leq \big \| \nabla f(x_0) - \nabla f\big(z(\ \hat t\ )\big) \big \|_2 \|x_j - x_0\|_2 \\
+	&\leq \gamma \|x_0 - z(\ \hat t\ )\|_2\ \|x_j - x_0\|_2 \\
+	&\leq \gamma \|x_j - x_0\|_2^2 \leq \gamma k^2, \\
+     \end{align}$
+
+  for all $1 \leq j \leq d.$ Using @@Lemma 2@@,
+
+    $\big \| \nabla f(x_i) - c \big \|_2^2 \leq \frac{d}{\sigma_d^2} \big( \gamma k^2\big)^2 \implies \big \| \nabla f(x_i) - c \big \|_2 \leq \sqrt{d} \frac{\gamma k^2}{\sigma_d}.$
+
+  $\square$
+
+$ $
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+## Theorem
+  Under the assumptions of @@Lemma 1@@ and @@Lemma 3@@, for $z \in S,$
+
+    $\displaystyle \big|\ f(z) - \hat f(z)\big| \leq \frac{\gamma \|z - x_0\|_2^2}{2} + \sqrt{d} \frac{\gamma k^2}{\sigma_d} \|z - x_0\|_2.$
+
+* **Proof** *
+  Let $v = \nabla f(x_0) - c,$ where $\|v\|_2 \leq \sqrt{d} \gamma k^2 / \sigma_d$ by @@Lemma 3@@. Now
+
+    $\begin{align}
+       \big|\ f(z) - \hat f(z)\ \big| &= \big|\ f(z) - f(x_0) - \langle c, z - x_0 \rangle \big| \\ 
+       &= \big|\ f(z) - f(x_0) - \langle \nabla f(x_0) - v, z - x_0 \rangle \big| \\
+       &= \big|\ f(z) - f(x_0) - \langle \nabla f(x_0) , z - x_0 \rangle + \langle v , z - x_0 \rangle \big| \\
+       &\leq \big|\ f(z) - f(x_0) - \langle \nabla f(x_0) , z - x_0 \rangle \big| + \big| \langle v , z - x_0 \rangle \big| \\
+       &\leq \big|\ f(z) - f(x_0) - \langle \nabla f(x_0) , z - x_0 \rangle \big| + \|v\|_2 \ \|z - x_0\|_2 \\
+       &\leq \big|\ f(z) - f(x_0) - \langle \nabla f(x_0), z - x_0 \rangle \big| + \textstyle{\frac{\gamma k^2 \sqrt{d}}{\sigma_d}} \|z - x_0\|_2 \\
+       &\leq \frac{\gamma \|z - x_0\|_2^2}{2} + \sqrt{d}\frac{\gamma k^2}{\sigma_d} \|z - x_0\|_2,
+     \end{align}$
+
+  where the last inequality follows from @@Lemma 1@@.
+
+  $\square$
+
+$ $
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+
+
+
+
+
+
+
+%% ## Corollary
+%%   Given the definitions of the @@Theorem@@, when $z$ is inside the convex hull of $X$ we have
+
+%%     $\displaystyle |\ f(z) - \hat f(z)| \leq \min_{x_i \in X} \frac{\gamma (k^{(i)})^2 d}{\sigma_d^{(i)}} + \frac{\gamma \|x_i - z\|_2^2}{2}.$
+
+%% * **Proof** *
+%%   Pass
+
+%% $ $
+
+%% ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+%%    $\implies \big| \big< \nabla f(x_0) - c, \frac{x_j - x_0}{\|x_j - x_0\|_2} \big \rangle \big| \leq \gamma \|x_j - x_0\|_2 = \gamma k,$
+
+
+%% $ $
+
+%% Combining the two results thus far, the maximum interpolation error over the interior of a simplex is approximately $c d \gamma q r.$
+
+%% $ $
+
+%% ## Theorem 3
+%%   Functions that have Lipschitz continuous first derivatives are pseudo convex everywhere except a set of measure $0.$
+
+%% $ $
+
+%% ## Theorem 4
+%%   For pseudo-convex functions, the maximum interpolation error on the interior of a simplex is $\frac{r^2}{2}.$
+
+
+%% we know from @@Fact 1.1@@ that the condition number of that matrix is greater than or equal to the smallest edge length $e.$ Now
+
+%% ----------------------------------------------------------------------
+
+%%   We know that when $v_i$ are orthonormal $q$ is $1$ and *Parseval's Identity* gives us the equality.
+
+%%   When the $v_i$ are not orthogonal and right hand side is greater than the left hand side, the inequality holds. We must consider the case where $v_i$ are not orthogonal and the condition number times the $2$-norm of the projections is less than the $2$-norm of the vector.
+
+%%   *(something using the condition number to bound the "shrinkage" that can be applied to the vector $x-y$.)*
+
+%% %%  For $\big(\sum_{i=1}^d c_i^2\big)^{1/2}$ to be smaller than $\|x-y\|_2,$ the inner products of $x-y$ with $v_i$ must *small.* Knowing that $M$ is not singular, we can determine exactly how small each $c_i$ can be. It is possible that all but one $v_i$ can be orthogonal to $x-y.$
+
+
+%%   $\ldots$
+
+
+
+%% It follows that any interpolant using a locally constant approximation to $\nabla f$ has maximum error proportional to the ***square root*** of the distance from an interpolation node when approximating functions with Lipschitz continuous first derivatives.
+
+%% $ $
+
+%% ## Fact 1.1
+%%   Given a matrix $M = [v_1, \ldots, v_d]^{(d\ \times\ d)},$ then $\sigma_d$ of $M$ (the smallest singular value) is equal to $\|p\|_2,$ where $p \in \mathbb{R}^d$ is the smallest $2$-norm vector perturbation that can be applied to some $v_i$ to make $M$ singular.
+
+
+%%  The first $d-1$ vectors could be orthogonal to the "only" meaningful vector in the space. The $d$-th vector must have some component in the meaningful direction. The percentage of the component in that direction is $\epsilon.$ We need that number to be rescaled to $1,$ so we need to divide by $\epsilon.$ 
+
+
+
+%%  Certainly the maximum error is bounded then by the sum of errors along each component, yielding $\|\nabla f(x_i) - \nabla \hat f_X\| \leq \gamma \sum_{j \not = i} \|x_i - x_j\| \leq 2 \gamma d r.$
+
+
+%%  Looking at each of these $d$ conditions, we can write the largest possible error in the gradient estimate as the point on the interior of $X$ with the greatest norm difference from $x_i$
+
+%%    $\displaystyle \max_{\substack{\sum_{j=1}^d w_j = 1 \\ w_j \geq 0}} \gamma \bigg \|x_i - \sum_{j=1}^d w_j x_j \bigg\|$
+  
+
+%%  $\ldots$
+
+
+%%  Notice that the $d$ vectors define a transformation of coordinates $M.$ If $M$ has determinant $1$ then we have $\|\nabla f(x_i) - \nabla \hat f_X \| \leq \gamma \| M \nabla f(x_i) \|$.
+
+
+%%  This is trivially true based on the definition of $\gamma$-Lipschitz. That is, $\| \nabla f(x) - \nabla f(y) \| \leq \gamma \|x - y\|.$ A radius of $r$ implies the maximum distance to the nearest vertex for any point $x$ on the interior $X$ is $r$.
+
+
+%% For any simplex, without loss of generality we can transform the coordinates such that the diameter of the simplex is $1$. Now we want to bound the maximum difference between $\nabla \hat f$ and $\nabla f$ at the vertices of the simplex.
+
+%% If we pick a path, the mean value theorem tells us that $\nabla f$ along the path must equal $\nabla \hat f$ along the path somewhere in the simplex. However, we cannot guarantee that the *value* of $\nabla \hat f$ is obtained exactly inside the simplex, consider the example below.
+
+%% {{not_equal.html}}
+
+%% Notice that the function $f$ only has a nonzero derivative in the $x$ component, while $\hat f$ only has a nonzero derivative in the $y$ component. Similarly, when we restrict $f$ to be convex that does not improve the error bound over the standard Lipschitz guarantees. This is particularly evident when the slope at the vertices is as far from the slope of the simplex as possible, see example below. 
+
+%% {{bad_convex.html}}
+
+%% More precisely, the worst possible error of the approximation is proportional to $\frac{\gamma d^2}{2},$ where $d$ is the diameter of the simplex.
+
+%% If we require that the function is pseudo-convex, meaning $\langle \nabla f(x), (x-y) \rangle \geq 0 \implies f(x) \leq f(y)$
+
+%% ----
+
+%% 1) Assume function first derivative is Lipschitz continuous
+%% 2) Restate the calculus bounds on function approximation error
+%% 3) State the change of coordinates to have a simplex with diameter $1$
+%% 4) State the max difference between the slope of simplex and the slope of the function
+%% 5) Show that that max difference translates to a maximum error of $\cdots$
+
+%% State the max difference between the magnitude of the slope
+
+%% $g'$ is also $\gamma$-Lipschitz continuous because $\frac{y - x}{c}$ is unit length, 
