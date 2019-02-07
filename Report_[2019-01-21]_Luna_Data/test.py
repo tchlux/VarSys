@@ -19,7 +19,7 @@ d.reorder(d.names[:-5] + d.names[-4:] + [d.names[-5]])
 d._max_display = 100
 d.sort()
 print(d)
-d.effect()
+d.effect("Mean Time")
 print()
 
 

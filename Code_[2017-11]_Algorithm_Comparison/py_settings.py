@@ -4,7 +4,9 @@ from util.classes import AtomicOpen
 import numpy as np
 # For retrieving the comparing algorithms
 import os, sys, time, fcntl, signal, inspect
-from util.algorithms import *
+from util.approximate import *
+# Import additional Delaunay testing modules.
+from util.approximate.delaunay import DelaunayP1, DelaunayP2, DelaunayP3
 
 # Get the name of a class as listed in python source file.
 GET_CLASS_NAME = lambda obj: (repr(obj)[1:].split(" ")[0]).split(".")[-1]
