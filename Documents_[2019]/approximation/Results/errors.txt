@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "make_predictions.py", line 7, in <module>
+    from util.approximate import Delaunay, Voronoi, BoxMesh, ShepMod, \
+  File "/Users/thomaslux/Git/util/util/approximate/__init__.py", line 22, in <module>
+    from util.approximate.neural_network import NeuralNetwork, BFGS1000
+  File "/Users/thomaslux/Git/util/util/approximate/neural_network/__init__.py", line 55, in <module>
+    class BFGS1000(Neural_Network):
+NameError: name 'Neural_Network' is not defined
