@@ -28,6 +28,7 @@ fit_data = Data(names=["Data name", "Dimension", "Fold size", "Fold number", "Mo
 
 print()
 for raw_file in sorted(os.listdir(raw_dir)):
+    raw_file = raw_file.replace(".gz","")
     raw_path = os.path.join(raw_dir, raw_file)
     data_path = os.path.join(data_dir, raw_file + '.dill')
     intermediate_results_file = os.path.join(".", "Predictions",

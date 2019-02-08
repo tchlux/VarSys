@@ -53,7 +53,7 @@ data_dir = os.path.join( cwd, "Data" )
 
 for raw_file in sorted(os.listdir(raw_dir)):
     raw_path = os.path.join(raw_dir, raw_file)
-    data_path = os.path.join(data_dir, raw_file + '.dill')
+    data_path = os.path.join(data_dir, raw_file.replace(".gz","") + '.dill')
     if not os.path.exists(data_path):
         print('-'*70)
         print(raw_path)
