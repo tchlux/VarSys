@@ -18,16 +18,19 @@ data_name = lambda p: os.path.basename(p).replace(".dill","").replace(".csv","")
 models = [ShepMod, BoxMesh, Voronoi, Delaunay,
           BFGS1000, LSHEP, SVR, MARS,]
 
-intermediate_fit_results = "fit-intermediate.dill"
-final_fit_results = "fit-final.dill"
-
-
 # Recording data for each set and for each algorithm that looks like:
 # | Data name | Dimension | Fold Size | Fold Number | Model Name | Model fit time |
 # | x | ... | y | ... | Model y | ... | Model nearest | Model max edge | Model furthest | Model num contributors | Model prediction time |
 
-fit_data = Data(names=["Data name", "Dimension", "Fold size", "Fold number", "Model name", "Fit time"],
-                types=[str,         int,         int,         int,           str,          float     ])
+
+intermediate_fit_results = os.path.join(".", "Predictions", "fit-intermediate.dill")
+final_fit_results = os.path.join(".", "Predictions", "fit-final.dill")
+if os.path.exists(intermediate_fit_results):
+    fit_data = Data.load(intermediate_fit_results)
+else:
+    fit_data = Data(names=["Data name", "Dimension", "Fold size", "Fold number", "Model name", "Fit time"],
+                    types=[str,         int,         int,         int,           str,          float     ])
+
 
 print()
 for raw_file in sorted(os.listdir(raw_dir)):
@@ -47,6 +50,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
     # Load data, declare "target" column, 
     if os.path.exists(intermediate_results_file):
         print("Loading intermediate results..")
+        print(intermediate_results_file)
         d = Data.load(intermediate_results_file)
         print(d)
         target = d.names[d.names.index("Indices") - 1]
@@ -125,7 +129,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
             row = [data_name(data_path), train_x.shape[1], test_x.shape[0],
                    i+1, class_name(model), t.total]
             fit_data.append(row)
-            fit_data.save(intermediate_results_file)
+            fit_data.save(intermediate_fit_results)
             # Now collect the approximation data.
             for test_idx, (d_idx, test_pt) in enumerate(zip(test["Indices"], test_x)):
                 print(f"    {test_idx+1:4d} :{len(test_x):4d}", end="\r")
@@ -169,12 +173,12 @@ for raw_file in sorted(os.listdir(raw_dir)):
                 min_dist = float(min(test_train_dists[test_idx,:]))
                 d[d_idx, nearest_col] = min_dist
             # ^^ END (for test point ...)
-            print("    done.          ")
-            print()
             # Save intermediate results to a file (after each model).
             d.save(intermediate_results_file)
+            print("    done.          ")
+            print()
         # ^^ END (for model ...)
     # ^^ END (for fold ...)
     d.save(final_results_file)
 # ^^ END (for data ...)
-fit_data.save(final_results_file)
+fit_data.save(final_fit_results)
