@@ -18,6 +18,9 @@ data_name = lambda p: os.path.basename(p).replace(".dill","").replace(".csv","")
 models = [ShepMod, BoxMesh, Voronoi, Delaunay,
           BFGS1000, LSHEP, SVR, MARS,]
 
+intermediate_fit_results = "fit-intermediate.dill"
+final_fit_results = "fit-final.dill"
+
 
 # Recording data for each set and for each algorithm that looks like:
 # | Data name | Dimension | Fold Size | Fold Number | Model Name | Model fit time |
@@ -122,6 +125,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
             row = [data_name(data_path), train_x.shape[1], test_x.shape[0],
                    i+1, class_name(model), t.total]
             fit_data.append(row)
+            fit_data.save(intermediate_results_file)
             # Now collect the approximation data.
             for test_idx, (d_idx, test_pt) in enumerate(zip(test["Indices"], test_x)):
                 print(f"    {test_idx+1:4d} :{len(test_x):4d}", end="\r")
@@ -137,7 +141,9 @@ for raw_file in sorted(os.listdir(raw_dir)):
                         print("     found '0' weights, removing..")
                         ids = ids[wts > 0]
                         wts = wts[wts > 0]
-
+                    if (len(ids) == 0):
+                        print("     failed approximation for data row {d_idx}, skipping..")
+                        continue
                     # Identify the nearest contributor.
                     min_dist = float(min(test_train_dists[test_idx, ids]))
                     # Identify the furthest contributor.
@@ -171,3 +177,4 @@ for raw_file in sorted(os.listdir(raw_dir)):
     # ^^ END (for fold ...)
     d.save(final_results_file)
 # ^^ END (for data ...)
+fit_data.save(final_results_file)
