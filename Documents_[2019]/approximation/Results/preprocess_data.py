@@ -81,6 +81,15 @@ for raw_file in sorted(os.listdir(raw_dir)):
             d["month_x"] = (month_map[v][0] for v in d["month"])
             d["month_y"] = (month_map[v][1] for v in d["month"])
             d = d[[n for n in d.names if n not in ("month", "day", "area")] +["area"]]
+            print("Finding unique points..")
+            unique_points = {}
+            for i,pt in enumerate(d):
+                pt = tuple(pt[:-1])
+                unique_points[pt] = unique_points.get(pt, []) + [i]
+            # Store the indices of the first occurrence of each unique point.
+            unique_indices = sorted(unique_points[pt][0] for pt in unique_points)
+            print(f"Removing {len(d) - len(unique_indices)} duplicate points..")
+            d = d[unique_indices]
         elif (raw_file == "iozone_150.csv"):
             # Reduce to the "readers" test type.
             d = d[d["Test"] == "readers"]

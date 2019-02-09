@@ -40,11 +40,24 @@ for raw_file in sorted(os.listdir(raw_dir)):
     print(raw_path)
     print(final_results_file)
     print()
-    d = Data.load(data_path)
-    target = d.names[-1]
-    num_train_columns = len(d.names) - 1
-    d["Indices"] = range(len(d))
+    # Check to see if intermediate results have been stored.
+    # Load data, declare "target" column, 
+    if os.path.exists(intermediate_results_file):
+        print("Loading intermediate results..")
+        d = Data.load(intermediate_results_file)
+        print(d)
+        target = d.names[d.names.index("Indices") - 1]
+    else:
+        print("Loading data file..")
+        d = Data.load(data_path)
+        print(d)
+        target = d.names[-1]
+        # Declare the indices..
+        d["Indices"] = range(len(d))
+    # Compute the number of training columns.
+    num_train_columns = d.names.index(target)
     print(f"Data shape: {d.shape} predicting '{target}'")
+    # Start the folds.
     for i,(train, test) in enumerate(d.k_fold(k=folds, seed=seed)):
         print(f"  Fold {i+1} of {folds}..")
         # Get the numeric representation of this data based on training,
@@ -83,6 +96,13 @@ for raw_file in sorted(os.listdir(raw_dir)):
             fur_contrib_col     = f"{class_name(model)} furthest contributor"
             num_contrib_col     = f"{class_name(model)} number of contributors"
             max_edge_col        = f"{class_name(model)} max edge length"
+            # Check to see if the columns are already filled, if so, skip.
+            output_columns = (target_guess_col, prediction_time_col, nearest_col)
+            if all(c in d.names for c in output_columns):
+                if all(None not in test[c] for c in output_columns):
+                    print("    all data collected, skipping.")
+                    print()
+                    continue
             # Initialize the columns of data that will be recorded for
             # this model if that has not been done already.
             if target_guess_col not in d.names:
@@ -94,6 +114,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
                     d[fur_contrib_col] = (None for i in range(len(d)))
                     d[num_contrib_col] = (None for i in range(len(d)))
                     d[max_edge_col] = (None for i in range(len(d)))
+
             # Collect the fit-time data.
             t = Timer()
             model.fit(train_x, train_y)
@@ -142,7 +163,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
                 min_dist = float(min(test_train_dists[test_idx,:]))
                 d[d_idx, nearest_col] = min_dist
             # ^^ END (for test point ...)
-            print("    done.")
+            print("    done.          ")
             print()
             # Save intermediate results to a file (after each model).
             d.save(intermediate_results_file)
