@@ -1,5 +1,7 @@
 import os
 from util.data import Data
+from util.pairs import pairwise_distance
+from util.math import SMALL
 
 # Given a list of lists, transpose it and return.
 def transpose(l): return [list(row) for row in zip(*l)]
@@ -58,7 +60,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
         print('-'*70)
         print(raw_path)
         d = Data.load(raw_path, sep=",", verbose=True)    
-        if   (raw_file == "creditcard.csv"):
+        if   ("creditcard" in raw_file):
             # Remove all fraudulent transactions, only keep authentic ones.
             # Only need to remove the "time" 1st column and "fraud" last column.
             print("Removing fraudulent transations..")
@@ -74,7 +76,20 @@ for raw_file in sorted(os.listdir(raw_dir)):
             unique_indices = sorted(unique_points[pt][0] for pt in unique_points)
             print(f"Removing {len(d) - len(unique_indices)} duplicate points..")
             d = d[unique_indices]
-        elif (raw_file == "forestfires.csv"):
+            print("Converting data to numeric form..")
+            nums = d[:,:-1].to_matrix()
+            print(f"Using a more robust technique to identify remaining duplicates..")
+            dists = pairwise_distance(nums.data)
+            to_remove = []
+            print("Cycling through pairs..")
+            for i in range(dists.shape[0]):
+                for j in range(i+1, dists.shape[1]):
+                    if dists[i,j] < SMALL**(1/2): to_remove.append(i)
+            to_remove = sorted(set(to_remove))
+            print(f"Found {len(to_remove)} more duplicate points, removing..")
+            # Pop out these rows from the Data
+            for i in to_remove[::-1]: d.pop(i)
+        elif ("forestfires" in raw_file):
             # Map months to a circle, remove the day of week information.
             months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
             month_map = {m:pt for m,pt in zip(months, circle_points(len(months)))}
@@ -90,7 +105,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
             unique_indices = sorted(unique_points[pt][0] for pt in unique_points)
             print(f"Removing {len(d) - len(unique_indices)} duplicate points..")
             d = d[unique_indices]
-        elif (raw_file == "iozone_150.csv"):
+        elif ("iozone_150" in raw_file):
             # Reduce to the "readers" test type.
             d = d[d["Test"] == "readers"]
             d = d[[n for n in d.names if n != "Test"]]
@@ -102,11 +117,11 @@ for raw_file in sorted(os.listdir(raw_dir)):
             d["Throughput"] = [cdf_fit(row, fit="cubic") for row in d[:,trial_cols]]
             print("Reducing data..")
             d = d[[n for n in d.names if "Trial" not in n]]
-        elif (raw_file == "parkinsons_updrs.csv"):
+        elif ("parkinsons_updrs" in raw_file):
             # Remove the "subject#" 1st column.
             d.reorder([n for n in d.names if n not in {"total_UPDRS", "motor_UPDRS"}])
             d = d[d.names[1:-2] + ["total_UPDRS"]]
-        elif (raw_file == "weatherAUS.csv"):
+        elif ("weatherAUS" in raw_file):
             # Count the occurrence of different locations in data.
             print()
             print("Choices for locations:")

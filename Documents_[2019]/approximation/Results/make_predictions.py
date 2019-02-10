@@ -3,7 +3,7 @@ import numpy as np
 
 from util.data import Data
 from util.system import Timer
-from util.misc import pairwise_distance
+from util.pairs import pairwise_distance
 from util.approximate import Delaunay, Voronoi, BoxMesh, ShepMod, \
     LSHEP, BFGS1000, MARS, SVR, class_name
 
@@ -149,7 +149,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
                     t.stop()
                     # If some '0' weights were included, remove those.
                     if (min(wts) <= 0):
-                        print("     found '0' weights, removing..")
+                        print("     found '0' weights, removing..", end="\r")
                         ids = ids[wts > 0]
                         wts = wts[wts > 0]
                     if (len(ids) == 0):
