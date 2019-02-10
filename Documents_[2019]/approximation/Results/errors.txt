@@ -1,2 +1,0 @@
-Assembler messages:
-Fatal error: can't create build/temp.linux-x86_64-3.6/voronoi.o: No such file or directory

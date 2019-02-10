@@ -10,6 +10,12 @@ from util.approximate import Delaunay, Voronoi, BoxMesh, ShepMod, \
 # Make sure all of the prepared and pre-processed data files exist.
 from preprocess_data import cwd, raw_dir, data_dir
 
+# Overwrite the print function so that it forces prints to flush.
+def print(*args, og_print=print, **kwargs):
+    kwargs["flush"] = True
+    return og_print(*args, **kwargs)
+
+
 seed = 0
 folds = 10
 
@@ -32,7 +38,8 @@ else:
                     types=[str,         int,         int,         int,           str,          float     ])
 
 
-print()
+
+    
 for raw_file in sorted(os.listdir(raw_dir)):
     raw_file = raw_file.replace(".gz","")
     raw_path = os.path.join(raw_dir, raw_file)
@@ -146,7 +153,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
                         ids = ids[wts > 0]
                         wts = wts[wts > 0]
                     if (len(ids) == 0):
-                        print("     failed approximation for data row {d_idx}, skipping..")
+                        print(f"     failed approximation for data row {d_idx}, skipping..")
                         continue
                     # Identify the nearest contributor.
                     min_dist = float(min(test_train_dists[test_idx, ids]))
