@@ -1,9 +1,11 @@
 import numpy as np
-import pickle, sys, pathlib, os
+import pickle, sys, pathlib, os, time
 from util.multi_dim_analysis import make_test_data, MDA_Iterator
+from util.system import AtomicOpen
+from util.decorators import timeout
 from notifications import send_email
-from util.decorators import timeout_after
 import util.algorithms
+
 from py_settings import *
 
 # 1) using all 4 continuous dimensions (file size, record size,
@@ -302,7 +304,7 @@ for alg_name in to_test:
             # Get any extra arguments to pass to individual alrogithm fits
             extra_args = EXTRA_ARGS.get(name,[])
             # Wrap the fit function to monitor timeouts
-            fit_func = timeout_after(FIT_TIMEOUT_SECONDS,FAIL_VALUE)(alg.fit)
+            fit_func = timeout(FIT_TIMEOUT_SECONDS,FAIL_VALUE)(alg.fit)
             # Time the fit operation
             fit_time = time.time()
             fit_output = fit_func(train_points, train_values, *extra_args)
@@ -317,7 +319,7 @@ for alg_name in to_test:
                 print()
                 break # Cancel the rest of data collection for this algorithm
             # Wrap the approximation function to monitor timeouts
-            approx_func = timeout_after(APPROX_TIMEOUT_SECONDS,FAIL_VALUE)(alg)
+            approx_func = timeout(APPROX_TIMEOUT_SECONDS,FAIL_VALUE)(alg)
             # Evaluate at the testing points
             eval_time = time.time()
             test_approx = approx_func(test_points)
