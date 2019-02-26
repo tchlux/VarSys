@@ -5,7 +5,7 @@ from util.data import Data
 from util.system import Timer
 from util.pairs import pairwise_distance
 from util.approximate import Delaunay, Voronoi, BoxMesh, ShepMod, \
-    LSHEP, BFGS1000, MARS, SVR, class_name
+    LSHEP, SGD10K, MARS, SVR, class_name
 
 # Make sure all of the prepared and pre-processed data files exist.
 from preprocess_data import cwd, raw_dir, data_dir
@@ -22,7 +22,7 @@ folds = 10
 data_name = lambda p: os.path.basename(p).replace(".dill","").replace(".csv","")
 
 models = [ShepMod, BoxMesh, Voronoi, Delaunay,
-          BFGS1000, LSHEP, SVR, MARS,]
+          SGD10K, LSHEP, SVR, MARS,]
 
 # Recording data for each set and for each algorithm that looks like:
 # | Data name | Dimension | Fold Size | Fold Number | Model Name | Model fit time |
@@ -139,7 +139,11 @@ for raw_file in sorted(os.listdir(raw_dir)):
             fit_data.save(intermediate_fit_results)
             # Now collect the approximation data.
             for test_idx, (d_idx, test_pt) in enumerate(zip(test["Indices"], test_x)):
-                print(f"    {test_idx+1:4d} :{len(test_x):4d}", end="\r")
+                if (None not in (d[d_idx,target_guess_col], d[d_idx,prediction_time_col], d[d_idx,nearest_col])):
+                    # Skip predictions that have stored results.
+                    print(f"    {test_idx+1:4d} :{len(test_x):4d} skipping..", end="\r")                    
+                    continue
+                print(f"    {test_idx+1:4d} :{len(test_x):4d}           ", end="\r")
                 if is_weighted:
                     # Generate the guess based on the weighted sum.
                     t.start()

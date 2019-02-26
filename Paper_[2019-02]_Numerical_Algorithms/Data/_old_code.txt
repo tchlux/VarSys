@@ -1,0 +1,7 @@
+                    f_name = "hard_problem.csv"
+                    print("Training data file", )
+                    data = np.concatenate((train_x, test_pt[None,:]), axis=0)
+                    np.savetxt(f_name, data, delimiter=',', header=f'{train_x.shape[1]},{train_x.shape[0]},1,0')
+                    exit()
+
+
