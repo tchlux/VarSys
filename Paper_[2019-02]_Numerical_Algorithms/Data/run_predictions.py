@@ -49,7 +49,6 @@ for raw_file in sorted(os.listdir(raw_dir)):
                     f"intermediate_results_{data_name(raw_file)}.dill")
     final_results_file = os.path.join(".", "Predictions",
                     f"results_{data_name(raw_file)}.dill")
-    if "iozone" not in raw_file: continue
     print('-'*70)
     print(data_name(raw_path))
     print(raw_path)
