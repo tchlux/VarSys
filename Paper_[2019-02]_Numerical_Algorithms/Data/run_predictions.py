@@ -1,6 +1,7 @@
 import os
 import numpy as np
 
+from util.stats import cdf_fit
 from util.data import Data
 from util.system import Timer
 from util.pairs import pairwise_distance
@@ -21,7 +22,7 @@ folds = 10
 
 data_name = lambda p: os.path.basename(p).replace(".dill","").replace(".csv","")
 
-models = [ShepMod, BoxMesh, Voronoi, Delaunay,
+models = [ShepMod, BoxMesh, Voronoi, Delaunay, 
           SGD10K, LSHEP, SVR, MARS,]
 
 # Recording data for each set and for each algorithm that looks like:
@@ -48,6 +49,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
                     f"intermediate_results_{data_name(raw_file)}.dill")
     final_results_file = os.path.join(".", "Predictions",
                     f"results_{data_name(raw_file)}.dill")
+    if "iozone" not in raw_file: continue
     print('-'*70)
     print(data_name(raw_path))
     print(raw_path)
@@ -190,6 +192,8 @@ for raw_file in sorted(os.listdir(raw_dir)):
             print()
         # ^^ END (for model ...)
     # ^^ END (for fold ...)
+    print(f"Saving final results in '{final_results_file}'..")
+    print()
     d.save(final_results_file)
 # ^^ END (for data ...)
 fit_data.save(final_fit_results)
