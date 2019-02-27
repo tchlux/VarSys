@@ -6,7 +6,7 @@ from util.data import Data
 from util.system import Timer
 from util.pairs import pairwise_distance
 from util.approximate import Delaunay, Voronoi, BoxMesh, ShepMod, \
-    LSHEP, SGD10K, MARS, SVR, class_name
+    LSHEP, NeuralNetwork, MARS, SVR, class_name
 
 # Make sure all of the prepared and pre-processed data files exist.
 from preprocess_data import cwd, raw_dir, data_dir
@@ -22,8 +22,8 @@ folds = 10
 
 data_name = lambda p: os.path.basename(p).replace(".dill","").replace(".csv","")
 
-models = [ShepMod, BoxMesh, Voronoi, Delaunay, 
-          SGD10K, LSHEP, SVR, MARS,]
+models = [# ShepMod, BoxMesh, Voronoi, Delaunay, 
+          NeuralNetwork, ]#LSHEP, SVR, MARS,]
 
 # Recording data for each set and for each algorithm that looks like:
 # | Data name | Dimension | Fold Size | Fold Number | Model Name | Model fit time |
@@ -103,6 +103,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
                     continue
             # Initialize the model..
             model = model()
+
             # Generate the names of the columns where data will be recorded.
             target_guess_col    = f"{class_name(model)} {target}"
             prediction_time_col = f"{class_name(model)} prediction time"
@@ -176,10 +177,9 @@ for raw_file in sorted(os.listdir(raw_dir)):
                     t.start()
                     guess = model(test_pt.reshape(1,-1))
                     t.stop()
-                # Fix numpy floats 
-                if "float" in str(type(guess)): guess = float(guess)
                 # Store the guess and the total time taken to make the prediction
-                d[d_idx, target_guess_col] = guess
+                try:    d[d_idx, target_guess_col] = float(guess)
+                except: d[d_idx, target_guess_col] = guess
                 d[d_idx, prediction_time_col] = float(t.total)
                 # Calculate the nearest data point in the set and store.
                 min_dist = float(min(test_train_dists[test_idx,:]))
