@@ -1,10 +1,15 @@
 import os
 from util.data import Data
 from util.pairs import pairwise_distance
-from util.math import SMALL
+from util.math import SMALL, flatten
 
-# Given a list of lists, transpose it and return.
-def transpose(l): return [list(row) for row in zip(*l)]
+
+# Read in the data files.
+cwd = os.path.dirname(os.path.abspath(__file__))
+raw_dir = os.path.join( cwd, "Raw" )
+data_dir = os.path.join( cwd, "Data" )
+results_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Predictions")
+processed_results_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Results")
 
 # Given a count, return "count" evenly spaced points on the 
 # unit circle in 2 dimensions.
@@ -47,11 +52,6 @@ def cardinal_to_circle(card):
     try:    return circle_points(len(directions))[ directions.index(card) ]
     except: return (None, None)
 
-
-# Read in the data files.
-cwd = os.path.dirname(os.path.abspath(__file__))
-raw_dir = os.path.join( cwd, "Raw" )
-data_dir = os.path.join( cwd, "Data" )
 
 for raw_file in sorted(os.listdir(raw_dir)):
     raw_path = os.path.join(raw_dir, raw_file)
@@ -156,3 +156,34 @@ for raw_file in sorted(os.listdir(raw_dir)):
         d.save(data_path)
         print(d)
         print()
+
+
+# Go through the data directory, make sure the files containing only
+# response values have been produced.
+for f in os.listdir(data_dir):
+    if "." == f[0]: continue
+    name = f.split(".")[0]
+    # Skip the outputs that have already been produced.
+    if any(f"data_{name}_" in f for f  in os.listdir(processed_results_folder)): continue
+    # Load the data.
+    d = Data.load(os.path.join(data_dir, f))
+    target = d.names[-1]
+    output_name = os.path.join(
+        processed_results_folder,
+        f"data_{name}_{target.replace(' ','')}.csv")
+    print("Processing flat form for", f, target, "with shape", d.shape)
+    if "iozone" in f:
+        print()
+        # Load the original data, flatten throughput values into a
+        # matrix, store in a dict to trick "np.savetxt" line of code.
+        f = os.path.join("Raw",f[:-len(".dill")])
+        print("Loading..",f)
+        d = Data.load(f, verbose=True, sep=',')
+        print("Reducing to 'readers' test..")
+        d = d[d["Test"] == "readers"]
+        print("Converting to matrix and flattening..")
+        d = {target: d[:,5:].to_matrix().data.flatten()}
+        print()
+    # Save data.
+    np.savetxt(output_name, list(d[target]), delimiter=",")
+

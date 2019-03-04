@@ -22,8 +22,8 @@ folds = 10
 
 data_name = lambda p: os.path.basename(p).replace(".dill","").replace(".csv","")
 
-models = [# ShepMod, BoxMesh, Voronoi, Delaunay, 
-          NeuralNetwork, ]#LSHEP, SVR, MARS,]
+models = [ShepMod, BoxMesh, Voronoi, Delaunay, 
+          NeuralNetwork, LSHEP, SVR, MARS,]
 
 # Recording data for each set and for each algorithm that looks like:
 # | Data name | Dimension | Fold Size | Fold Number | Model Name | Model fit time |
@@ -35,8 +35,8 @@ final_fit_results = os.path.join(".", "Predictions", "fit-final.dill")
 if os.path.exists(intermediate_fit_results):
     fit_data = Data.load(intermediate_fit_results)
 else:
-    fit_data = Data(names=["Data name", "Dimension", "Fold size", "Fold number", "Model name", "Fit time"],
-                    types=[str,         int,         int,         int,           str,          float     ])
+    fit_data = Data(names=["Data name", "Model name", "Train Shape", "Test Shape", "Fold number", "Fit time"],
+                    types=[ str,         str,          tuple,         tuple,        int,           float,   ])
 
 
 
@@ -135,8 +135,8 @@ for raw_file in sorted(os.listdir(raw_dir)):
             t = Timer()
             model.fit(train_x, train_y)
             t.stop()            
-            row = [data_name(data_path), train_x.shape[1], test_x.shape[0],
-                   i+1, class_name(model), t.total]
+            row = [data_name(data_path), class_name(model),
+                   train_x.shape, test_x.shape, i+1, t.total]
             fit_data.append(row)
             fit_data.save(intermediate_fit_results)
             # Now collect the approximation data.
