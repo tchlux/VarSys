@@ -1,5 +1,6 @@
-from util.decorators import timeout_after
-from util.classes import AtomicOpen
+from util.decorators import timeout
+from util.system import AtomicOpen
+import util.approximate
 
 import numpy as np
 # For retrieving the comparing algorithms
@@ -9,7 +10,8 @@ from util.approximate import *
 from util.approximate.delaunay import DelaunayP1, DelaunayP2, DelaunayP3
 
 # Get the name of a class as listed in python source file.
-GET_CLASS_NAME = lambda obj: (repr(obj)[1:].split(" ")[0]).split(".")[-1]
+from util.approximate import class_name
+GET_CLASS_NAME = class_name
 
 # Reduce a number to its minimal display form (no unnecessary 0's on right)
 CLEAN_NUMBER_STRING = lambda number: str(number).rstrip("0").rstrip(".") \
@@ -58,3 +60,13 @@ elif MEASURE_DIM:
     DIM = 1
     FILE_NAME = "Run-time-dim.pkl"
 
+
+# Generate the list of algorithms (from all possible algorithms in util)
+ALGORITHMS = []
+for name in dir(util.approximate):
+    try:
+        if issubclass(getattr(util.approximate,name), util.approximate.Approximator):
+            ALGORITHMS.append(getattr(util.approximate,name)())
+    except:
+        pass
+ALGORITHMS += [DelaunayP1, DelaunayP2, DelaunayP3]

@@ -4,7 +4,6 @@ from util.misc.multi_dim_analysis import make_test_data, MDA_Iterator
 from util.system import AtomicOpen
 from util.decorators import timeout
 from notifications import send_email
-import util.algorithms
 
 from py_settings import *
 
@@ -109,15 +108,6 @@ if ((not os.path.exists(MEAN_MDA_DIR)) or
     print("Ready to test and evaluate")
 
 
-# Generate the list of algorithms (from all possible algorithms in util)
-algorithms = []
-for name in dir(util.algorithms):
-    try:
-        if issubclass(getattr(util.algorithms,name), util.algorithms.Approximator):
-            algorithms.append(getattr(util.algorithms,name)())
-    except:
-        pass
-
 # All algorithms have:
 #  <alg>.fit(<inputs>, <responses>)
 #  <alg>(<inputs>) -> <responses>
@@ -161,7 +151,7 @@ to_test = sys.argv[2:]
 for alg_name in to_test:
     print(alg_name)
     # Retreive the requested algorithm
-    for alg in algorithms:
+    for alg in ALGORITHMS:
         name = GET_CLASS_NAME(alg)
         if (name == alg_name): break
     else:
@@ -299,47 +289,49 @@ for alg_name in to_test:
         data_scale = np.max(train_points, axis=0)
         train_points /= data_scale
         test_points /= data_scale
-        try:
-            # Fit the training points
-            # Get any extra arguments to pass to individual alrogithm fits
-            extra_args = EXTRA_ARGS.get(name,[])
-            # Wrap the fit function to monitor timeouts
-            fit_func = timeout(FIT_TIMEOUT_SECONDS,FAIL_VALUE)(alg.fit)
-            # Time the fit operation
-            fit_time = time.time()
-            fit_output = fit_func(train_points, train_values, *extra_args)
-            fit_time = time.time() - fit_time
-            if ((type(fit_output) == type(FAIL_VALUE)) and
-                (fit_output == FAIL_VALUE)):
-                print()
-                print('ERROR: %s failed to fit within %i seconds.'%(
-                    name,FIT_TIMEOUT_SECONDS))
-                print("Training file: '%s'"%(train))
-                print("Testing file:  '%s'"%(test))
-                print()
-                break # Cancel the rest of data collection for this algorithm
-            # Wrap the approximation function to monitor timeouts
-            approx_func = timeout(APPROX_TIMEOUT_SECONDS,FAIL_VALUE)(alg)
-            # Evaluate at the testing points
-            eval_time = time.time()
-            test_approx = approx_func(test_points)
-            eval_time = time.time() - eval_time
-            if ((type(test_approx) == type(FAIL_VALUE)) and
-                (test_approx == FAIL_VALUE)):
-                print()
-                print('ERROR: %s failed to create approximation within %i seconds.'%(
-                    name, APPROX_TIMEOUT_SECONDS))
-                print("Training file: '%s'"%(train))
-                print("Testing file:  '%s'"%(test))
-                print()
-                break # Cancel the rest of data collection for this algorithm
-        except:
+        # try:
+        # Fit the training points
+        # Get any extra arguments to pass to individual alrogithm fits
+        extra_args = EXTRA_ARGS.get(name,[])
+        # Wrap the fit function to monitor timeouts
+        fit_func = timeout(FIT_TIMEOUT_SECONDS,FAIL_VALUE)(alg.fit)
+        # Time the fit operation
+        fit_time = time.time()
+        print(" "*70)
+        print("train_points.shape: ",train_points.shape)
+        fit_output = fit_func(train_points, train_values, *extra_args)
+        fit_time = time.time() - fit_time
+        if ((type(fit_output) == type(FAIL_VALUE)) and
+            (fit_output == FAIL_VALUE)):
             print()
-            print('ERROR: %s failed to fit and approximate data.'%(name))
+            print('ERROR: %s failed to fit within %i seconds.'%(
+                name,FIT_TIMEOUT_SECONDS))
             print("Training file: '%s'"%(train))
             print("Testing file:  '%s'"%(test))
             print()
-            break # Cancel the rest of data collection for this algorithm            
+            break # Cancel the rest of data collection for this algorithm
+        # Wrap the approximation function to monitor timeouts
+        approx_func = timeout(APPROX_TIMEOUT_SECONDS,FAIL_VALUE)(alg)
+        # Evaluate at the testing points
+        eval_time = time.time()
+        test_approx = approx_func(test_points)
+        eval_time = time.time() - eval_time
+        if ((type(test_approx) == type(FAIL_VALUE)) and
+            (test_approx == FAIL_VALUE)):
+            print()
+            print('ERROR: %s failed to create approximation within %i seconds.'%(
+                name, APPROX_TIMEOUT_SECONDS))
+            print("Training file: '%s'"%(train))
+            print("Testing file:  '%s'"%(test))
+            print()
+            break # Cancel the rest of data collection for this algorithm
+        # except:
+        #     print()
+        #     print('ERROR: %s failed to fit and approximate data.'%(name))
+        #     print("Training file: '%s'"%(train))
+        #     print("Testing file:  '%s'"%(test))
+        #     print()
+        #     break # Cancel the rest of data collection for this algorithm            
 
         # De-normalize the data so that correct values are writtne to file
         train_points *= data_scale
