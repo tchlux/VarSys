@@ -297,8 +297,6 @@ for alg_name in to_test:
         fit_func = timeout(FIT_TIMEOUT_SECONDS,FAIL_VALUE)(alg.fit)
         # Time the fit operation
         fit_time = time.time()
-        print(" "*70)
-        print("train_points.shape: ",train_points.shape)
         fit_output = fit_func(train_points, train_values, *extra_args)
         fit_time = time.time() - fit_time
         if ((type(fit_output) == type(FAIL_VALUE)) and

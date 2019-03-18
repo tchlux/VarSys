@@ -69,4 +69,4 @@ for name in dir(util.approximate):
             ALGORITHMS.append(getattr(util.approximate,name)())
     except:
         pass
-ALGORITHMS += [DelaunayP1, DelaunayP2, DelaunayP3]
+ALGORITHMS += [DelaunayP1(), DelaunayP2(), DelaunayP3()]
