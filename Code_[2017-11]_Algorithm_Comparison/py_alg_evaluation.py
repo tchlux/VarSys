@@ -1,6 +1,6 @@
 import numpy as np
 import pickle, sys, pathlib, os, time
-from util.multi_dim_analysis import make_test_data, MDA_Iterator
+from util.misc.multi_dim_analysis import make_test_data, MDA_Iterator
 from util.system import AtomicOpen
 from util.decorators import timeout
 from notifications import send_email
