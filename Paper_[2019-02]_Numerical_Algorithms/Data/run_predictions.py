@@ -39,6 +39,8 @@ else:
                     types=[ str,         str,          tuple,         tuple,        int,           float,   ])
 
 
+# from util.approximate.delaunay import DelaunayP1, DelaunayP2, DelaunayP3
+# models = [Delaunay, DelaunayP1, DelaunayP2, DelaunaayP3]
 
     
 for raw_file in sorted(os.listdir(raw_dir)):

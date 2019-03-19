@@ -172,10 +172,10 @@ for f in data_order:
     predict_size = d.shape[0] // 10
 
     formats = ['', ".1f", ''] + [".2e"]*3
-    wrappers = ['', ("$","\\%$"), ''] + [("$","$s")]*3
+    wrappers = ['', ("$","$"), ''] + [("$","$")]*3
 
     # Make the table.
-    t = latex_table(table, ['Algorithm', '\% Best', "", "Fit Time", "App. Time (1)", "Total App. Time"],
+    t = latex_table(table, ['Algorithm', '\% Best', "", "Fit / Prep. Time", "App. Time (s)", "Total App. Time"],
                     side_bars=False, fmt=formats, wrap_nums=wrappers,
                     **{"wrap_1_-1" : ("\\mathbf{","}"),
                        "wrap_1_-2" : ("\\mathit{","}"),
