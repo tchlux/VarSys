@@ -127,7 +127,7 @@ for f in data_order:
 
     # Generate the table for the errors.
     t = latex_table(table[1:], table[0],
-                    side_bars=False, fmt=".2e", simplify_sig=4,
+                    side_bars=False, fmt=".2e", simplify_sig=6,
                     **dict([(f"wrap_{i}_0", ("\\mathbf{","}"))
                             for i in range(len(table[0]))] +
                            [(f"wrap_{i}_1", ("\\mathit{","}"))
@@ -176,7 +176,7 @@ for f in data_order:
 
     # Make the table.
     t = latex_table(table, ['Algorithm', '\% Best', "", "Fit / Prep. Time", "App. Time (s)", "Total App. Time"],
-                    side_bars=False, fmt=formats, wrap_nums=wrappers,
+                    side_bars=False, fmt=formats, wrap_nums=wrappers, simplify_sig=6,
                     **{"wrap_1_-1" : ("\\mathbf{","}"),
                        "wrap_1_-2" : ("\\mathit{","}"),
                        "wrap_3_0" : ("\\mathbf{", "}"),

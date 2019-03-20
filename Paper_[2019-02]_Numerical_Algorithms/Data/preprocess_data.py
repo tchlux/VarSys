@@ -1,7 +1,7 @@
 import os
 from util.data import Data
 from util.pairs import pairwise_distance
-from util.math import SMALL, flatten
+from util.math import SMALL, flatten, transpose
 
 
 # Read in the data files.

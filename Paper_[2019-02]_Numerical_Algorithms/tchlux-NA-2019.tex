@@ -143,11 +143,11 @@ interpolant is much less computationally expensive.
 In this work, multivariate interpolation is defined given a closed
 convex subset $Y$ of a metrizable topological vector space with metric
 $s$, some function $f:\mathbb{R}^d \rightarrow Y$ and a set of points
-$X = \bigl\{x^{(1)}$,$\ldots$,$x^{(n)}\bigr\} \subset \mathbb{R}^d,$
+$X = \bigl\{x^{(1)}$, $\ldots$, $x^{(n)}\bigr\} \subset \mathbb{R}^d$,
 along with associated function values $f\bigl(x^{(i)}\bigr)$. The goal
 is to construct an approximation $\hat f: \mathbb{R}^d \rightarrow Y$
 such that $\hat f\bigl(x^{(i)}\bigr) = f\bigl(x^{(i)}\bigr)$ for all
-$i = 1$,$\ldots$,$n$. It is often the case that the form of the true
+$i = 1$, $\ldots$, $n$. It is often the case that the form of the true
 underlying function $f$ is unknown, however it is still desirable to
 construct an approximation $\hat f$ with small approximation error at
 $y \notin X$. The two metric spaces that will be discussed in this
@@ -185,15 +185,14 @@ are applied to a collection of moderately high dimensional problems
 
 The remainder of this paper is organized as follows. Sections
 \ref{sec:regression} and \ref{sec:interpolation} present the
-multivariate models. Section \ref{sec:error} presents the error
-measuring methodology that is used for collecting empirical
-results. Section \ref{sec:theory} presents the theoretical error
-bounds for interpolation. Section \ref{sec:data} presents the data
-sets for empirical approximation analysis and presents the
-approximation results for all models on these data sets. Section
-\ref{sec:discussion} analyzes and discusses the results, their
-implications, and their limitations. Finally, Section
-\ref{sec:conclusion} concludes.
+multivariate models. Section \ref{sec:error} gives the error measuring
+methodology that is used for collecting empirical results. Section
+\ref{sec:theory} presents the theoretical error bounds for
+interpolation. Section \ref{sec:data} presents the data sets for
+empirical approximation analysis and the approximation results for all
+models on these data sets. Section \ref{sec:discussion} analyzes and
+discusses the results, their implications, and their
+limitations. Finally, Section \ref{sec:conclusion} concludes.
 
 % Art is a subjective form of personal expression and computers are
 % just robots that are going to take over the world. \textit{*deep
@@ -449,13 +448,14 @@ Figure \ref{fig:prediction-example}.
 \label{sec:theory}
 
 This section presents the theoretical results bounding the error of
-Delaunay interpolation. The error analysis relies on the Delaunay
-interpolation for two reasons: (1) second order results can be
+simplicial interpolation. The error analysis relies on simplicial
+interpolation for three reasons: (1) second order results can be
 obtained utilizing a Lipschitz constant on the gradient of a function,
-rather than standard Lipschitz bounds and (2) multiple other
-interpolants analyzed compute predictions as convex combinations of
-observed function values, which may allow for straight forward
-extensions of this error bound.
+rather than standard Lipschitz bounds; (2) the results directly
+apply to Delaunay; and (3) multiple other interpolants in this paper
+compute predictions as convex combinations of observed function
+values, which may allow for straight forward extensions of this error
+bound.
 
 \begin{plainlemma}
   \label{lemma:1}
@@ -558,28 +558,28 @@ extensions of this error bound.
 \end{proofdot}
 
 
-In summary, the approximation error of a Delaunay interpolant tends
+In summary, the approximation error of a simplicial interpolant tends
 quadratically towards zero when approaching observed data only when
-the diameter of the interpolating simplex is also reduced at a
-proportional rate. Without the incorporation of additional
-observations, only linear convergence to the true function is be
-achieved. Notice that the approximation error is largely determined by
-the spacing of observed data. Predictions made by simplices whose
-vertices are not well-spaced (i.e. have large diameter, or are nearly
-contained in a hyperplane) have higher error. In light of this error
-bound, an empirical evaluation of presented algorithms follows.
+the diameter of the simplex is also reduced at a proportional rate.
+Only linear convergence to the true function can be achieved in
+practice, without the incorporation of additional observations. Notice
+that the approximation error is largely determined by the spacing of
+observed data. Predictions made by simplices whose vertices are not
+well-spaced (i.e. have large diameter, or are nearly contained in a
+hyperplane) have higher error. In light of this error bound, an
+empirical evaluation of presented algorithms follows.
 
 %% ===================================================================
 \section{Data and Empirical Analysis}
 \label{sec:data}
 
 The theoretical results constructed in Section \ref{sec:theory} for
-Delaunay interpolation are promising, however they are difficult to
-interpret in context with the other approximation algorithms that do
-not have similar known uniform error bounds. For that reason, this
-paper utilizes five different data sets of varying dimension and
-application to construct approximations and compare the accuracy of
-different techniques.
+simplicial interpolation are promising, however they are difficult to
+interpret in context with approximation algorithms that do not have
+similar known uniform error bounds. For that reason, this paper
+utilizes five different data sets of varying dimension and application
+to construct approximations and compare the accuracy of different
+techniques.
 
 In the following five subsections the sources and targets of each test
 data set are described, as well as challenges and limitations related
@@ -651,7 +651,7 @@ interpolation.
     absolute prediction error for each model. Similar to figure
     \ref{fig:hist-forest-fire}, the errors are presented on a natural
     log scale. The complementing numerical data to this figure is
-    provided in table \ref{table:error-forest-fire} in the Appendix.}
+    provided in Table \ref{table:error-forest-fire} in the Appendix.}
   \label{fig:error-forest-fire}
 \end{figure}
 
@@ -666,7 +666,7 @@ humidity, wind speed, and outdoor rain. The original analysis of this
 data set demonstrated it to be difficult to model, likely due to the
 skew in response values.
 
-As suggested by figure \ref{fig:error-forest-fire}, the SVR has the
+As suggested by Figure \ref{fig:error-forest-fire}, the SVR has the
 lowest absolute prediction errors for 80\% of the data, with ShepMod
 and BoxSpline being the nearest overall competitors. The effectiveness
 of SVR on this data suggests the underlying function can be defined by
@@ -765,7 +765,7 @@ nearest-neighbor strategy of prediction.
     quartiles (box edges), fences at $3/2$ interquartile range
     (whiskers), and outliers (dots) of absolute prediction error for
     each model. The errors are presented on a natural log scale,
-    mimicking the presentation in figure \ref{fig:hist-weather}. The
+    mimicking the presentation in Figure \ref{fig:hist-weather}. The
     complementing numerical data to this figure is provided in table
     \ref{table:error-weather} in the Appendix.}
   \label{fig:error-weather}
@@ -780,7 +780,7 @@ to coordinates on circle), wind speeds, and humidities throughout the
 day, day of the year (converted to coordinates on circle), and the
 model must predict the amount of rainfall tomorrow.
 
-While figure \ref{fig:hist-weather} makes MARS look far better than
+While Figure \ref{fig:hist-weather} makes MARS look far better than
 other techniques, it only provides the best prediction for 11\% of
 points. The MLP has the lowest absolute error for 56\% of points and
 LSHEP is best for 28\%. MARS likely achieves such a low first quartile
@@ -825,7 +825,7 @@ due to the high occurrence of the value 0 in the data.
     each model. The absolute errors in transaction amount predictions
     are presented on a natural log scale, just as in figure
     \ref{fig:hist-credit-card}. The complementing numerical data to
-    this figure is provided in table \ref{table:error-credit-card} in
+    this figure is provided in Table \ref{table:error-credit-card} in
     the Appendix.}
   \label{fig:error-credit-card}
 \end{figure}
@@ -840,7 +840,7 @@ largest dimension of all considered, at 28. A model over this data
 predicts the transaction amount given the vector of principle
 component information.
 
-As can be seen in figure \ref{fig:error-credit-card}, the MLP
+As can be seen in Figure \ref{fig:error-credit-card}, the MLP
 outperforms all other algorithms at the first, second, third, and
 fourth quartiles. The MLP produces the lowest absolute error
 prediction for 80\% of transactions, Delaunay bests the remaining
@@ -882,9 +882,9 @@ performer.
     interquartile range (whiskers), and outliers (dots) of KS
     statistic between the observed distribution at each system
     configuration and the predicted distribution. The above figure is
-    \textit{not} log-scaled like figure \ref{fig:hist-throughput}. The
+    \textit{not} log-scaled like Figure \ref{fig:hist-throughput}. The
     complimentary numerical data for this figure is provided in
-    Appendix table \ref{table:error-throughput}.}
+    Appendix Table \ref{table:error-throughput}.}
   \label{fig:error-throughput}
 \end{figure}
 
@@ -944,7 +944,7 @@ best predictions, the behavior of Voronoi may be preferable.
     BoxMesh & $99.5\%$ & $98.5\%$ & $96.6\%$ & $89.5\%$\\
   \end{tabular}
   \caption{This is the numerical counterpart to the histogram data
-    presented in figure \ref{fig:throughput-prediction}. The columns
+    presented in Figure \ref{fig:throughput-prediction}. The columns
     display the percent of null hypothesis rejections by the KS-test
     when provided different selections of $p$-values for each
     algorithm. The algorithm with the lowest rejection rate at each
@@ -956,7 +956,7 @@ best predictions, the behavior of Voronoi may be preferable.
 %% ===================================================================
 
 Figure \ref{fig:throughput-prediction} expands on the KS statistic
-results presented in figure \ref{fig:error-throughput}. Agglomerate
+results presented in Figure \ref{fig:error-throughput}. Agglomerate
 errors for each algorithm resemble a Gamma distribution. The
 percentages of significant prediction errors with varying $p$-values
 are on display in Table \ref{table:null-hypothesis-results}. When
@@ -996,7 +996,7 @@ characteristics of the CDFs at new system configurations.
     (weighted equally by data set, \textit{not} points) the average
     frequency with which any algorithm provided the lowest absolute
     error approximation, the average time-to-fit, and the average time
-    required to approximated one point. Interpolants provide the
+    required to approximate one point. Interpolants provide the
     lowest error approximation one third of the time across all data,
     while regressors occupy the other two thirds. This result is
     obtained without any customized tuning or preprocessing to
@@ -1064,13 +1064,14 @@ models of multivariate phenomenon when compared with common regressors
 for sparse, moderately high dimensional problems.
 
 The various interpolants discussed in this paper have been
-demonstrated to effectively approximate multivariate phenomena up to
-$30$ dimensions. The underlying constructions are theoretically
+demonstrated to effectively approximate multivariate phenomena in up
+to $30$ dimensions. The underlying constructions are theoretically
 straightforward, yet powerful and flexible. Most of the interpolants'
 computational complexities make them particularly suitable for
-applications in even higher dimension, where the major benefits are
-seen when only a small number of approximations are to be made from
-any given data ($\leq 1000$).
+applications in even higher dimension. The major benefits of
+interpolation are seen when only a small number of approximations
+($\leq 1000$) are made from data and when there are relatively few
+data points for the dimension (for empirical results presented, $\log_d n \leq 5$).
 
 %\begin{acknowledgements}
 %If you'd like to thank anyone, place your comments here
@@ -1082,6 +1083,8 @@ any given data ($\leq 1000$).
 
 \bibliographystyle{spmpsci}      % mathematics and physical sciences
 \bibliography{paper}
+
+\newpage
 
 \begin{appendix}
 
@@ -1104,7 +1107,7 @@ any given data ($\leq 1000$).
     \hline
   \end{tabular}
   \caption{This numerical data accompanies the visual provided in
-    figure \ref{fig:error-forest-fire}. The columns of absolute error
+    Figure \ref{fig:error-forest-fire}. The columns of absolute error
     percentiles correspond to the minimum, first quartile, median,
     second quartile, and maximum absolute errors respectively. The
     minimum of each column is boldface, while the second lowest value
@@ -1155,7 +1158,7 @@ any given data ($\leq 1000$).
     \hline
   \end{tabular}
   \caption{This numerical data accompanies the visual provided in
-    figure \ref{fig:error-parkinsons}. The columns of absolute error
+    Figure \ref{fig:error-parkinsons}. The columns of absolute error
     percentiles correspond to the minimum, first quartile, median,
     second quartile, and maximum absolute errors respectively. The
     minimum of each column is boldface, while the second lowest value
@@ -1206,7 +1209,7 @@ any given data ($\leq 1000$).
     \hline
   \end{tabular}
   \caption{This numerical data accompanies the visual provided in
-    figure \ref{fig:error-weather}. The columns of absolute error
+    Figure \ref{fig:error-weather}. The columns of absolute error
     percentiles correspond to the minimum, first quartile, median,
     second quartile, and maximum absolute errors respectively. The
     minimum value of each column is boldface, while the second lowest
@@ -1257,7 +1260,7 @@ any given data ($\leq 1000$).
     \hline
   \end{tabular}
   \caption{This numerical data accompanies the visual provided in
-    figure \ref{fig:error-credit-card}. The columns of absolute error
+    Figure \ref{fig:error-credit-card}. The columns of absolute error
     percentiles correspond to the minimum, first quartile, median,
     second quartile, and maximum absolute errors respectively. The
     minimum value of each column is boldface, while the second lowest
@@ -1284,7 +1287,7 @@ any given data ($\leq 1000$).
   \end{tabular}
   \caption{The left above shows how often each algorithm had the
     lowest absolute error approximating credit card transaction data
-    in table \ref{table:error-credit-card}. On the right columns are
+    in Table \ref{table:error-credit-card}. On the right columns are
     median fit time of 5006 points, median time for one approximation,
     and median time approximating 556 points.}
   \label{table:best-credit-card}
@@ -1305,7 +1308,7 @@ any given data ($\leq 1000$).
     \hline
   \end{tabular}
   \caption{This numerical data accompanies the visual provided in
-    figure \ref{fig:error-throughput}. The columns of absolute error
+    Figure \ref{fig:error-throughput}. The columns of absolute error
     percentiles correspond to the minimum, first quartile, median,
     second quartile, and maximum KS statistics respectively between
     truth and guess for models predicting the distribution of I/O
@@ -1330,7 +1333,7 @@ any given data ($\leq 1000$).
   \end{tabular}
   \caption{The left above shows how often each algorithm had the
     lowest KS statistic on the I/O throughput distribution data in
-    table \ref{table:error-throughput}. On the right columns are
+    Table \ref{table:error-throughput}. On the right columns are
     median fit time of 2715 points, median time for one approximation,
     and median time approximating 301 points.}
   \label{table:best-throughput}

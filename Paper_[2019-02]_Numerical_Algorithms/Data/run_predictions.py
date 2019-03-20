@@ -40,9 +40,9 @@ else:
 
 
 # from util.approximate.delaunay import DelaunayP1, DelaunayP2, DelaunayP3
-# models = [Delaunay, DelaunayP1, DelaunayP2, DelaunaayP3]
+# models = [Delaunay, DelaunayP1, DelaunayP2, DelaunayP3]
 
-    
+
 for raw_file in sorted(os.listdir(raw_dir)):
     raw_file = raw_file.replace(".gz","")
     raw_path = os.path.join(raw_dir, raw_file)
