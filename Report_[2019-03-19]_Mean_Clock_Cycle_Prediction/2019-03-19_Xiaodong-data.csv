@@ -1,4 +1,4 @@
-P1,P2,P3,P4,Clock Cycles
+Private Cache Size,Private Cache Associativity,Shared Cache Size,Shared Cache Associativity,Clock Cycles
 2,16,2,2,42959
 2,16,2,2,43200
 2,16,2,2,43615

@@ -663,11 +663,11 @@ The forest fire data set \cite{cortez2007data} describes the area of
 Montesinho park burned over months of the year along with
 environmental conditions. The twelve dimensions being used to model
 burn area are the $x$ and $y$ spatial coordinates of burns in the
-park, month of year (mapped to a 2D circle), the FFMC, DMC, DC, and
-ISI indices (see source for details), the temperature, relative
-humidity, wind speed, and outdoor rain. The original analysis of this
-data set demonstrated it to be difficult to model, likely due to the
-skew in response values.
+park, month of year (mapped to $x$, $y$ coordinates on a unit circle),
+the FFMC, DMC, DC, and ISI indices (see source for details), the
+temperature, relative humidity, wind speed, and outdoor rain. The
+original analysis of this data set demonstrated it to be difficult to
+model, likely due to the skew in response values.
 
 As suggested by Figure \ref{fig:error-forest-fire}, the SVR has the
 lowest absolute prediction errors for $80\%$ of the data, with MLP and
@@ -858,8 +858,7 @@ performer.
     IOzone tests across all system configurations. The distribution is
     skewed right, with few tests having significantly higher
     throughput than most others. The data is presented on a $\ln$
-    scale, however the resulting left-skew reveals the data is not
-    precisely distributed according to an exponential.}
+    scale.}
   \label{fig:hist-throughput}
 \end{figure}
 
@@ -983,7 +982,7 @@ characteristics of the CDFs at new system configurations.
     provides a gross summary of overall results. The columns display
     (weighted equally by data set, \textit{not} points) the average
     frequency with which any algorithm provided the lowest absolute
-    error approximation, the average time to fit / prepare, and the
+    error approximation, the average time to fit/prepare, and the
     average time required to approximate one point. Interpolants
     provide the lowest error approximation one third of the time
     across all data, while regressors occupy the other two
@@ -1144,9 +1143,9 @@ empirical results presented, $\log_d n \leq 5$).
     SVR & $0$&$00138$ & $3$&$17$ & $7$&$31$ & $12$&$6$ & $\mathbf{27}$&$\mathbf{5}$\\
     MLP & $0$&$0000239$ & $\mathit{0}$&$\mathit{533}$ & $\mathit{1}$&$\mathit{25}$ & $\mathbf{2}$&$\mathbf{84}$ & $39$&$3$\\
     Delaunay & $\mathit{3}$&$\mathit{72 \times 10^{-12}}$ & $1$&$20$ & $3$&$50$ & $7$&$67$ & $30$&$7$\\
-    ShepMod & $\mathbf{0}$&$\mathbf{00}$ & $\mathbf{0}$&$\mathbf{255}$ & $\mathbf{0}$&$\mathbf{908}$ & $\mathit{3}$&$\mathit{43}$ & $34$&$5$\\
+    ShepMod & $\mathbf{0}$&$\mathbf{0}$ & $\mathbf{0}$&$\mathbf{255}$ & $\mathbf{0}$&$\mathbf{908}$ & $\mathit{3}$&$\mathit{43}$ & $34$&$5$\\
     LSHEP & $0$&$00254$ & $2$&$93$ & $7$&$16$ & $13$&$1$ & $\mathit{29}$&$\mathit{0}$\\
-    Voronoi & $\mathbf{0}$&$\mathbf{00}$ & $1$&$29$ & $3$&$52$ & $6$&$87$ & $30$&$1$\\
+    Voronoi & $\mathbf{0}$&$\mathbf{0}$ & $1$&$29$ & $3$&$52$ & $6$&$87$ & $30$&$1$\\
     BoxSpline & $0$&$00287$ & $4$&$39$ & $9$&$10$ & $14$&$8$ & $41$&$3$\\
     \hline
   \end{tabular}
@@ -1169,7 +1168,7 @@ empirical results presented, $\log_d n \leq 5$).
     MARS & \quad\,$0$&$0$ &  & \quad\quad$37$&$9$ & \quad\,\,$0$&$00253$ & \quad\quad\quad\,\,$1$&$48$\\
     SVR & $0$&$1$ &  & $0$&$859$ & $\mathit{0}$&$\mathit{000181}$ & $\mathit{0}$&$\mathit{106}$\\
     MLP & $\mathit{32}$&$\mathit{0}$ &  & $348$&$0$ & $0$&$00111$ & $0$&$653$\\
-    Delaunay & $0$&$0$ &  & $\mathbf{0}$&$\mathbf{000190}$ & $3$&$69$ & $2170$&\\
+    Delaunay & $0$&$0$ &  & $\mathbf{0}$&$\mathbf{000190}$ & $3$&$69$ & $2170$&$0$\\
     ShepMod & $\mathbf{66}$&$\mathbf{4}$ &  & $1$&$13$ & $0$&$000182$ & $0$&$107$\\
     LSHEP & $0$&$0$ &  & $2$&$39$ & $\mathbf{0}$&$\mathbf{000144}$ & $\mathbf{0}$&$\mathbf{0845}$\\
     Voronoi & $1$&$6$ &  & $\mathit{0}$&$\mathit{298}$ & $0$&$0274$ & $16$&$1$\\
@@ -1194,11 +1193,11 @@ empirical results presented, $\log_d n \leq 5$).
     MARS & $\mathit{6}$&$\mathit{45 \times 10^{-15}}$ & $\mathbf{2}$&$\mathbf{70 \times 10^{-14}}$ & $1$&$66$ & $1$&$96$ & $\mathit{53}$&$\mathit{3}$\\
     SVR & $0$&$0420$ & $0$&$143$ & $0$&$148$ & $\mathit{0}$&$\mathit{860}$ & $119$&$0$\\
     MLP & $0$&$0000689$ & $0$&$0337$ & $\mathbf{0}$&$\mathbf{0795}$ & $\mathbf{0}$&$\mathbf{264}$ & $\mathbf{5}$&$\mathbf{31}$\\
-    Delaunay & $\mathbf{0}$&$\mathbf{00}$ & $0$&$187$ & $0$&$919$ & $2$&$72$ & $56$&$3$\\
-    ShepMod & $\mathbf{0}$&$\mathbf{00}$ & $0$&$0957$ & $0$&$685$ & $2$&$90$ & $73$&$2$\\
-    LSHEP & $\mathbf{0}$&$\mathbf{00}$ & $\mathit{0}$&$\mathit{0153}$ & $\mathit{0}$&$\mathit{106}$ & $1$&$17$ & $113$&$0$\\
-    Voronoi & $\mathbf{0}$&$\mathbf{00}$ & $0$&$430$ & $1$&$28$ & $2$&$94$ & $83$&$8$\\
-    BoxSpline & $\mathbf{0}$&$\mathbf{00}$ & $0$&$789$ & $2$&$06$ & $5$&$25$ & $119$&$0$\\
+    Delaunay & $\mathbf{0}$&$\mathbf{0}$ & $0$&$187$ & $0$&$919$ & $2$&$72$ & $56$&$3$\\
+    ShepMod & $\mathbf{0}$&$\mathbf{0}$ & $0$&$0957$ & $0$&$685$ & $2$&$90$ & $73$&$2$\\
+    LSHEP & $\mathbf{0}$&$\mathbf{0}$ & $\mathit{0}$&$\mathit{0153}$ & $\mathit{0}$&$\mathit{106}$ & $1$&$17$ & $113$&$0$\\
+    Voronoi & $\mathbf{0}$&$\mathbf{0}$ & $0$&$430$ & $1$&$28$ & $2$&$94$ & $83$&$8$\\
+    BoxSpline & $\mathbf{0}$&$\mathbf{0}$ & $0$&$789$ & $2$&$06$ & $5$&$25$ & $119$&$0$\\
     \hline
   \end{tabular}
   \caption{This numerical data accompanies the visual provided in
@@ -1245,8 +1244,8 @@ empirical results presented, $\log_d n \leq 5$).
     MARS & $5$&$36$ & $3610$&$0$ & $4580$&$0$ & $5450$&$0$ & $13400$&$0$\\
     SVR & $0$&$0138$ & $8$&$47$ & $15$&$4$ & $41$&$9$ & $7700$&$0$\\
     MLP & $0$&$00151$ & $\mathbf{1}$&$\mathbf{60}$ & $\mathbf{3}$&$\mathbf{86}$ & $\mathbf{8}$&$\mathbf{34}$ & $\mathbf{604}$&$\mathbf{0}$\\
-    Delaunay & $\mathbf{0}$&$\mathbf{00}$ & $\mathit{2}$&$\mathit{69}$ & $\mathit{13}$&$\mathit{8}$ & $\mathit{35}$&$\mathit{0}$ & $\mathit{4840}$&$\mathit{0}$\\
-    ShepMod & $\mathbf{0}$&$\mathbf{00}$ & $4$&$21$ & $17$&$3$ & $51$&$6$ & $6510$&$0$\\
+    Delaunay & $\mathbf{0}$&$\mathbf{0}$ & $\mathit{2}$&$\mathit{69}$ & $\mathit{13}$&$\mathit{8}$ & $\mathit{35}$&$\mathit{0}$ & $\mathit{4840}$&$\mathit{0}$\\
+    ShepMod & $\mathbf{0}$&$\mathbf{0}$ & $4$&$21$ & $17$&$3$ & $51$&$6$ & $6510$&$0$\\
     LSHEP & $1$&$27$ & $199$&$0$ & $260$&$0$ & $343$&$0$ & $6530$&$0$\\
     Voronoi & $\mathit{2}$&$\mathit{89 \times 10^{-10}}$ & $14$&$7$ & $32$&$8$ & $52$&$9$ & $4860$&$0$\\
     BoxSpline & $0$&$00740$ & $20$&$8$ & $40$&$9$ & $79$&$6$ & $7640$&$0$\\
@@ -1271,7 +1270,7 @@ empirical results presented, $\log_d n \leq 5$).
     MARS & \quad\,$0$&$0$ &  & \quad\quad\,\,$22$&$0$ & \quad$0$&$00148$ & \quad\quad\quad$0$&$820$\\
     SVR & $0$&$0$ &  & $1$&$01$ & $\mathit{0}$&$\mathit{000210}$ & $\mathit{0}$&$\mathit{117}$\\
     MLP & $\mathbf{79}$&$\mathbf{5}$ &  & $290$&$0$ & $0$&$000714$ & $0$&$397$\\
-    Delaunay & $\mathit{20}$&$\mathit{5}$ &  & $\mathbf{0}$&$\mathbf{000243}$ & $6$&$83$ & $3800$&$$\\
+    Delaunay & $\mathit{20}$&$\mathit{5}$ &  & $\mathbf{0}$&$\mathbf{000243}$ & $6$&$83$ & $3800$&$0$\\
     ShepMod & $0$&$1$ &  & $1$&$45$ & $0$&$000220$ & $0$&$122$\\
     LSHEP & $0$&$0$ &  & $3$&$47$ & $\mathbf{0}$&$\mathbf{000176}$ & $\mathbf{0}$&$\mathbf{0981}$\\
     Voronoi & $0$&$0$ &  & $\mathit{0}$&$\mathit{197}$ & $0$&$0950$ & $52$&$8$\\
