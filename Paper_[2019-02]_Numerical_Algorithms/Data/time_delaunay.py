@@ -8,7 +8,7 @@ from util.approximate import Delaunay, class_name
 # Make sure all of the prepared and pre-processed data files exist.
 from preprocess_data import cwd, raw_dir, data_dir
 
-to_test = 2
+to_test = 30
 
 
 # Overwrite the print function so that it forces prints to flush.
