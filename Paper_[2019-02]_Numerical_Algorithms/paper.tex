@@ -153,7 +153,7 @@ construct an approximation $\hat f$ with small approximation error at
 $y \notin X$. The two metric spaces that will be discussed in this
 work are the real numbers with metric $s(x,y) = |x-y|$, and the set of
 cumulative distribution functions (CDFs) with the Kolmogorov-Smirnov
-(KS) statistic as metric.
+(KS) statistic \cite{lilliefors1967kolmogorov} as metric.
 
 Multivariate regression is often used when the underlying function is
 presumed to be stochastic, or stochastic error is introduced in the
@@ -168,7 +168,7 @@ often what parametric form to adopt for any given application.
 The most challenging problem when scaling in dimension is that the
 number of possible interactions between dimensions grows
 exponentially. Quantifying all possible interactions becomes
-intractable and hence beyond three-dimensional data, mostly linear
+intractable, and hence beyond three-dimensional data mostly linear
 models are used. That is not to say nonlinear models are absent, but
 nonlinearities are often either preconceived or model pairwise
 interactions between dimensions at most. Even globally nonlinear
@@ -218,7 +218,7 @@ approximation function $\hat f$.
 This approximation was introduced in \cite{friedman1991multivariate}
 and subsequently improved to its current version in
 \cite{stanford1993fast}, called fast multivariate adaptive regression
-splines (Fast MARS).In Fast MARS, a least squares fit model is
+splines (Fast MARS). In Fast MARS, a least squares fit model is
 iteratively built by beginning with a single constant valued function
 and adding two new basis functions at each iteration of the form
 \begin{align*}
@@ -263,18 +263,18 @@ gradient descent (SGD) or BFGS minimization techniques
 \cite{goh2017why,moller1993scaled,robbins1951stochastic}, the model
 built by a multilayer perceptron uses layers $l : \mathbb{R}^{i}
 \rightarrow \mathbb{R}^{j}$ defined by
- $$ l(u) = \bigl( u^t W_l \bigr)_+ ,$$
-where $W_l$ is the $i \times j$ weight matrix for layer $l$. In this
-form, the multilayer perceptron (MLP) produces a piecewise linear
-model of the input data. The computational complexity of training a
-multilayer perceptron is $\mathcal{O}(n d m)$, where $m$ is determined
-by the sizes of the layers of the network and the stopping criterion
-of the minimization used for finding weights. This paper uses a MLP
-built from Keras and Tensorflow to perform regression
-\cite{chollet2015keras,tensorflow2015-whitepaper} with ten hidden
-layers each having thirty two nodes (a total of approximately ten
-thousand parameters), ReLU activation, and five thousand epochs of SGD
-for training.
+ $$ l(u) = \bigl( u^t W_l + c_l \bigr)_+ ,$$
+where $c_l \in \mathbb{R}^j$ and $W_l$ is the $i \times j$ weight
+matrix for layer $l$. In this form, the multilayer perceptron (MLP)
+produces a piecewise linear model of the input data. The computational
+complexity of training a multilayer perceptron is $\mathcal{O}(n d
+m)$, where $m$ is determined by the sizes of the layers of the network
+and the stopping criterion of the minimization used for finding
+weights. This paper uses an MLP built from Keras and Tensorflow to
+perform regression \cite{tensorflow2015-whitepaper,chollet2015keras}
+with ten hidden layers each having thirty two nodes (a total of
+approximately ten thousand parameters), ReLU activation, and five
+thousand epochs of SGD for training.
 
 %% ===================================================================
 \section{Multivariate Interpolation}
@@ -297,16 +297,16 @@ $\ldots$, $d$, $y \in S$ is a unique convex combination of the
 vertices,
  $$ y = \sum_{i=0}^{d} w_i x^{(i)}, \quad \sum_{i=0}^{d} w_i = 1, \quad w_i \geq 0, \quad i=0,\ldots,d, $$
 and the Delaunay interpolant $\hat f(y)$ at $y$ is given by
- $$ \hat f(y) = \sum_{i=0}^{d} w_i f\bigl(x^{(i)}\bigr). $$
-The computational complexity of Delaunay interpolation (for the
-implementation used \cite{chang2018polynomial}) is $\mathcal{O}(n d^4
-\log d)$, which is capable of scaling reasonably to $d \leq 50$. In
+ $$ \hat f(y) = \sum_{i=0}^{d} w_i f\bigl(x^{(i)}\bigr). $$ The
+computational complexity of Delaunay interpolation (for the
+implementation used \cite{chang2018polynomial}) is $\mathcal{O}(k n
+d^3)$. Given pathological data the entire triangulation could be
+computed with $k = n^{\lceil d / 2 \rceil}$, but the average case yields
+$k = d \log d$ and is capable of scaling reasonably to $d \leq 50$. In
 the present application, a Delaunay simplex $S$ containing $y$ is
 found, then the $d+1$ vertices (points in $X$) of $S$ are used to
 assign weights to each vertex and produce the predicted function value
 for point $y$.
-
-\newpage
 
 \subsection{Modified Shepard}
 \label{sec:modified-shepard}
@@ -359,10 +359,10 @@ spline model is $\mathcal{O}(n^2 d)$.
 \subsection{Voronoi}
 \label{sec:voronoi}
 
-A well-studied technique for classification and approximation is the
-nearest neighbor algorithm \cite{cover1967nearest}. Nearest neighbor
-inherently utilizes the convex region $C^{x^{(i)}}$ (Voronoi cell
-\cite{dirichlet1850reduction}) consisting of all points closer to
+The nearest neighbor algorithm \cite{cover1967nearest} is a
+well-studied technique for classification and approximation. Nearest
+neighbor inherently utilizes the convex region $C^{x^{(i)}}$ (Voronoi
+cell \cite{dirichlet1850reduction}) consisting of all points closer to
 $x^{(i)}$ than to any other point $x^{(j)}$. The Voronoi model smooths
 the nearest neighbor approximation by utilizing the Voronoi cells to
 define support via a generic basis function $v: \mathbb{R}^d
@@ -565,7 +565,7 @@ proportional rate.  Only linear convergence to the true function can
 be achieved in practice, without the incorporation of additional
 observations. Notice that the approximation error is largely
 determined by the spacing of observed data. Predictions made by
-simplices whose vertices are not well-spaced (i.e. have large
+simplices whose vertices are not well-spaced (i.e., have large
 diameter, or are nearly contained in a hyperplane) have higher
 error. In light of this error bound, an empirical evaluation of
 presented algorithms follows.
@@ -588,7 +588,7 @@ data set are described, as well as challenges and limitations related
 to approximating these data. The distribution of response values being
 modeled is presented followed by the distribution of approximation
 errors for each algorithm. The plots for all five data sets have the
-same statistical format.
+same format.
 
 All five data sets are rescaled such that the domain of approximation
 is the unit hypercube. The range of the first four data sets is the
@@ -600,7 +600,7 @@ applied to the final data set.
 
 All approximations are constructed using $k$-fold cross validation as
 described in \cite{kohavi1995study} with $k=10$. This approach
-randomly partitions data into $k$ equal sized (nearly) sets. Each
+randomly partitions data into $k$ (nearly) equal sized sets. Each
 algorithm is then evaluated by constructing an approximation over each
 unique union of $k-1$ elements of the partition, making predictions
 for points in the remaining element. As a result, each observed data
@@ -912,12 +912,13 @@ best predictions, the behavior of Voronoi may be preferable.
     using $10$-fold cross validation. The histograms show the KS
     statistics for the predicted throughput distribution versus the
     actual throughput distribution. The four vertical lines represent
-    commonly used $p$-values 0.05, 0.01, 0.001, $10^{-6}$,
-    respectively. All predictions to the right of a vertical line
-    represent CDF predictions that are significantly different (by
-    respective $p$-value) from the actual distribution according to
-    the KS test. The numerical counterpart to this figure is presented
-    in Table \ref{table:null-hypothesis-results}.}
+    cutoff KS statistics given $150$ samples for commonly used
+    $p$-values 0.05, 0.01, 0.001, $10^{-6}$, respectively. All
+    predictions to the right of a vertical line represent CDF
+    predictions that are significantly different (by respective
+    $p$-value) from the actual distribution according to the KS
+    test. The numerical counterpart to this figure is presented in
+    Table \ref{table:null-hypothesis-results}.}
   \label{fig:throughput-prediction}
 \end{figure}
 
@@ -930,7 +931,7 @@ best predictions, the behavior of Voronoi may be preferable.
     Delaunay & $\mathbf{50.3}\%$ & $\mathit{43.5}\%$ & $\mathit{36.2}\%$ & $\mathit{24.7}\%$\\
     ShepMod & $\mathit{51.4}\%$ & $44.8\%$ & $38.1\%$ & $27.7\%$\\
     Voronoi & $52.6\%$ & $\mathbf{43.4}\%$ & $\mathbf{34.4}\%$ & $\mathbf{19.1}\%$\\
-    BoxMesh & $99.5\%$ & $98.5\%$ & $96.6\%$ & $89.5\%$\\
+    BoxSpline & $99.5\%$ & $98.5\%$ & $96.6\%$ & $89.5\%$\\
   \end{tabular}
   \caption{Numerical counterpart of the histogram data presented in
     Figure \ref{fig:throughput-prediction}. The columns display the
@@ -967,14 +968,14 @@ characteristics of the CDFs at new system configurations.
   \begin{tabular}{c|r@{.}l|r@{.}l|r@{.}l}
     Algorithm & \multicolumn{2}{c|}{Avg. \% Best} & \multicolumn{2}{c|}{\multilinecell{Avg. Fit or \\ Prep. Time (s)}} & \multicolumn{2}{c}{Avg. App. Time (s)}\\
     \hline
-    MARS & \quad\quad$4$&$6$ & \,\quad$22$&$3$ & \quad\quad$0$&$00137$\\
-    SVR & $\mathit{21}$&$\mathit{1}$ & $0$&$503$ & $\mathit{0}$&$\mathit{000137}$\\
-    MLP & $\mathbf{42}$&$\mathbf{1}$ & $210$&$0$ & $0$&$00102$\\
-    Delaunay & $6$&$0$ & $\mathbf{0}$&$\mathbf{000143}$ & $3$&$03$\\
-    ShepMod & $18$&$4$ & $0$&$711$ & $0$&$000149$\\
-    LSHEP & $8$&$4$ & $1$&$69$ & $\mathbf{0}$&$\mathbf{000116}$\\
-    Voronoi & $0$&$5$ & $\mathit{0}$&$\mathit{127}$ & $0$&$0375$\\
-    BoxSplines & $0$&$2$ & $0$&$816$ & $0$&$000526$\\
+    MARS & \quad\quad$4$&$6$ & \,\quad$20$&$0$ & \quad\quad$0$&$001$\\
+    SVR & $\mathit{21}$&$\mathit{1}$ & $\mathit{0}$&$\mathit{5}$ & $\mathbf{0}$&$\mathbf{0001}$\\
+    MLP & $\mathbf{42}$&$\mathbf{1}$ & $200$&$0$ & $0$&$001$\\
+    Delaunay & $6$&$0$ & $1$&$0$ & $1$&$0$\\
+    ShepMod & $18$&$4$ & $0$&$7$ & $\mathbf{0}$&$\mathbf{0001}$\\
+    LSHEP & $8$&$4$ & $2$&$0$ & $\mathbf{0}$&$\mathbf{0001}$\\
+    Voronoi & $0$&$5$ & $\mathbf{0}$&$\mathbf{1}$ & $0$&$04$\\
+    BoxSpline & $0$&$2$ & $0$&$8$ & $\mathit{0}$&$\mathit{0005}$\\
   \end{tabular}
   \caption{This average of Appendix Tables
     \ref{table:best-forest-fire}, \ref{table:best-parkinsons},
@@ -983,9 +984,11 @@ characteristics of the CDFs at new system configurations.
     (weighted equally by data set, \textit{not} points) the average
     frequency with which any algorithm provided the lowest absolute
     error approximation, the average time to fit/prepare, and the
-    average time required to approximate one point. Interpolants
-    provide the lowest error approximation one third of the time
-    across all data, while regressors occupy the other two
+    average time required to approximate one point. The times have
+    been rounded to one significant digit, as reasonably large
+    fluctuations may be observed due to implementation hardware.
+    Interpolants provide the lowest error approximation for nearly one
+    third of all data, while regressors occupy the other two
     thirds. This result is obtained without any customized tuning or
     preprocessing to maximize the performance of any given
     algorithm. In practice, tuning and preprocessing may have large
@@ -1044,11 +1047,14 @@ average absolute error in that final case study.
 
 The major contributions of this work are: 1) new uniform theoretical
 error bounds for piecewise linear interpolation in arbitrary dimension
-(Section \ref{sec:theory}); and 2) an empirical evaluation across
+(Section \ref{sec:theory}); 2) an empirical evaluation across
 real-world problems (Section \ref{sec:data}) that demonstrates
 interpolants produce competitively accurate models of multivariate
 phenomenon when compared with common regressors for sparse, moderately
-high dimensional problems.
+high dimensional problems; and 3) a demonstration that some
+interpolants generalize to interpolation in function spaces,
+preserving monotonicity (with CDFs, e.g.), neither of which common
+regressors can do.
 
 The various interpolants discussed in this paper have been
 demonstrated to effectively approximate multivariate phenomena up to
@@ -1112,13 +1118,13 @@ empirical results presented, $\log_d n \leq 5$).
     \cline{1-3}\cline{5-10}
     Algorithm & \multicolumn{2}{c|}{\% Best} &  & \multicolumn{2}{c|}{Fit/Prep. Time (s)} & \multicolumn{2}{c|}{App. Time (s)} & \multicolumn{2}{c|}{Total App. Time (s)}\\
     \cline{1-3}\cline{5-10}
-    MARS & \quad$\mathit{7}$&$\mathit{7}$ &  & \quad\,\,\,$29$&$1$ & \quad$0$&$00137$ & \quad\quad\quad$0$&$0686$\\
-    SVR & $\mathbf{80}$&$\mathbf{2}$ &  & $0$&$00584$ & $\mathit{0}$&$\mathit{0000620}$ & $\mathit{0}$&$\mathit{00310}$\\
+    MARS & \quad$\mathit{7}$&$\mathit{7}$ &  & \quad\quad$29$&$1$ & \quad$0$&$00137$ & \quad\quad\quad$0$&$0686$\\
+    SVR & $\mathbf{80}$&$\mathbf{2}$ &  & $\mathit{0}$&$\mathit{00584}$ & $\mathit{0}$&$\mathit{0000620}$ & $\mathit{0}$&$\mathit{00310}$\\
     MLP & $0$&$0$ &  & $32$&$8$ & $0$&$000871$ & $0$&$0436$\\
-    Delaunay & $3$&$5$ &  & $\mathbf{0}$&$\mathbf{0000249}$ & $0$&$0385$ & $1$&$93$\\
+    Delaunay & $3$&$5$ &  & $0$&$0151$ & $0$&$0234$ & $1$&$18$\\
     ShepMod & $3$&$7$ &  & $0$&$00634$ & $0$&$0000644$ & $0$&$00322$\\
     LSHEP & $5$&$1$ &  & $0$&$0275$ & $\mathbf{0}$&$\mathbf{0000463}$ & $\mathbf{0}$&$\mathbf{00231}$\\
-    Voronoi & $0$&$0$ &  & $\mathit{0}$&$\mathit{000182}$ & $0$&$000396$ & $0$&$0198$\\
+    Voronoi & $0$&$0$ &  & $\mathbf{0}$&$\mathbf{000182}$ & $0$&$000396$ & $0$&$0198$\\
     BoxSpline & $0$&$4$ &  & $0$&$00724$ & $0$&$0000978$ & $0$&$00489$\\
     \cline{1-3}\cline{5-10}
   \end{tabular}
@@ -1165,13 +1171,13 @@ empirical results presented, $\log_d n \leq 5$).
     \cline{1-3}\cline{5-10}
     Algorithm & \multicolumn{2}{c|}{\% Best} &  & \multicolumn{2}{c|}{Fit/Prep. Time (s)} & \multicolumn{2}{c|}{App. Time (s)} & \multicolumn{2}{c|}{Total App. Time (s)}\\
     \cline{1-3}\cline{5-10}
-    MARS & \quad\,$0$&$0$ &  & \quad\quad$37$&$9$ & \quad\,\,$0$&$00253$ & \quad\quad\quad\,\,$1$&$48$\\
-    SVR & $0$&$1$ &  & $0$&$859$ & $\mathit{0}$&$\mathit{000181}$ & $\mathit{0}$&$\mathit{106}$\\
+    MARS & \quad\,$0$&$0$ &  & \quad\quad\quad$37$&$9$ & \quad\,\,$0$&$00253$ & \quad\quad\quad\,\,$1$&$48$\\
+    SVR & $0$&$1$ &  & $\mathit{0}$&$\mathit{859}$ & $\mathit{0}$&$\mathit{000181}$ & $\mathit{0}$&$\mathit{106}$\\
     MLP & $\mathit{32}$&$\mathit{0}$ &  & $348$&$0$ & $0$&$00111$ & $0$&$653$\\
-    Delaunay & $0$&$0$ &  & $\mathbf{0}$&$\mathbf{000190}$ & $3$&$69$ & $2170$&$0$\\
+    Delaunay & $0$&$0$ &  & $2$&$47$ & $1$&$22$ & $720$&$0$\\
     ShepMod & $\mathbf{66}$&$\mathbf{4}$ &  & $1$&$13$ & $0$&$000182$ & $0$&$107$\\
     LSHEP & $0$&$0$ &  & $2$&$39$ & $\mathbf{0}$&$\mathbf{000144}$ & $\mathbf{0}$&$\mathbf{0845}$\\
-    Voronoi & $1$&$6$ &  & $\mathit{0}$&$\mathit{298}$ & $0$&$0274$ & $16$&$1$\\
+    Voronoi & $1$&$6$ &  & $\mathbf{0}$&$\mathbf{298}$ & $0$&$0274$ & $16$&$1$\\
     BoxSpline & $0$&$0$ &  & $1$&$26$ & $0$&$000643$ & $0$&$377$\\
     \cline{1-3}\cline{5-10}
   \end{tabular}
@@ -1216,13 +1222,13 @@ empirical results presented, $\log_d n \leq 5$).
     \cline{1-3}\cline{5-10}
     Algorithm & \multicolumn{2}{c|}{\% Best} &  & \multicolumn{2}{c|}{Fit/Prep. Time (s)} & \multicolumn{2}{c|}{App. Time (s)} & \multicolumn{2}{c|}{Total App. Time (s)}\\
     \cline{1-3}\cline{5-10}
-    MARS & \,\,\,\,$10$&$7$ &  & \quad\quad\,\,$0$&$151$ & \quad$0$&$000117$ & \quad\quad\quad\,\,$0$&$0304$\\
-    SVR & $4$&$1$ &  & $0$&$133$ & $\mathbf{0}$&$\mathbf{0000947}$ & $\mathbf{0}$&$\mathbf{0246}$\\
+    MARS & \,\,\,\,$10$&$7$ &  & \quad\quad\quad$0$&$151$ & \quad$0$&$000117$ & \quad\quad\quad\,\,$0$&$0304$\\
+    SVR & $4$&$1$ &  & $\mathit{0}$&$\mathit{133}$ & $\mathbf{0}$&$\mathbf{0000947}$ & $\mathbf{0}$&$\mathbf{0246}$\\
     MLP & $\mathbf{56}$&$\mathbf{8}$ &  & $169$&$0$ & $0$&$00137$ & $0$&$356$\\
-    Delaunay & $0$&$1$ &  & $\mathbf{0}$&$\mathbf{000116}$ & $1$&$55$ & $403$&$0$\\
+    Delaunay & $0$&$1$ &  & $0$&$664$ & $0$&$886$ & $230$&$0$\\
     ShepMod & $3$&$5$ &  & $0$&$265$ & $0$&$000128$ & $0$&$0333$\\
     LSHEP & $\mathit{28}$&$\mathit{4}$ &  & $0$&$874$ & $\mathit{0}$&$\mathit{0000975}$ & $\mathit{0}$&$\mathit{0254}$\\
-    Voronoi & $0$&$2$ &  & $\mathit{0}$&$\mathit{0112}$ & $0$&$0270$ & $7$&$01$\\
+    Voronoi & $0$&$2$ &  & $\mathbf{0}$&$\mathbf{012}$ & $0$&$0270$ & $7$&$01$\\
     BoxSpline & $0$&$3$ &  & $0$&$330$ & $0$&$000406$ & $0$&$106$\\
     \cline{1-3}\cline{5-10}
   \end{tabular}
@@ -1267,13 +1273,13 @@ empirical results presented, $\log_d n \leq 5$).
     \cline{1-3}\cline{5-10}
     Algorithm & \multicolumn{2}{c|}{\% Best} &  & \multicolumn{2}{c|}{Fit/Prep. Time (s)} & \multicolumn{2}{c|}{App. Time (s)} & \multicolumn{2}{c|}{Total App. Time (s)}\\
     \cline{1-3}\cline{5-10}
-    MARS & \quad\,$0$&$0$ &  & \quad\quad\,\,$22$&$0$ & \quad$0$&$00148$ & \quad\quad\quad$0$&$820$\\
-    SVR & $0$&$0$ &  & $1$&$01$ & $\mathit{0}$&$\mathit{000210}$ & $\mathit{0}$&$\mathit{117}$\\
+    MARS & \quad\,$0$&$0$ &  & \quad\quad\quad$22$&$0$ & \quad$0$&$00148$ & \quad\quad\quad\,\,$0$&$820$\\
+    SVR & $0$&$0$ &  & $\mathit{1}$&$\mathit{01}$ & $\mathit{0}$&$\mathit{000210}$ & $\mathit{0}$&$\mathit{117}$\\
     MLP & $\mathbf{79}$&$\mathbf{5}$ &  & $290$&$0$ & $0$&$000714$ & $0$&$397$\\
-    Delaunay & $\mathit{20}$&$\mathit{5}$ &  & $\mathbf{0}$&$\mathbf{000243}$ & $6$&$83$ & $3800$&$0$\\
+    Delaunay & $\mathit{20}$&$\mathit{5}$ &  & $3$&$12$ & $3$&$71$ & $2070$&$0$\\
     ShepMod & $0$&$1$ &  & $1$&$45$ & $0$&$000220$ & $0$&$122$\\
     LSHEP & $0$&$0$ &  & $3$&$47$ & $\mathbf{0}$&$\mathbf{000176}$ & $\mathbf{0}$&$\mathbf{0981}$\\
-    Voronoi & $0$&$0$ &  & $\mathit{0}$&$\mathit{197}$ & $0$&$0950$ & $52$&$8$\\
+    Voronoi & $0$&$0$ &  & $\mathbf{0}$&$\mathbf{197}$ & $0$&$0950$ & $52$&$8$\\
     BoxSpline & $0$&$0$ &  & $1$&$66$ & $0$&$000956$ & $0$&$532$\\
     \cline{1-3}\cline{5-10}
   \end{tabular}
@@ -1317,9 +1323,9 @@ empirical results presented, $\log_d n \leq 5$).
     \cline{1-3}\cline{5-10}
     Algorithm & \multicolumn{2}{c|}{\% Best} &  & \multicolumn{2}{c|}{Fit/Prep. Time (s)} & \multicolumn{2}{c|}{App. Time (s)} & \multicolumn{2}{c|}{Total App. Time (s)}\\
     \cline{1-3}\cline{5-10}
-    Delaunay & \,\,$\mathbf{62}$&$\mathbf{0}$ &  & \quad\quad$\mathbf{0}$&$\mathbf{000517}$ & \quad$0$&$353$ & \quad\quad\,\,$106$&$0$\\
-    ShepMod & $0$&$0$ &  & $0$&$0884$ & $\mathbf{0}$&$\mathbf{000145}$ & $\mathbf{0}$&$\mathbf{0436}$\\
-    Voronoi & $\mathit{38}$&$\mathit{0}$ &  & $\mathit{0}$&$\mathit{0173}$ & $0$&$00253$ & $0$&$762$\\
+    Delaunay & \,\,$\mathbf{62}$&$\mathbf{0}$ &  & \quad\quad\quad$0$&$344$ & \quad$0$&$00984$ & \quad\quad\,\,$2$&$71$\\
+    ShepMod & $0$&$0$ &  & $\mathbf{0}$&$\mathbf{0884}$ & $\mathbf{0}$&$\mathbf{000145}$ & $\mathbf{0}$&$\mathbf{0436}$\\
+    Voronoi & $\mathit{38}$&$\mathit{0}$ &  & $1$&$0$ & $0$&$00253$ & $0$&$762$\\
     BoxSpline & $0$&$0$ &  & $0$&$0972$ & $\mathit{0}$&$\mathit{000210}$ & $\mathit{0}$&$\mathit{0633}$\\
     \cline{1-3}\cline{5-10}
   \end{tabular}
