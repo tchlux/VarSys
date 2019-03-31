@@ -256,7 +256,7 @@ kernel function.
 \label{sec:mlp}
 The neural network is a well studied and widely used method for both
 regression and classification tasks
-\cite{rumelhart1988learning,hornik1989multilayer}. When using the
+\cite{hornik1989multilayer,rumelhart1988learning}. When using the
 rectified linear unit (ReLU) activation function
 \cite{dahl2013improving} and fitting the model with stochastic
 gradient descent (SGD) or BFGS minimization techniques
@@ -315,7 +315,7 @@ The modified Shepard method used here (ShepMod) generates a continuous
 approximation based on Euclidean distance and resembles a nearest
 neighbor interpolant \cite{cover1967nearest}. This model is a type of
 \textit{metric interpolation}, also called a Shepard method
-\cite{shepard1968two,gordon1978shepard}. The interpolant has the form
+\cite{gordon1978shepard,shepard1968two}. The interpolant has the form
  $$ p(x) = \frac{\sum\limits_{k=1}^{n}W_k(x)f\bigl(x^{(k)}\bigr)}
      {\sum\limits_{k=1}^{n}W_k(x)} ,$$
 where $W_k(x) = \bigl(r_k - \bigl\|x - x^{(k)}\bigr\|\bigr)_+^2 \big/
@@ -387,7 +387,7 @@ of known function values $f\bigl(x^{(i)}\bigr)$.
 \begin{figure}[htb]
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.75\textwidth,]{Figures/plot-delaunay-example-prediction.pdf}};
+    \node (img)  {\includegraphics[width=0.75\textwidth,]{Fig1.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {I/O Throughput};
     \node[left=of img, node distance=0cm, rotate=90, anchor=center,yshift=-0.7cm] {CDF Value};
   \end{tikzpicture}
@@ -626,7 +626,7 @@ towards interpolation.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.75\textwidth,]{Figures/raw-histogram-forest-fire.pdf}};
+    \node (img)  {\includegraphics[width=0.75\textwidth,]{Fig2.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Forest Fire Area Burned};
     \node[left=of img, node distance=0cm, rotate=90, anchor=center,yshift=-0.7cm] {Count};
   \end{tikzpicture}
@@ -640,7 +640,7 @@ towards interpolation.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.8\textwidth,]{Figures/error-box-forest-fire.pdf}};
+    \node (img)  {\includegraphics[width=0.8\textwidth,]{Fig3.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Area Burned Error};
   \end{tikzpicture}
   \caption{All models are applied to approximate the amount of area
@@ -685,7 +685,7 @@ low-burn-area data points.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.75\textwidth,]{Figures/raw-histogram-parkinsons.pdf}};
+    \node (img)  {\includegraphics[width=0.75\textwidth,]{Fig4.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Parkinson's Total UPDRS Score};
     \node[left=of img, node distance=0cm, rotate=90, anchor=center,yshift=-0.7cm] {Count};
   \end{tikzpicture}
@@ -697,7 +697,7 @@ low-burn-area data points.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.8\textwidth,]{Figures/error-box-parkinsons.pdf}};
+    \node (img)  {\includegraphics[width=0.8\textwidth,]{Fig5.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Total UPDRS Score Error};
   \end{tikzpicture}
   \caption{All models are applied to approximate the total UPDRS score
@@ -737,7 +737,7 @@ favoring a nearest-neighbor strategy of prediction.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.75\textwidth,]{Figures/raw-histogram-weather.pdf}};
+    \node (img)  {\includegraphics[width=0.75\textwidth,]{Fig6.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Daily Rainfall in Sydney};
     \node[left=of img, node distance=0cm, rotate=90, anchor=center,yshift=-0.7cm] {Count};
   \end{tikzpicture}
@@ -752,7 +752,7 @@ favoring a nearest-neighbor strategy of prediction.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.8\textwidth,]{Figures/error-box-weather.pdf}};
+    \node (img)  {\includegraphics[width=0.8\textwidth,]{Fig7.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Sydney Rainfall Tomorrow Error};
   \end{tikzpicture}
   \caption{All models are applied to approximate the amount of
@@ -793,7 +793,7 @@ quartile due to the high occurrence of the value zero in the data.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.75\textwidth,]{Figures/raw-histogram-credit-card.pdf}};
+    \node (img)  {\includegraphics[width=0.75\textwidth,]{Fig8.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Credit Card Transaction Amount};
     \node[left=of img, node distance=0cm, rotate=90, anchor=center,yshift=-0.7cm] {Count};
   \end{tikzpicture}
@@ -808,7 +808,7 @@ quartile due to the high occurrence of the value zero in the data.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.8\textwidth,]{Figures/error-box-credit-card.pdf}};
+    \node (img)  {\includegraphics[width=0.8\textwidth,]{Fig9.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {Transaction Amount Error};
   \end{tikzpicture}
   \caption{All models are applied to approximate the expected
@@ -850,8 +850,8 @@ performer.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.75\textwidth,]{Figures/raw-histogram-throughput.pdf}};
-    \node[below=of img, node distance=1cm, yshift=1cm] {I/O Read Throughtput};
+    \node (img)  {\includegraphics[width=0.75\textwidth,]{Fig10.pdf}};
+    \node[below=of img, node distance=1cm, yshift=1cm] {I/O Read Throughput};
     \node[left=of img, node distance=0cm, rotate=90, anchor=center,yshift=-0.7cm] {Count};
   \end{tikzpicture}
   \caption{Histogram of the raw throughput values recorded during all
@@ -865,8 +865,8 @@ performer.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.8\textwidth,]{Figures/error-box-throughput.pdf}};
-    \node[below=of img, node distance=1cm, yshift=1cm] {Read Throughtput KS Statistic};
+    \node (img)  {\includegraphics[width=0.8\textwidth,]{Fig11.pdf}};
+    \node[below=of img, node distance=1cm, yshift=1cm] {Read Throughput KS Statistic};
   \end{tikzpicture}
   \caption{The models directly capable of predicting distributions are
     applied to predicting the expected CDF of I/O throughput at a
@@ -903,7 +903,7 @@ best predictions, the behavior of Voronoi may be preferable.
 \begin{figure}
   \centering
   \begin{tikzpicture}
-    \node (img)  {\includegraphics[width=0.8\textwidth]{Figures/plot-throughput-ks.pdf}};
+    \node (img)  {\includegraphics[width=0.8\textwidth]{Fig12.pdf}};
     \node[below=of img, node distance=1cm, yshift=1cm] {KS Statistic for Predicted vs. Actual};
     \node[left=of img, node distance=0cm, rotate=90, anchor=center,yshift=-0.7cm] {Count of KS Statistic};
   \end{tikzpicture}
