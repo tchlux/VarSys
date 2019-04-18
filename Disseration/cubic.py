@@ -319,6 +319,34 @@ def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
 
 # Testing code.
 if __name__ == "__main__":
+    SHOW_FEASIBLE_REGION = True
+    if SHOW_FEASIBLE_REGION:
+        # Compute the circle boundary points (for region 2).
+        circ_func = lambda x: (9 - x**2)**(1/2)
+        x = [(i/100) for i in range(300+1)] + [0]
+        y = [circ_func(i) for i in x]
+
+        from util.plot import Plot
+        p = Plot("Regions of monotonicity", "alpha", "beta")
+
+        # Add region 1 (the box at 3).
+        p.add("Region 1", [0,3,3]+x[::-1][1:], [3,3,0]+y[::-1][1:], mode="lines", fill="toself")
+        # Add region 2 (the circle at 3).
+        p.add("Region 2", x, y, mode="lines", fill="toself")
+        # Add region 3 (inside y = 3 - x).
+        p.add("Region 3", [0,3,1,0], [3,0,1,3], mode="lines", fill="toself")
+        # Add region 4 (inside min{y = 3 - 2x, x = 3 - 2y}).
+        p.add("Region 4", [0,0,1,3,0], [0,3,1,0,0], mode="lines", fill="toself")
+        # Define knowing-to-work width and height, compute ratio.
+        width, height= 880, 700
+        ratio = width / height
+        # Redefine the width an height
+        width = 500
+        height = width / ratio
+        p.show(x_range=[-1,4], y_range=[-1,4], width=width,
+               height=height, file_name="feasible_region.html")
+        
+
 
     TEST_PROJECTION = False
     if TEST_PROJECTION:
@@ -332,9 +360,8 @@ if __name__ == "__main__":
 
         for m in (1,2,3,4):
             for pr in (1, 2):
-
-                # Creat an animated plot.
                 from util.plot import Plot
+                # Creat an animated plot.
                 p = Plot("Projecting onto the region of monotonicity", "d[i+1] / s", "d[i] / s")
 
                 # Add points and their projections.
@@ -387,7 +414,7 @@ if __name__ == "__main__":
                        height=700, append=append, file_name="demo_feasible.html")
 
 
-    TEST_FIT = True
+    TEST_FIT = False
     if TEST_FIT:
         from util.plot import Plot
         SEED = 1

@@ -3,32 +3,53 @@ A preliminary defense planning document
 :: Thomas C.H. Lux :: tchlux@vt.edu :: http://people.cs.vt.edu/tchlux
 
 
-This thesis proposes research on the numerically robust construction of monotonic quintic interpolating splines given data.
+This thesis proposes research on the numerically robust construction of monotone quintic interpolating splines from data.
 
 
 # Introduction and Motivation
 
-- splines, a piecewise polynomial with meaningful continuity
-- splines are useful in 1D interpolation (and regression)
-- a powerful subclass of problems are monotone (physical constraints, CDFs, and random number generation)
-- constructing monotone splines is difficult, it has been done for cubic splines (1980s)
+Many domains of science rely on smooth approximations to real-valued functions over a closed interval. While polynomial interpolants or regressors apply broadly, piecewise polynomial functions (splines) are often a good choice because of their unique combination of flexibility and control. It is often the case that the true underlying function or phenomenon being modeled has known properties e.g., convexity, positivity, various levels of continuity, or monotonicity. Given a reasonably large amount of data, it can be impossible to maintain these properties with a single polynomial function.
+
+In general, the maintenance of function properties through interpolation / regression is usually referred to as *shape preserving* [[fritsch1980monotone,gregory1985shape]]. The specific shapes this work will focus on are monotonicity and multiple levels of continuity for a function. These properties are chiefly important to the approximation of cumulative distribution functions and subsequently the effective generation of random numbers from a specified distribution. 
+
+In statistics especially, the construction of a monotone interpolating spline that is continuous in second derivative could be meaningfully useful [[ramsay1988monotone]]. A function with these properties could approximate random variables to a high level of accuracy with relatively few intervals((with even more accuracy given greater continuity)). A continuously twice differentiable approximation to a cumulative distribution function would also produce a corresponding probability density function that is continuously differentiable, which is a property many commonly occurring parametric distributions are expected to maintain.
+
 
 # Related Work
 
+The current state-of-the-art monotone interpolating spline is piecewise cubic, continuously differentiable, and was first proposed in [[fritsch1980monotone]] then expanded upon in [[carlson1985monotone]]. Let $\pi: a = x_1 < x_2 < \cdots < x_n = b$ be a partition of the interval $[a,b]$. Let $\{f(x_i) : i = 1,2,\ldots,n\}$ be a given set of data values at the partition points for a monotone function $f$, meaning $f(x_i) \leq f(x_{i+1})$ for $i = 1, \ldots, n-1$ or $f(x_i) \geq f(x_{i+1})$ for $i = 1, \ldots, n-1$. Let $\hat f$ be a piecewise cubic spline defined in each sub-interval $I_i = [x_i, x_{i+1}]$ by
+
+$$ \begin{align}
+
+h_i =& \ x_{i+1} - x_{i} \\
+u(t) =& \ 3t^2 - 2t^3 \\
+p(t) =& \ t^3 - t^2 \\
+\hat f(x) =& \ f(x_i)\ u\big((x_{i+1} - x) / h_i\big) + f(x_{i+1})\ u\big((x - x_i) / h_i\big) \\
+& - \hat f^{\ \prime}(x_i)\ p\big((x_{i+1}-x)/h_i\big) + \hat f^{\ \prime}(x_{i+1})\ p\big((x-x_i)/h_i \big).
+
+\end{align} $$
+
+Notice that it is up to the user to choose values for $\hat f^{\ \prime}$and a viable monotonic cubic spline can be produced by choosing $\hat f^{\ \prime}(x_i) = 0$, $i = 1, \ldots, n$. However, such a spline has too many *wiggles* for most applications. Fritsch and Carlson proceed to show that simple conditions on the derivative values can guarantee monotonicity, and that these conditions can be enforced in a way that ensures modifications on one interval will not break the monotonicity of splines any neighboring intervals. Consider the terms $\alpha = \frac{\hat f^{\ \prime}(x_i) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}$ and $\beta = \frac{\hat f^{\ \prime}(x_{i+1}) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}$, now monotonicity of a cubic polynomial over a sub-interval can be maintained by ensuring that $\alpha$ and $\beta$ reside in one of the following regions.
+
+{{feasible_region.html}}
+
+
 - construction of monotone splines
 - theory of piecewise cubic monotone splines
-- code for piecewise cubic
+- algorithm for constructing a monotone piecewise cubic spline
 - theory of piecewise quintic monotone splines
 
 # Achieved Progress
 
-- link code for producing monotone cubic splines
+To expand my own understanding of the current state-of-the-art method for constructing a monotone spline interpolant, I {#37a}@{fully implemented}{https://github.com/tchlux/VarSys/blob/master/Disseration/cubic.py}@{#37a} the algorithm described in [[fritsch1980monotone]] in Python. This code can be used to generate monotone cubic spline fits to data and allows for the user specification of a method((the means by which monotonicity is enforced)) and derivatives at any of the knots or endpoints. Clearly this code is not optimized for numerical robustness, nor speed, but it serves as a portable demonstration and educational tool.
+
+
 - show visual of projecting into the region of monotonicity
 - show final spline fits of data
 
 # Research Goal
 
-{#37a} ****Produce numerically robust software that computes monotone quintic interpolating splines given data.**** {#37a}
+{#3a7} ****Produce numerically robust software that computes monotone quintic interpolating splines given data.**** {#3a7}
 
 # Timeline
 
@@ -77,6 +98,14 @@ This thesis proposes research on the numerically robust construction of monotoni
   pages={425--441},
   year={1988},
   publisher={Institute of Mathematical Statistics}
+}
+
+@article{gregory1985shape,
+  title={Shape preserving spline interpolation},
+  author={Gregory, John A},
+  journal = {Brunel University},
+  year={1985},
+  url = { https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19850020252.pdf }
 }
 
 @article{ulrich1994positivity,
