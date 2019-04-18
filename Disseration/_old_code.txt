@@ -1,0 +1,30 @@
+    # print()
+    # print('-'*70)
+    # print("MODE:",mode)
+    # print()
+    # print("data[0]:  ",x[0])
+    # print("func[0]:  ",y[0])
+    # print("deriv[0]: ",deriv[0])
+    # for i in range(1, len(x)-1):
+    #     # Compute the secant slope, the left slope ratio and the
+    #     # right slope ratio for this interval of the function.
+    #     secant_slope = (y[i+1] - y[i]) / (x[i+1] - x[i])
+    #     left_ratio = deriv[i] / secant_slope
+    #     right_ratio = deriv[i+1] / secant_slope
+    #     print()
+    #     print("i:            ",i)
+    #     print("data[i]:      ",x[i])
+    #     print("func[i]:      ",y[i])
+    #     print("deriv[i]:     ",deriv[i])
+    #     print("secant_slope: ",secant_slope)
+    #     print("left_ratio:   ",left_ratio)
+    #     print("right_ratio:  ",right_ratio)
+    # print()
+    # print("data[-1]:  ",x[-1])
+    # print("func[-1]:  ",y[-1])
+    # print("deriv[-1]: ",deriv[-1])
+    # print('-'*70)
+    # print()
+
+
+
