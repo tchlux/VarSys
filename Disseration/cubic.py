@@ -319,7 +319,7 @@ def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
 
 # Testing code.
 if __name__ == "__main__":
-    SHOW_FEASIBLE_REGION = True
+    SHOW_FEASIBLE_REGION = False
     if SHOW_FEASIBLE_REGION:
         # Compute the circle boundary points (for region 2).
         circ_func = lambda x: (9 - x**2)**(1/2)
@@ -327,7 +327,7 @@ if __name__ == "__main__":
         y = [circ_func(i) for i in x]
 
         from util.plot import Plot
-        p = Plot("Regions of monotonicity", "alpha", "beta")
+        p = Plot("Regions of monotonicity", "alpha", "beta", font_family="times")
 
         # Add region 1 (the box at 3).
         p.add("Region 1", [0,3,3]+x[::-1][1:], [3,3,0]+y[::-1][1:], mode="lines", fill="toself")
@@ -342,10 +342,104 @@ if __name__ == "__main__":
         ratio = width / height
         # Redefine the width an height
         width = 500
-        height = width / ratio
+        height = 400
         p.show(x_range=[-1,4], y_range=[-1,4], width=width,
                height=height, file_name="feasible_region.html")
         
+
+
+    SMALL_PROJECTION_DEMO = False
+    if SMALL_PROJECTION_DEMO:
+        from util.plot import Plot
+        # Creat an animated plot.
+        p = Plot("Example Projections onto the Region of Monotonicity",
+                 "alpha", "beta", font_family="times")
+
+        # Compute the circle boundary points (for region 2).
+        circ_func = lambda x: (9 - x**2)**(1/2)
+        x = [(i/100) for i in range(300+1)] + [0]
+        y = [circ_func(i) for i in x]
+
+        # Add points and their projections.
+        def add_point(x, y, color=None, mode=2, project=1):
+            show = False
+            if (color == None):
+                color = p.color_num + 1
+                p.color_num += 1
+                show = True
+            new_y, new_x = compute_feasible(y, x, mode=mode, project=project)
+            p.add(f"Point {color-3} to Region {mode}", [x,new_x], [y,new_y],
+                  mode="markers+lines", dash="dot", color=p.color(4),
+                  line_color=p.color(mode-1, alpha=.6))
+            return color
+
+        # Add region 1 (the box at 3).
+        p.add("Region 1", [0,3,3]+x[::-1][1:], [3,3,0]+y[::-1][1:], mode="lines", fill="toself")
+        # Add region 2 (the circle at 3).
+        p.add("Region 2", x, y, mode="lines", fill="toself")
+        # Add region 3 (inside y = 3 - x).
+        p.add("Region 3", [0,3,1,0], [3,0,1,3], mode="lines", fill="toself")
+        # Add region 4 (inside min{y = 3 - 2x, x = 3 - 2y}).
+        p.add("Region 4", [0,0,1,3,0], [0,3,1,0,0], mode="lines", fill="toself")
+
+        add_point(3,4.5, mode=1)
+        add_point(4,4, mode=2)
+        add_point(4,1, mode=3)
+        add_point(1.5,3.5, mode=4)
+        p.show(x_range=[-1,5], y_range=[-1,5], width=500,
+               height=400, file_name="demo_projection.html")
+
+
+
+    SMALL_FIT_DEMO = True
+    if SMALL_FIT_DEMO:
+        from util.plot import Plot
+        SEED = 1
+        NODES = 4
+
+        # Generate random data to test the monotonic fit function.
+        import numpy as np
+        np.random.seed(SEED)
+        nodes = NODES + 2
+        x = np.linspace(0, 1, nodes)
+        y = sorted(np.random.normal(size=(nodes,)))
+        # Convert these arrays to lists.
+        x, y = list(x), list(y)
+
+        # Generate a plot of the function.
+        width = max(x) - min(x)
+        padding = width * .1
+        bounds = (min(x)-padding, max(x)+padding)
+        # Reserve the "0" color for the points (to be added last).
+        p = Plot("Cubic Montone Interpolating Spline", font_family="times")
+        p.color_num += 1
+        # Settings for the  custom fits.
+        project = 1
+        ends = 1
+        mids = 2
+        mode = 2
+        fit = cubic_interp(x, y, mode=mode, mids=mids,
+                           project=project, ends=ends)
+        p.add_func(f"Fit: mode {mode}, project {project}, ends {ends}, mids {mids}", 
+                   fit, bounds, color=p.color(mode+2))
+        # Add the points last (so they are on top).
+        p.add("Points", x, y, color=p.color(0))
+        p.show(file_name="demo_fit.html", show_legend=False,
+               width=500, height=400)
+
+        p = Plot("Derivative of Cubic Montone Spline", font_family="times")
+        p.color_num += 1
+        fit = cubic_interp(x, y, mode=mode, mids=mids,
+                           project=project, ends=ends)
+        for (x1, y1) in zip(x,y):
+            p.add("Point", [x1, x1], [0,9], mode="lines",
+                  color=p.color(0, alpha=.3))
+
+        p.add_func(f"DERIVATIVE Fit: mode {mode}, project {project}, ends {ends}, mids {mids}", 
+                   fit.derivative, bounds, color=p.color(mode+2))
+
+        p.show(file_name="demo_fit_deriv.html", show_legend=False,
+               width=500, height=400)
 
 
     TEST_PROJECTION = False
@@ -485,5 +579,5 @@ if __name__ == "__main__":
 
         # Add the points last (so they are on top).
         p.add("Points", x, y, color=p.color(0))
-        p.show(file_name="demo_fit.html")
+        p.show(file_name="demo_fit_many.html")
 

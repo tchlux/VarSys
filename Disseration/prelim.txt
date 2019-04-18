@@ -12,7 +12,7 @@ Many domains of science rely on smooth approximations to real-valued functions o
 
 In general, the maintenance of function properties through interpolation / regression is usually referred to as *shape preserving* [[fritsch1980monotone,gregory1985shape]]. The specific shapes this work will focus on are monotonicity and multiple levels of continuity for a function. These properties are chiefly important to the approximation of cumulative distribution functions and subsequently the effective generation of random numbers from a specified distribution. 
 
-In statistics especially, the construction of a monotone interpolating spline that is continuous in second derivative could be meaningfully useful [[ramsay1988monotone]]. A function with these properties could approximate random variables to a high level of accuracy with relatively few intervals((with even more accuracy given greater continuity)). A continuously twice differentiable approximation to a cumulative distribution function would also produce a corresponding probability density function that is continuously differentiable, which is a property many commonly occurring parametric distributions are expected to maintain.
+In statistics especially, the construction of a monotone interpolating spline that is continuous in second derivative is meaningfully useful [[ramsay1988monotone]]. A function with these properties could approximate random variables to a high level of accuracy with relatively few intervals((with even more accuracy given greater continuity)). A continuously twice differentiable approximation to a cumulative distribution function would also produce a corresponding probability density function that is continuously differentiable, which is a property many commonly occurring parametric distributions maintain.
 
 
 # Related Work
@@ -29,23 +29,30 @@ p(t) =& \ t^3 - t^2 \\
 
 \end{align} $$
 
-Notice that it is up to the user to choose values for $\hat f^{\ \prime}$and a viable monotonic cubic spline can be produced by choosing $\hat f^{\ \prime}(x_i) = 0$, $i = 1, \ldots, n$. However, such a spline has too many *wiggles* for most applications. Fritsch and Carlson proceed to show that simple conditions on the derivative values can guarantee monotonicity, and that these conditions can be enforced in a way that ensures modifications on one interval will not break the monotonicity of splines any neighboring intervals. Consider the terms $\alpha = \frac{\hat f^{\ \prime}(x_i) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}$ and $\beta = \frac{\hat f^{\ \prime}(x_{i+1}) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}$, now monotonicity of a cubic polynomial over a sub-interval can be maintained by ensuring that $\alpha$ and $\beta$ reside in one of the following regions.
+Notice that it is up to the user to choose values for $\hat f^{\ \prime}$and a viable monotonic cubic spline can be produced by choosing $\hat f^{\ \prime}(x_i) = 0$, $i = 1, \ldots, n$. However, such a spline has too many *wiggles* for most applications. Fritsch and Carlson proceed to show that simple conditions on the derivative values can guarantee monotonicity, and that these conditions can be enforced in a way that ensures modifications on one interval will not break the monotonicity of cubic polynomials over any neighboring intervals. Consider the terms $\alpha = \frac{\hat f^{\ \prime}(x_i) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}$ and $\beta = \frac{\hat f^{\ \prime}(x_{i+1}) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}$, now monotonicity of a cubic polynomial over a sub-interval can be maintained by ensuring that $\alpha$ and $\beta$ reside in any of the following regions.
 
-{{feasible_region.html}}
+{{http://people.cs.vt.edu/tchlux/files/Dissertation/feasible_region.html}}
 
+The actual region of monotonicity for a cubic polynomial is larger, but projection of $(\alpha, \beta)$ into one of these regions ensures that monotonicity will be achieved and not violated for neighboring regions. The user must decide which region is most suitable to project $(\alpha, \beta)$ onto, Fritsch and Carlson recommend using region 2.
 
-- construction of monotone splines
-- theory of piecewise cubic monotone splines
-- algorithm for constructing a monotone piecewise cubic spline
-- theory of piecewise quintic monotone splines
+This theoretical work has been extended in [[ulrich1994positivity]] to monotone quintic polynomials, but no mathematical software has been produced accordingly. That is where this proposed work comes in.
+
 
 # Achieved Progress
 
 To expand my own understanding of the current state-of-the-art method for constructing a monotone spline interpolant, I {#37a}@{fully implemented}{https://github.com/tchlux/VarSys/blob/master/Disseration/cubic.py}@{#37a} the algorithm described in [[fritsch1980monotone]] in Python. This code can be used to generate monotone cubic spline fits to data and allows for the user specification of a method((the means by which monotonicity is enforced)) and derivatives at any of the knots or endpoints. Clearly this code is not optimized for numerical robustness, nor speed, but it serves as a portable demonstration and educational tool.
 
+Here we can see the recommended method of projection for moving cubic polynomials into the region of monotonicity.
 
-- show visual of projecting into the region of monotonicity
-- show final spline fits of data
+{{http://people.cs.vt.edu/tchlux/files/Dissertation/demo_projection.html}}
+
+The resulting interpolating spline is $C^1$ and has a *smooth* appearance, here is a demonstration when using Region 2.
+
+{{http://people.cs.vt.edu/tchlux/files/Dissertation/demo_fit.html}}
+
+And the derivative of the above spline is continuous.
+
+{{http://people.cs.vt.edu/tchlux/files/Dissertation/demo_fit_deriv.html}}
 
 # Research Goal
 
@@ -53,10 +60,20 @@ To expand my own understanding of the current state-of-the-art method for constr
 
 # Timeline
 
+| <100>		 | <500>							|
+| **Date**	 | **Milestone**						|
+| June 2019	 | Implementation of monotone quintic polynomial *interpolant*. |
+| August 2019	 | Implementation of monotone quintic polynomial *spline*.	|
+| October 2019	 | First draft of TOMS paper on algorithm.			|
+| December 2019	 | Research Defense of work.					|
+| March 2020	 | Submission of TOMS paper and code.				|
+| April 2020	 | Final Defense of Ph.D.					|
 
 # Final Remarks
 
+This project has the potential to be very widely utilized. As described earlier, many statistical applications could greatly benefit from having a $C^2$ approximation to CDFs, because the resulting PDF will be both aesthetically pleasing and more accurate for continuous distributions.
 
+I spent last summer preparing a @{mathematical software}{https://github.com/tchlux/VarSys/blob/master/Code_[2018-06-11]_Stable_Arbitrary_Box_Splines/boxspline.f90}@ for the evaluation of box-splines, which may (or may not) be included in this package as well.
 
 
 ======================================================================

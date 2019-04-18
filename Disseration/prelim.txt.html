@@ -5,13 +5,13 @@
     
     <!-- Include Distill -->
     <!-- <script src="https://distill.pub/template.v1.js"></script> -->
-    <!-- <script src="http://people.cs.vt.edu/tchlux/distill.template.v1.no-banner.js"></script> -->
-     <script src="/Users/thomaslux/Git/txt_to_html/txt_to_html/resources/distill.template.v1.no-banner.js"></script> 
+     <script src="http://people.cs.vt.edu/tchlux/distill.template.v1.no-banner.js"></script> 
+    <!-- <script src="/Users/thomaslux/Git/txt_to_html/txt_to_html/resources/distill.template.v1.no-banner.js"></script> -->
     
     
     <!-- Include MathJax -->
-    <!-- <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"> </script> -->
-     <script type="text/javascript" async src="/Users/thomaslux/Git/txt_to_html/txt_to_html/resources/MathJax-2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML,local/local"></script> 
+     <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.2/MathJax.js?config=TeX-MML-AM_CHTML"> </script> 
+    <!-- <script type="text/javascript" async src="/Users/thomaslux/Git/txt_to_html/txt_to_html/resources/MathJax-2.7.2/MathJax.js?config=TeX-AMS-MML_HTMLorMML,local/local"></script> -->
     
     
 
@@ -28,6 +28,13 @@
     </script>
 
     <style type="text/css">
+
+
+      dt-article p {
+        text-align: justify;
+      }
+
+
       dt-article ol, dt-article ul {
         padding-left: 50px;
       }
@@ -62,32 +69,77 @@
     
 <p></p>
 
-<p>This thesis proposes research on the numerically robust construction of monotonic quintic interpolating splines given data.</p>
+<p>This thesis proposes research on the numerically robust construction of monotone quintic interpolating splines from data.</p>
 <h2 id="Introduction and Motivation"> Introduction and Motivation</h2>
 
-<p>
-<ul><li>splines, a piecewise polynomial with meaningful continuity</li>
-<li>splines are useful in 1D interpolation (and regression)</li>
-<li>a powerful subclass of problems are monotone (physical constraints, CDFs, and random number generation)</li>
-<li>constructing monotone splines is difficult, it has been done for cubic splines (1980s)</li></ul></p>
+<p>Many domains of science rely on smooth approximations to real-valued functions over a closed interval. While polynomial interpolants or regressors apply broadly, piecewise polynomial functions (splines) are often a good choice because of their unique combination of flexibility and control. It is often the case that the true underlying function or phenomenon being modeled has known properties e.g., convexity, positivity, various levels of continuity, or monotonicity. Given a reasonably large amount of data, it can be impossible to maintain these properties with a single polynomial function.</p>
+
+<p>In general, the maintenance of function properties through interpolation / regression is usually referred to as <i>shape preserving</i> <dt-cite key="fritsch1980monotone,gregory1985shape"></dt-cite>. The specific shapes this work will focus on are monotonicity and multiple levels of continuity for a function. These properties are chiefly important to the approximation of cumulative distribution functions and subsequently the effective generation of random numbers from a specified distribution. </p>
+
+<p>In statistics especially, the construction of a monotone interpolating spline that is continuous in second derivative is meaningfully useful <dt-cite key="ramsay1988monotone"></dt-cite>. A function with these properties could approximate random variables to a high level of accuracy with relatively few intervals<dt-fn>with even more accuracy given greater continuity</dt-fn>. A continuously twice differentiable approximation to a cumulative distribution function would also produce a corresponding probability density function that is continuously differentiable, which is a property many commonly occurring parametric distributions maintain.</p>
 <h2 id="Related Work"> Related Work</h2>
 
+<p>The current state-of-the-art monotone interpolating spline is piecewise cubic, continuously differentiable, and was first proposed in <dt-cite key="fritsch1980monotone"></dt-cite> then expanded upon in <dt-cite key="carlson1985monotone"></dt-cite>. Let \(\pi: a = x_1 < x_2 < \cdots < x_n = b\) be a partition of the interval \([a,b]\). Let \(\{f(x_i) : i = 1,2,\ldots,n\}\) be a given set of data values at the partition points for a monotone function \(f\), meaning \(f(x_i) \leq f(x_{i+1})\) for \(i = 1, \ldots, n-1\) or \(f(x_i) \geq f(x_{i+1})\) for \(i = 1, \ldots, n-1\). Let \(\hat f\) be a piecewise cubic spline defined in each sub-interval \(I_i = [x_i, x_{i+1}]\) by</p>
+
 <p>
-<ul><li>construction of monotone splines</li>
-<li>theory of piecewise cubic monotone splines</li>
-<li>code for piecewise cubic</li>
-<li>theory of piecewise quintic monotone splines</li></ul></p>
+$$ \begin{align}
+
+h_i =& \ x_{i+1} - x_{i} \\
+u(t) =& \ 3t^2 - 2t^3 \\
+p(t) =& \ t^3 - t^2 \\
+\hat f(x) =& \ f(x_i)\ u\big((x_{i+1} - x) / h_i\big) + f(x_{i+1})\ u\big((x - x_i) / h_i\big) \\
+& - \hat f^{\ \prime}(x_i)\ p\big((x_{i+1}-x)/h_i\big) + \hat f^{\ \prime}(x_{i+1})\ p\big((x-x_i)/h_i \big).
+
+\end{align} $$</p>
+
+<p>Notice that it is up to the user to choose values for \(\hat f^{\ \prime}\)and a viable monotonic cubic spline can be produced by choosing \(\hat f^{\ \prime}(x_i) = 0\), \(i = 1, \ldots, n\). However, such a spline has too many <i>wiggles</i> for most applications. Fritsch and Carlson proceed to show that simple conditions on the derivative values can guarantee monotonicity, and that these conditions can be enforced in a way that ensures modifications on one interval will not break the monotonicity of cubic polynomials over any neighboring intervals. Consider the terms \(\alpha = \frac{\hat f^{\ \prime}(x_i) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}\) and \(\beta = \frac{\hat f^{\ \prime}(x_{i+1}) (x_{i+1}-x_i)}{f(x_{i+1}) - f(x_i)}\), now monotonicity of a cubic polynomial over a sub-interval can be maintained by ensuring that \(\alpha\) and \(\beta\) reside in any of the following regions.</p>
+
+<p><iframe src='http://people.cs.vt.edu/tchlux/files/Dissertation/feasible_region.html' frameBorder='0' style='height: 420px; width: 510px;'></iframe></p>
+
+<p>The actual region of monotonicity for a cubic polynomial is larger, but projection of \((\alpha, \beta)\) into one of these regions ensures that monotonicity will be achieved and not violated for neighboring regions. The user must decide which region is most suitable to project \((\alpha, \beta)\) onto, Fritsch and Carlson recommend using region 2.</p>
+
+<p>This theoretical work has been extended in <dt-cite key="ulrich1994positivity"></dt-cite> to monotone quintic polynomials, but no mathematical software has been produced accordingly. That is where this proposed work comes in.</p>
 <h2 id="Achieved Progress"> Achieved Progress</h2>
 
-<p>
-<ul><li>link code for producing monotone cubic splines</li>
-<li>show visual of projecting into the region of monotonicity</li>
-<li>show final spline fits of data</li></ul></p>
+<p>To expand my own understanding of the current state-of-the-art method for constructing a monotone spline interpolant, I <font color='#37a'> <a href='https://github.com/tchlux/VarSys/blob/master/Disseration/cubic.py'>fully implemented</a> </font> the algorithm described in <dt-cite key="fritsch1980monotone"></dt-cite> in Python. This code can be used to generate monotone cubic spline fits to data and allows for the user specification of a method<dt-fn>the means by which monotonicity is enforced</dt-fn> and derivatives at any of the knots or endpoints. Clearly this code is not optimized for numerical robustness, nor speed, but it serves as a portable demonstration and educational tool.</p>
+
+<p>Here we can see the recommended method of projection for moving cubic polynomials into the region of monotonicity.</p>
+
+<p><iframe src='http://people.cs.vt.edu/tchlux/files/Dissertation/demo_projection.html' frameBorder='0' style='height: 420px; width: 510px;'></iframe></p>
+
+<p>The resulting interpolating spline is \(C^1\) and has a <i>smooth</i> appearance, here is a demonstration when using Region 2.</p>
+
+<p><iframe src='http://people.cs.vt.edu/tchlux/files/Dissertation/demo_fit.html' frameBorder='0' style='height: 420px; width: 510px;'></iframe></p>
+
+<p>And the derivative of the above spline is continuous.</p>
+
+<p><iframe src='http://people.cs.vt.edu/tchlux/files/Dissertation/demo_fit_deriv.html' frameBorder='0' style='height: 420px; width: 510px;'></iframe></p>
 <h2 id="Research Goal"> Research Goal</h2>
 
-<p><font color='#37a'>  <text style='font-family: monospace;'>Produce numerically robust software that computes monotone quintic interpolating splines given data.</text>  </font></p>
+<p><font color='#3a7'>  <text style='font-family: monospace;'>Produce numerically robust software that computes monotone quintic interpolating splines given data.</text>  </font></p>
 <h2 id="Timeline"> Timeline</h2>
+
+<table>
+<tr><td> <div style='width: 100px;'>		 </td><td> <div style='width: 500px;'>							</td></tr>
+
+<tr><td> <b>Date</b>	 </td><td> <b>Milestone</b>						</td></tr>
+
+<tr><td> June 2019	 </td><td> Implementation of monotone quintic polynomial <i>interpolant</i>. </td></tr>
+
+<tr><td> August 2019	 </td><td> Implementation of monotone quintic polynomial <i>spline</i>.	</td></tr>
+
+<tr><td> October 2019	 </td><td> First draft of TOMS paper on algorithm.			</td></tr>
+
+<tr><td> December 2019	 </td><td> Research Defense of work.					</td></tr>
+
+<tr><td> March 2020	 </td><td> Submission of TOMS paper and code.				</td></tr>
+
+<tr><td> April 2020	 </td><td> Final Defense of Ph.D.					</td></tr></table>
 <h2 id="Final Remarks"> Final Remarks</h2>
+
+<p>This project has the potential to be very widely utilized. As described earlier, many statistical applications could greatly benefit from having a \(C^2\) approximation to CDFs, because the resulting PDF will be both aesthetically pleasing and more accurate for continuous distributions.</p>
+
+<p>I spent last summer preparing a <a href='https://github.com/tchlux/VarSys/blob/master/Code_[2018-06-11]_Stable_Arbitrary_Box_Splines/boxspline.f90'>mathematical software</a> for the evaluation of box-splines, which may (or may not) be included in this package as well.</p>
 
 
     </dt-article>
@@ -111,9 +163,41 @@
   year = {1980},
   doi = { 10.1137/0717021 },
   URL = { https://doi.org/10.1137/0717021 },
-  eprint = { https://doi.org/10.1137/0717021 }
+  eprint = { https://doi.org/10.1137/0717021 },
 }
 
+
+@article{carlson1985monotone,
+  author = {Carlson, R. and Fritsch, F.},
+  title = {Monotone Piecewise Bicubic Interpolation},
+  journal = {SIAM Journal on Numerical Analysis},
+  volume = {22},
+  number = {2},
+  pages = {386-400},
+  year = {1985},
+  doi = {10.1137/0722023},
+  URL = { https://doi.org/10.1137/0722023 },
+  eprint = { https://doi.org/10.1137/0722023 },
+}
+
+@article{ramsay1988monotone,
+  title={Monotone Regression Splines in Action},
+  author={Ramsay, James O and others},
+  journal={Statistical science},
+  volume={3},
+  number={4},
+  pages={425--441},
+  year={1988},
+  publisher={Institute of Mathematical Statistics}
+}
+
+@article{gregory1985shape,
+  title={Shape preserving spline interpolation},
+  author={Gregory, John A},
+  journal = {Brunel University},
+  year={1985},
+  url = { https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19850020252.pdf }
+}
 
 @article{ulrich1994positivity,
   author = {Ulrich, G. and Watson, L.},
@@ -125,7 +209,7 @@
   year = {1994},
   doi = { 10.1137/0915035 },
   URL = { https://doi.org/10.1137/0915035 },
-  eprint = { https://doi.org/10.1137/0915035 }
+  eprint = { https://doi.org/10.1137/0915035 },
 }
 
 </script>
