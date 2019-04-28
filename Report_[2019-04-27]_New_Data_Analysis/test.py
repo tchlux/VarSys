@@ -5,7 +5,8 @@ from util.data import Data
 
 
 
-CREATE_ALL_DATA_PLOT = True
+
+CREATE_ALL_DATA_PLOT = False
 if CREATE_ALL_DATA_PLOT:
     # Otherwise load the combined data file.
     d = Data.load("combined-data.csv", sample=False)
@@ -69,7 +70,7 @@ if BUILD_ALL_DATA:
             for row in d: all_data.append( [n[:-4]] + list(row) )
 
         print("Loading old data..", flush=True)
-        d = Data.load("2018-stacked.pkl")
+        d = Data.load("2018-stacked.pkl.gz")
         print("Reducing old data..", flush=True)
         d = d[(i for i in range(len(d)) if
                tuple(d[i,config_cols[2:]][0]) in unique_configs)]
