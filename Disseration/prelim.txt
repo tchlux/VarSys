@@ -60,14 +60,14 @@ And the derivative of the above spline is continuous.
 
 # Timeline
 
-| <100>		 | <500>							|
+|  |							|
 | **Date**	 | **Milestone**						|
-| June 2019	 | Implementation of monotone quintic polynomial *interpolant*. |
-| August 2019	 | Implementation of monotone quintic polynomial *spline*.	|
-| October 2019	 | First draft of TOMS paper on algorithm.			|
-| December 2019	 | Research Defense of work.					|
-| March 2020	 | Submission of TOMS paper and code.				|
-| April 2020	 | Final Defense of Ph.D.					|
+| *June<br>2019*	 | Implementation of monotone quintic polynomial *interpolant*. |
+| *August<br>2019*	 | Implementation of monotone quintic polynomial *spline*.	|
+| *October<br>2019* | First draft of TOMS paper on algorithm.			|
+| *December<br>2019*| Research Defense of work.					|
+| *March<br>2020*	 | Submission of TOMS paper and code.				|
+| *April<br>2020*	 | Final Defense of Ph.D.					|
 
 # Final Remarks
 

@@ -1,0 +1,64 @@
+VarSys
+April 24th, 2019 
+
+Attendance:
+
+Yili (chair)
+Godmar
+Margaret
+Li
+Xiaodong
+Bharti
+Tyler
+Thomas
+
+
+
+## Margaret
+
+The CSG group is hoping to start working on a front-facing website in the Summer.
+
+The big picture is: we scrape benchmark data on computers. They are working on a database design, while also constructing a "genome" that shows how the systems have evolved over time.
+
+ *showing a visual that overviews the CSG work*
+
+We are very excited to get more public-facing materials ready over the summer and into the fall. As we produce and need more visuals we will be leaning on the group.
+
+
+## Bharti
+
+Setting up a luster cluster and expanding it. Almost ready to begin data collection. Currently split between two projects that will give us data sets for modeling. Focusing on expanding and growing a previous experiment and running previous models to test on slightly larger setups.
+
+Will probably start collecting data next week. Will be on an internship over the summer, so progress will likely stall for those three months. However, with some extra work it should be likely that we can produce some data.
+
+Another person may join VarSys over the summer from this lab.
+
+
+## Xiaodong
+
+My trip to Argonne was productive and it was operated like a faculty position interview. Currently busy writing a draft of a paper for usinex conference, in this paper we are going to try to measure the performance of the cache-based side channel attacks based on cache configuration. Data is being collected, probably for another two weeks.
+
+ *demo some of the prediction results for side-channel attack times*
+
+
+## Tyler
+
+Talking with collaborator at Argonne about how to integrate my work with their system.
+
+
+## Thomas
+
+Working on the background reading for my preliminary proposal. Will be producing code that can make good fits of data, interested in some error theory, but not well developed yet.
+
+
+## Li
+
+Jon's data has a significant difference across machines, he needs to review this result to confirm. The random write has the most variability over all tests. This new data has more multi-modal behavior than the select set of configurations.
+
+Otherwise, still working on the functional predictions.
+
+
+# Godmar
+
+The CSG team has hit a hurdle, in 2012 there was a big collection project published by a group at Stanford and they have kept the database up-to-date through 2017. Now the CSG group is deciding what to do to make sure that the work is a valuable contribution. 
+
