@@ -1,0 +1,56 @@
+
+# d["Median Time"] = (np.median(t) for t in d["Time"])
+# d = d[d["Compiler"] == "gfortran"]
+# d = d[d["Optimization"] == "-O3"]
+# d = d[d["Median Time"] > 14]
+# d = d[d["Median Time"] < 17]
+# d.summarize()
+# print(d)
+
+
+
+# Plot by code version for Intel.
+d = ifort[:]
+d = d[ d["Optimization"] == "-O3" ]
+p = Plot(f"Runtime CDFs for Different Box-Spline Versions on Intel Compiler for {len(d)//3} Tests", 
+         "Execution Time (sec)", "P[Code Run < <Execution Time>]")
+for i,version in enumerate(versions):
+    perf_data = [v for t in d[d["Version"]==version, "Time"] for v in t[0]]
+    cdf = cdf_fit_func(perf_data)
+    if ("manual" in version): version = version.replace("manual", "allocate")
+    version = version.replace("bs-","").replace(".f90","")
+    p.add_function(version, cdf, cdf(), color=p.color(i))
+p.show(append=True, legend=legend_settings, y_range=[.5,1])
+d = d[d["Version"] == versions[0]]
+
+
+# Plot by code GNU.
+d = gfort[:]
+d = d[ d["Optimization"] == "-O3" ]
+p = Plot(f"Runtime CDFs for Different Box-Spline Versions on GNU Compiler for {len(d)//3} Tests", 
+         "Execution Time (sec)", "P[Code Run < <Execution Time>]")
+for i,version in enumerate(versions):
+    perf_data = [v for t in d[d["Version"]==version, "Time"] for v in t[0]]
+    cdf = cdf_fit_func(perf_data)
+    if ("manual" in version): version = version.replace("manual", "allocate")
+    version = version.replace("bs-","").replace(".f90","")
+    p.add_function(version, cdf, cdf(), color=p.color(i))
+p.show(append=True, legend=legend_settings, y_range=[.5,1])
+d = d[d["Version"] == versions[0]]
+
+# Reduce to only the remaining testing parameters.
+tests = d["Multiplicity", "Element", "Num Points"]
+print(tests)
+
+
+# Plot by compiler.
+p = Plot(f"Aggregate Runtime CDFs by Compiler over {len(d)//3} Different Tests", 
+         "Execution Time (sec)", "P[Code Run < <Execution Time>]")
+for c in compilers:
+    perf_data = [v for t in c["Time"] for v in t]
+    cdf = cdf_fit_func(perf_data)
+    p.add_function(c.compiler, cdf, cdf())
+p.show(show=False, legend=legend_settings, y_range=[.5,1])
+# Reduce the data to only the best compiler
+
+
