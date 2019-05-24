@@ -1,0 +1,257 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9916,        247]
+NotebookOptionsPosition[      9353,        227]
+NotebookOutlinePosition[      9708,        243]
+CellTagsIndexPosition[      9665,        240]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{"(*", " ", 
+      RowBox[{
+      "This", " ", "function", " ", "constructs", " ", "the", " ", "lowest", 
+       " ", "order", " ", "polynomial", " ", "that", " ", "matches", " ", 
+       "the", " ", "provided", " ", 
+       RowBox[{"left", " ", "[", 
+        RowBox[{"value", ",", " ", "d1", ",", " ", "..."}], "]"}], " ", "and",
+        " ", 
+       RowBox[{"right", " ", "[", 
+        RowBox[{"value", ",", " ", "d1", ",", " ", "..."}], "]"}], " ", "and",
+        " ", "returns", " ", "that", " ", "polynomial", " ", "as", " ", "a", 
+       " ", "univariate", " ", 
+       RowBox[{"function", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"PolyPiece", "[", 
+       RowBox[{"LeftValues_", ",", "RightValues_"}], "]"}], ":=", 
+      RowBox[{"{", "\[IndentingNewLine]", 
+       RowBox[{
+        RowBox[{"left", "=", "LeftValues"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"right", "=", "RightValues"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"For", "[", 
+         RowBox[{
+          RowBox[{"i", "=", "1"}], ",", 
+          RowBox[{"i", "\[LessEqual]", 
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"Length", "[", "left", "]"}], "-", 
+             RowBox[{"Length", "[", "right", "]"}]}], ")"}]}], ",", 
+          RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"right", ",", " ", 
+            RowBox[{"left", "[", 
+             RowBox[{"[", 
+              RowBox[{
+               RowBox[{"Length", "[", "right", "]"}], "+", "i"}], "]"}], 
+             "]"}]}], "]"}]}], "\[IndentingNewLine]", "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"For", "[", 
+         RowBox[{
+          RowBox[{"i", "=", "1"}], ",", 
+          RowBox[{"i", "\[LessEqual]", 
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"Length", "[", "right", "]"}], "-", 
+             RowBox[{"Length", "[", "left", "]"}]}], ")"}]}], ",", 
+          RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+          RowBox[{"AppendTo", "[", 
+           RowBox[{"left", ",", " ", 
+            RowBox[{"right", "[", 
+             RowBox[{"[", 
+              RowBox[{
+               RowBox[{"Length", "[", "left", "]"}], "+", "i"}], "]"}], 
+             "]"}]}], "]"}]}], "\[IndentingNewLine]", "]"}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"(*", " ", 
+         RowBox[{
+          RowBox[{
+          "Now", " ", "BOTH", " ", "left", " ", "and", " ", "right", " ", 
+           "are", " ", "the", " ", "same", " ", 
+           RowBox[{"length", ".", " ", "For"}], " ", "derivatives", " ", 
+           "that", " ", "were", " ", "not", " ", "provided"}], ",", " ", 
+          RowBox[{
+          "they", " ", "were", " ", "filled", " ", "to", " ", "be", " ", 
+           "constants", " ", 
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{
+             "reducing", " ", "the", " ", "necessary", " ", "order", " ", 
+              "of", " ", "the", " ", "equatino"}], ")"}], "."}]}]}], " ", 
+         "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"coefs", "=", 
+         RowBox[{"{", 
+          RowBox[{"left", "[", 
+           RowBox[{"[", "1", "]"}], "]"}], "}"}]}], ";", 
+        "\[IndentingNewLine]", 
+        RowBox[{"divisor", "=", "1"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"For", "[", 
+         RowBox[{
+          RowBox[{"i", "=", "1"}], ",", 
+          RowBox[{"i", "\[LessEqual]", 
+           RowBox[{"Length", "[", "left", "]"}]}], ",", 
+          RowBox[{"i", "++"}], ",", 
+          RowBox[{"{", "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"If", "[", 
+             RowBox[{
+              RowBox[{"i", "\[GreaterEqual]", "2"}], ",", 
+              RowBox[{"divisor", "*=", "i"}], ","}], "]"}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"AppendTo", "[", 
+             RowBox[{"coefs", ",", 
+              FractionBox[
+               RowBox[{
+                RowBox[{"right", "[", 
+                 RowBox[{"[", "i", "]"}], "]"}], "-", 
+                RowBox[{"left", "[", 
+                 RowBox[{"[", "i", "]"}], "]"}]}], "divisor"]}], "]"}], ";"}],
+            "\[IndentingNewLine]", "}"}]}], "]"}], ";", "\[IndentingNewLine]", 
+        RowBox[{"AppendTo", "[", 
+         RowBox[{"coefs", ",", "\[IndentingNewLine]", 
+          RowBox[{
+           RowBox[{"Print", "[", 
+            RowBox[{"\"\<Coefs:\\n \>\"", ",", " ", "coefs"}], "]"}], ";", 
+           "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{
+            "Now", " ", "we", " ", "have", " ", "all", " ", "the", " ", 
+             "coefficients", " ", "necessary", " ", "to", " ", "construct", 
+             " ", "a", " ", "Newton", " ", 
+             RowBox[{"interpolant", "."}]}], " ", "*)"}], 
+           "\[IndentingNewLine]", 
+           RowBox[{"coefs", "=", 
+            RowBox[{"Reverse", "[", "coefs", "]"}]}], ";", 
+           "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"func", "[", "x_", "]"}], ":=", 
+            RowBox[{
+             RowBox[{"{", "\[IndentingNewLine]", 
+              RowBox[{
+               RowBox[{"total", "=", 
+                RowBox[{"coefs", "[", 
+                 RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+               RowBox[{"For", "[", 
+                RowBox[{
+                 RowBox[{"d", "=", "2"}], ",", 
+                 RowBox[{"d", "\[LessEqual]", 
+                  RowBox[{"Length", "[", "coefs", "]"}]}], ",", 
+                 RowBox[{"d", "++"}], ",", 
+                 RowBox[{"total", "=", 
+                  RowBox[{
+                   RowBox[{"coefs", "[", 
+                    RowBox[{"[", "d", "]"}], "]"}], "+", 
+                   RowBox[{
+                    RowBox[{"(", 
+                    RowBox[{"x", "-", "1"}], ")"}], "total"}]}]}]}], "]"}], 
+               ";", "\[IndentingNewLine]", "total"}], "\[IndentingNewLine]", 
+              "}"}], "[", 
+             RowBox[{"[", "1", "]"}], "]"}]}], ";", "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{
+            "Now", " ", "we", " ", "can", " ", "return", " ", "the", " ", 
+             "polynomial", " ", 
+             RowBox[{"function", "."}]}], " ", "*)"}], "\[IndentingNewLine]", 
+           "func"}]}], "\[IndentingNewLine]"}]}]}]}], "}"}], "[", 
+    RowBox[{"[", "1", "]"}], "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"f", "=", 
+   RowBox[{"PolyPiece", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"1", ",", "1"}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"1", ",", "1"}], "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Print", "[", 
+  RowBox[{"\"\<Function:\\n \>\"", ",", 
+   RowBox[{"f", "[", "x", "]"}]}], "]"}], "\[IndentingNewLine]"}], "Input",
+ CellChangeTimes->{{3.767628490476214*^9, 3.767628597767571*^9}, {
+  3.767628633822714*^9, 3.767628981016274*^9}, {3.767629175565998*^9, 
+  3.767629253793003*^9}, {3.7676293630539513`*^9, 3.7676295819628973`*^9}, {
+  3.7676297713147078`*^9, 3.767630249624981*^9}, {3.767632394026225*^9, 
+  3.7676325030042458`*^9}, {3.767632771548544*^9, 3.7676328596450253`*^9}, {
+  3.767632920312784*^9, 3.76763299151448*^9}, {3.767633030492467*^9, 
+  3.767633047256283*^9}, {3.767633157236506*^9, 3.767633200336606*^9}, {
+  3.767634540500401*^9, 3.767634610906458*^9}, {3.767634673393291*^9, 
+  3.767634695168756*^9}, {3.767634814689486*^9, 3.7676348179214697`*^9}, {
+  3.7676348861093884`*^9, 3.7676349040424623`*^9}, {3.7676366297485123`*^9, 
+  3.767636633703246*^9}},ExpressionUUID->"1373ef42-201b-4efa-8d6e-\
+d96c24b497f9"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Coefs:\\n \"\>", "\[InvisibleSpace]", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0", ",", "0"}], "}"}]}],
+  SequenceForm["Coefs:\n ", {1, 0, 0}],
+  Editable->False]], "Print",
+ CellChangeTimes->{{3.767633192678784*^9, 3.7676332015383053`*^9}, {
+  3.767634594043337*^9, 3.7676346129890947`*^9}, {3.767634676567474*^9, 
+  3.7676346956485987`*^9}, {3.767634880801936*^9, 3.76763490446525*^9}},
+ CellLabel->
+  "During evaluation of \
+In[82]:=",ExpressionUUID->"d9ff6570-9781-4c20-9416-f5128bdc53ea"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Function:\\n \"\>", "\[InvisibleSpace]", "1"}],
+  SequenceForm["Function:\n ", 1],
+  Editable->False]], "Print",
+ CellChangeTimes->{{3.767633192678784*^9, 3.7676332015383053`*^9}, {
+  3.767634594043337*^9, 3.7676346129890947`*^9}, {3.767634676567474*^9, 
+  3.7676346956485987`*^9}, {3.767634880801936*^9, 3.767634904476757*^9}},
+ CellLabel->
+  "During evaluation of \
+In[82]:=",ExpressionUUID->"f1cab9e2-b77c-4a07-9a00-62632d0c84d4"]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{808, 587},
+WindowMargins->{{149, Automatic}, {29, Automatic}},
+FrontEndVersion->"11.3 for Mac OS X x86 (32-bit, 64-bit Kernel) (March 5, \
+2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 7693, 173, 855, "Input",ExpressionUUID->"1373ef42-201b-4efa-8d6e-d96c24b497f9"],
+Cell[CellGroupData[{
+Cell[8298, 199, 542, 12, 44, "Print",ExpressionUUID->"d9ff6570-9781-4c20-9416-f5128bdc53ea"],
+Cell[8843, 213, 482, 10, 44, "Print",ExpressionUUID->"f1cab9e2-b77c-4a07-9a00-62632d0c84d4"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+

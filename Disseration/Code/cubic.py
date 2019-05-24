@@ -275,10 +275,10 @@ def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
         h = (r - l)
 
         # Compute the value outright.
-        value = (fr * (l - x)**2 * (l - 3 * r + 2 * x) - (r - x) * \
-                 (dr * (l - r) * (l - x)**2 + (r - x) * \
-                  (dl * (l - r) * (l - x) + fl * (-3 * l + r + 2 * x)))) \
-                  / (l - r)**3
+        value = ( fr * (l - x)**2 * (l - 3 * r + 2 * x) - (r - x) *
+                  (dr * (l - r) * (l - x)**2 + (r - x) *
+                   (dl * (l - r) * (l - x) + fl *
+                    (-3 * l + r + 2 * x))) ) / (l - r)**3
 
         # Return the interpolating function evaluation.
         return value
@@ -391,7 +391,7 @@ if __name__ == "__main__":
 
 
 
-    SMALL_FIT_DEMO = True
+    SMALL_FIT_DEMO = False
     if SMALL_FIT_DEMO:
         from util.plot import Plot
         SEED = 1
@@ -580,4 +580,51 @@ if __name__ == "__main__":
         # Add the points last (so they are on top).
         p.add("Points", x, y, color=p.color(0))
         p.show(file_name="demo_fit_many.html")
+
+
+    BUILDING_APPROX_DEMO = True
+    if BUILDING_APPROX_DEMO:
+        from util.plot import Plot
+        from util.stats import cdf_fit, cdf_points
+        import numpy as np
+        # Generate random data.
+        np.random.seed(4)
+        data = np.random.normal(size=(8,))
+        data = sorted(data + min(data))
+        print([round(v,2) for v in data])
+        x, y = cdf_points(data)
+        x[0] -= .1
+
+        # # Make a flat EDF plot.
+        # p = Plot()
+        # p.add("EDF Points", x, y)
+        # f = cdf_fit((x,y), fit=None)
+        # p.add_func("Flat fit", f, (min(data)-.2, max(data)+.2))
+        # p.show(file_name="flat-fit.html")
+
+        # # Make a linear fit.
+        # p = Plot()
+        # p.add("EDF Points", x, y)
+        # f = cdf_fit((x,y), fit="linear")
+        # p.add_func("Linear fit", f, (min(data)-.2, max(data)+.2))
+        # p.show(file_name="linear-fit.html")
+
+        # # Make a bad cubic fit.
+        # p = Plot()
+        # p.add("EDF Points", x, y)
+        # f = cdf_fit((x,y), fit="cubic")
+        # p.add_func("Cubic fit", f, (min(data)-.2, max(data)+.2))
+        # p.show(file_name="cubic-fit-bad.html")
+
+        # Make a good cubic fit.
+        p = Plot()
+        p.add("EDF Points", x, y)
+        f = cubic_interp(list(x),list(y), mode=4, mids=2)
+        p.add_func("Cubic fit", f, (min(data)-.2, max(data)+.2))
+        p.show(file_name="cubic-fit-good.html")
+
+        # f = cdf_fit((x,y), fit="linear")
+        # p.add_func("Linear fit", f, (min(data)-.2, max(data)+.2))
+        # f = cdf_fit((x,y), fit="cubic")
+        # p.add_func("Cubic fit", f, (min(data)-.2, max(data)+.2))
 
