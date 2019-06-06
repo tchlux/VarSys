@@ -2,6 +2,7 @@
 # 
 # The following objects are provided:
 # 
+#   Spline           -- A piecewise polynomial interpolant.
 #   Polynomial       -- A monomial with stored coefficients,
 #                       evaluation, derivative, and a string method.
 #   NewtonPolynomial -- A Newton polynomial with stored coefficients,
@@ -16,9 +17,87 @@
 #                       values at the endpoints of an interval.
 # 
 
+# A piecewise polynomial function that supports evaluation,
+# differentiation, and stitches together an arbitrary sequence of
+# function values (and any number of derivatives) at data points
+# (knots). Provides evaluation, derivation, and string methods.
+# 
+# Spline(knots, values):
+#   Given a sequence of "knots" [float, ...] and an equal-length
+#   sequence of "values" [[float, ...], ...] that define the
+#   function value and any number of derivatives at every knot,
+#   construct the piecewise polynomial that is this spline.
+class Spline:
+    # Define private internal variables for holding the knots, values,
+    # and the functions. Provide access to "knots" and "values" properties.
+    _knots = None
+    _values = None
+    _functions = None
+    @property
+    def knots(self): return self._knots
+    @knots.setter
+    def knots(self, knots): self._knots = list(knots)
+    @property
+    def values(self): return self._values
+    @values.setter
+    def values(self, values): self._values = [list(v) for v in values]
+    
+    def __init__(self, knots, values):
+        assert(len(knots) == len(values))
+        self.knots = knots
+        self.values = values
+        # Create the polynomial functions for all the pieces.
+        self._functions = []
+        for i in range(len(knots)-1):
+            self._functions.append(
+                polynomial_piece(self.values[i], self.values[i+1],
+                                 (self.knots[i], self.knots[i+1]))
+            )
+
+    # Evaluate this Spline at a given x coordinate.
+    def __call__(self, x):
+        # Deterimine which interval this "x" values lives in.
+        if (x <= self.knots[0]):    return self._functions[0](x)
+        elif (x >= self.knots[-1]): return self._functions[-1](x)
+        # Find the interval in which "x" exists.
+        for i in range(len(self.knots)-1):
+            if (self.knots[i] <= x <= self.knots[i+1]): break
+        # If no interval was found, then something unexpected must have happened.
+        else:
+            class UnexpectedError(Exception): pass
+            raise(UnexpectedError("This problem exhibited unexpected behavior."))
+        # Now "self.knots[i] <= x <= self.knots[i+1]" must be true.
+        return self._functions[i](x)
+        
+    # Compute the first derivative of this Spline.
+    # WARNING: The returned spline does *not* have "values"!
+    def derivative(self, d=1):
+        # Create a spline (do not bother filling values) with the same
+        # knot sequence and all the derivative functions.
+        s = Spline([], [])
+        s.knots = self.knots
+        s._functions = [f.derivative(d) for f in self._functions]
+        return s
+
+    # Produce a string description of this spline.
+    def __str__(self):
+        s = "Spline:\n"
+        s += f" [-inf, {self.knots[1]}]  =  "
+        s += str(self._functions[0]) + "\n"
+        for i in range(1,len(self.knots)-2):
+            s += f" ({self.knots[i]}, {self.knots[i+1]}]  =  "
+            s += str(self._functions[i]) + "\n"
+        s += f" ({self.knots[-2]}, inf)  =  "
+        s += str(self._functions[-1])
+        return s
+
 # A generic Polynomial class that stores coefficients in monomial
 # form. Provides numerically stable evaluation, derivative, and string
 # operations for convenience.
+# 
+# Polynomial(coefficients):
+#    Given coefficients (or optionally a "NewtonPolynomial")
+#    initialize this Monomial representation of a polynomial function.
 class Polynomial:
     # Initialize internal storage for this Newton Polynomial.
     _coefficients = None
@@ -34,48 +113,47 @@ class Polynomial:
     @coefs.setter
     def coefs(self, coefs): self._coefficients = list(coefs)
 
-    # Construct the polynomial that is the derivative of this polynomial.
-    def derivative(self, d=1):
-        if (d > 1): return self.derivative().derivative(d-1)
-        else:       return Polynomial([c*i for (c,i) in zip(
-                self.coefficients, range(len(self.coefficients)-1,0,-1))])
-
-   # Given coefficients (and optionally points, assumed to be all zero)
-    # for a Newton Polynomial, initialize a Monomial function.
-    def __init__(self, coefficients, points=None):
+    def __init__(self, coefficients):
         # If the user initialized this Polynomial with a Newton
         # Polynomial, then extract the points and coefficients.
         if (type(coefficients) == NewtonPolynomial):
-            points = coefficients.points
-            coefficients = coefficients.coefficients
-        # If the user provided points, assume a Newton form polynomial
-        # was provided and convert it to a monomial form.
-        if (type(points) != type(None)):
-            self.coefficients = to_monomial(coefficients, points)
-        # Otherwise, assume standard polynomial coefficients were given.
-        else:
-            self.coefficients = coefficients
+            coefficients = to_monomial(coefficients.coefficients,
+                                       coefficients.points)
+        self.coefficients = coefficients
 
     # Evaluate this Polynomial at a point "x" in a numerically stable way.
     def __call__(self, x):
+        if (len(self.coefficients) == 0): return 0
         total = self.coefficients[0]
         for d in range(1,len(self.coefficients)):
             total = self.coefficients[d] + x * total
         return total
 
+    # Construct the polynomial that is the derivative of this polynomial.
+    def derivative(self, d=1):
+        if (d == 0):  return self
+        elif (d > 1): return self.derivative().derivative(d-1)
+        else:         return Polynomial([c*i for (c,i) in zip(
+                self.coefficients, range(len(self.coefficients)-1,0,-1))])
+
     # Construct a string representation of this Polynomial.
     def __str__(self):
         s = ""
         for i in range(len(self.coefficients)):
+            if (self.coefficients[i] == 0): continue
             if   (i == len(self.coefficients)-1): x = ""
             elif (i == len(self.coefficients)-2): x = "x"
             else:   x = f"x^{len(self.coefficients)-1-i}"
             s += f"{self.coefficients[i]} {x}  +  "
         # Remove the trailing 
-        return s[:-len("   +  ")]
+        return s.rstrip(" +")
 
 # Extend the standard Polymomial class to hold Newton polynomials with
 # points in addition to the coefficients.
+# 
+# NewtonPolynomial(coefficients, points):
+#    Given a set of coefficients and a set of points (offsets), of
+#    the same length, construct a standard Newton Polynomial.
 class NewtonPolynomial(Polynomial):
     _points = None
     @property
@@ -145,12 +223,17 @@ def polynomial(x, y):
 
 # Given a (left value, left d1, ...), (right value, right d1, ...)
 # pair of tuples, return the lowest order polynomial necessary to
-# exactly match those values and derivatives at 0 on the left and 1
-# on the right (any range can be mapped into this).
+# exactly match those values and derivatives at interval[0] on the left
+# and interval[1] on the right ("interval" is optional, default [0,1]).
 def polynomial_piece(left, right, interval=(0,1)):
     # Make sure both are lists.
     left  = list(left)
     right = list(right)
+    # Fill values by matching them on both sides of interval (reducing order).
+    for i in range(len(left) - len(right)):
+        right.append( left[len(right)] )
+    for i in range(len(right) - len(left)):
+        left.append( right[len(left)] )
     # Rescale left and right to make their usage in the divided
     # difference table correct (by dividing by the factorial).
     mult = 1
@@ -158,11 +241,6 @@ def polynomial_piece(left, right, interval=(0,1)):
         mult *= i
         left[i] /= mult
         right[i] /= mult
-    # Fill values by matching them on both sides of interval (reducing order).
-    for i in range(len(left) - len(right)):
-        right.append( left[len(right)] )
-    for i in range(len(right) - len(left)):
-        left.append( right[len(left)] )
     # First match the function value, then compute the coefficients
     # for all of the higher order terms in the polynomial.
     coefs = list(left)
@@ -189,26 +267,30 @@ def polynomial_piece(left, right, interval=(0,1)):
     points = [interval[1]]*len(left) + [interval[0]]*len(left)
     coefs = list(reversed(coefs))
     # Return the polynomial function.
-    return NewtonPolynomial(coefs, points)
+    return Polynomial(to_monomial(coefs, points))
 
 # --------------------------------------------------------------------
 #                            TESTING CODE
 
 # Test the Polynomial class for basic operation.
 def _test_Polynomial():
+    f = Polynomial([3,0,1])
+    assert(str(f) == "3 x^2  +  1")
     f = Polynomial([3,2,1])
     assert(str(f) == "3 x^2  +  2 x  +  1")
     assert(str(f.derivative()) == "6 x  +  2")
     assert(str(f.derivative(2)) == "6")
     assert(str(f.derivative(3)) == "")
     assert(str(f.derivative(4)) == "")
-    f = Polynomial([3,2,1],[0,0,0])
+    assert(f.derivative(3)(10) == 0)
+    f = Polynomial(NewtonPolynomial([3,2,1],[0,0,0]))
     assert(str(f) == "3 x^2  +  2 x  +  1")
     assert(str(f.derivative()) == "6 x  +  2")
     assert(str(f.derivative(2)) == "6")
     assert(str(f.derivative(3)) == "")
     assert(str(f.derivative(4)) == "")
-    f = Polynomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1])
+    assert(f.derivative(3)(5) == 0)
+    f = Polynomial(to_monomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1]))
     assert(str(f) == "-1 x^5  +  9 x^4  +  6 x^3  +  -22 x^2  +  11 x  +  -3")
     assert(str(f.derivative()) == "-5 x^4  +  36 x^3  +  18 x^2  +  -44 x  +  11")
 
@@ -220,6 +302,24 @@ def _test_NewtonPolynomial():
     f = NewtonPolynomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1])
     assert(str(f) == "-32 + (x + 1)(32 + (x + 1)(24 + (x + 1)(-16 + (x - 1)(10 + (x - 1)(-1)))))")
 
+# Test the "polynomial" interpolation routine (uses Newton form).
+def _test_polynomial():
+    SMALL = 1.4901161193847656*10**(-8) 
+    # ^^ SQRT(EPSILON(REAL(1.0)))
+    x_vals = [0,1,2,3,4,5]
+    y_vals = [1,2,1,2,1,10]
+    f = polynomial(x_vals, y_vals)
+    for (x,y) in zip(x_vals,y_vals):
+        try:    assert( abs(y - f(x)) < SMALL )
+        except:
+            string =  "\n\nFailed test.\n"
+            string += f" x:    {x}\n"
+            string += f" y:    {y}\n"
+            string += f" f({x}): {f(x)}"
+            class FailedTest(Exception): pass
+            raise(FailedTest(string))
+
+# Test the "polynomial_piece" interpolation routine.
 def _test_polynomial_piece(plot=False):
     if plot:
         from util.plot import Plot
@@ -255,21 +355,14 @@ def _test_polynomial_piece(plot=False):
                             )#mode="markers", marker_size=2)
     if plot: p.show(file_name="piecewise_polynomial.html")
 
-def _test_polynomial():
-    SMALL = 1.4901161193847656*10**(-8) 
-    # ^^ SQRT(EPSILON(REAL(1.0)))
-    x_vals = [0,1,2,3,4,5]
-    y_vals = [1,2,1,2,1,10]
-    f = polynomial(x_vals, y_vals)
-    for (x,y) in zip(x_vals,y_vals):
-        try:    assert( abs(y - f(x)) < SMALL )
-        except:
-            string =  "\n\nFailed test.\n"
-            string += f" x:    {x}\n"
-            string += f" y:    {y}\n"
-            string += f" f({x}): {f(x)}"
-            class FailedTest(Exception): pass
-            raise(FailedTest(string))
+# Test the Spline class for basic operation.
+def _test_Spline():
+    knots = [0,1,2,3,4]
+    values = [[0],[1,-1,0],[0,-1],[1,0,0],[0]]
+    f = Spline(knots, values)
+    for (k,v) in zip(knots,values):
+        for d in range(len(v)):
+            assert(f.derivative(d)(k) == v[d])
 
 if __name__ == "__main__":
     # Run the tests on this file.
@@ -277,3 +370,4 @@ if __name__ == "__main__":
     _test_NewtonPolynomial()
     _test_polynomial()
     _test_polynomial_piece()
+    _test_Spline()

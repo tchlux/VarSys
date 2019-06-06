@@ -1,3 +1,89 @@
+    def interp_func(x, data=x, func=y, deriv=deriv):
+        # Handle the boundary cases by linearly extrapolating.
+        if (x <= data[0]):    return deriv[0]  * (x - data[0])  + func[0]
+        elif (x >= data[-1]): return deriv[-1] * (x - data[-1]) + func[-1]
+        # Find the interval in which "x" exists.
+        for i in range(len(data)-1):
+            if (data[i] <= x <= data[i+1]): break
+        # If no interval was found, then something unexpected must have happened.
+        else: raise(UnexpectedError("This problem exhibited unexpected behavior."))
+        # Now "data[i] <= x <= data[i+1]" must be true.
+
+        #  The following description more exactly matches what is 
+        #  presented in the original paper, but is less efficient.
+        # 
+        #  Define all the functions mentioned in the equation.
+        # 
+        #   upsilon = lambda t: 3*t**2 - 2*t**3
+        #   lamp = lambda t: t**3 - t**2
+        #   hi = data[i+1] - data[i]
+        #   h1 = lambda x:    upsilon( (data[i+1] - x) / hi )
+        #   h2 = lambda x:    upsilon( (x  -  data[i]) / hi )
+        #   h3 = lambda x: -hi * lamp( (data[i+1] - x) / hi )
+        #   h4 = lambda x:  hi * lamp( (x  -  data[i]) / hi )
+        #   value = func[i]*h1(x) + func[i+1]*h2(x) + deriv[i]*h3(x) + deriv[i+1]*h4(x)
+
+        # Shorten the expression of variables to more concisely write
+        # the interpolating function in full form.
+        l = data[i]
+        r = data[i+1]
+        fl = func[i]
+        fr = func[i+1]
+        dl = deriv[i]
+        dr = deriv[i+1]
+        h = (r - l)
+
+        # Compute the value outright.
+        value = ( fr * (l - x)**2 * (l - 3 * r + 2 * x) - (r - x) *
+                  (dr * (l - r) * (l - x)**2 + (r - x) *
+                   (dl * (l - r) * (l - x) + fl *
+                    (-3 * l + r + 2 * x))) ) / (l - r)**3
+
+        # Return the interpolating function evaluation.
+        return value
+
+    # Define an interpolation function for return.
+    def deriv_func(x, data=x, func=y, deriv=deriv):
+        # Handle the boundary cases by linearly extrapolating.
+        if (x <= data[0]):    return deriv[0]
+        elif (x >= data[-1]): return deriv[-1]
+        # Find the interval in which "x" exists.
+        for i in range(len(data)-1):
+            if (data[i] <= x <= data[i+1]): break
+        # If no interval was found, then something unexpected must have happened.
+        else: raise(UnexpectedError("This problem exhibited unexpected behavior."))
+        # Now "data[i] <= x <= data[i+1]" must be true.
+        l = data[i]
+        r = data[i+1]
+        fl = func[i]
+        fr = func[i+1]
+        dl = deriv[i]
+        dr = deriv[i+1]
+        h = (r - l)
+        # Compute the value outright.
+        value = (dr * (l - r) * (l + 2 * r - 3 * x) * (l - x) - \
+                 (-dl * (l - r) * (2 * l + r - 3 * x) + \
+                  6 * fl * (l - x) - 6 * fr * (l - x)) * (r - x)) \
+                  / (l - r)**3
+        # Return the interpolating function derivative evaluation.
+        return value
+
+    # Store the derivative function as an attribute of the
+    # interpolating function.
+    interp_func.derivative = deriv_func
+
+    # Return the interpolating function.
+    return interp_func
+
+
+    from util.plot import Plot
+    p = Plot("Spline")
+    low_upp = [-.2, 4.2]
+    p.add_func(str(values), f, low_upp)
+    p.add_func("f'(x)", f.derivative(1), low_upp)
+    p.add_func("f''(x)", f.derivative(2), low_upp)
+    p.show()
+
     # print()
     # print('-'*70)
     # print("MODE:",mode)

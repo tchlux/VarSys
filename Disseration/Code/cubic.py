@@ -57,7 +57,8 @@ def compute_feasible(left_ratio, right_ratio, mode, project):
             right_ratio /= (length / 3)
     elif (mode == 3):
         # Option 3: Project onto the line "y = 3 - x".
-        slope = left_ratio / right_ratio
+        if (right_ratio != 0): slope = left_ratio / right_ratio
+        else:                  slope = float('inf')
         if (project == 1):
             # Compute the intersection of the line and the ratio vector.
             left_ratio = min(left_ratio, (slope*3) / (slope + 1))
@@ -70,7 +71,8 @@ def compute_feasible(left_ratio, right_ratio, mode, project):
             )
     elif (mode == 4):
         # Option 4: Project onto the greater of "y = 3 - 2x" and "x = 3 - 2y".
-        slope = left_ratio / right_ratio
+        if (right_ratio != 0): slope = left_ratio / right_ratio
+        else:                  slope = float('inf')
         if (project == 1):
             # Intersect the ratio vector with the first (steeper) line.
             first_left = min(left_ratio, (3*slope) / (2*slope + 1))
@@ -239,87 +241,20 @@ def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
     # ----------------------------------------------------------------
 
     # Define an interpolation function for return.
-    def interp_func(x, data=x, func=y, deriv=deriv):
-        # Handle the boundary cases by linearly extrapolating.
-        if (x <= data[0]):    return deriv[0]  * (x - data[0])  + func[0]
-        elif (x >= data[-1]): return deriv[-1] * (x - data[-1]) + func[-1]
-        # Find the interval in which "x" exists.
-        for i in range(len(data)-1):
-            if (data[i] <= x <= data[i+1]): break
-        # If no interval was found, then something unexpected must have happened.
-        else: raise(UnexpectedError("This problem exhibited unexpected behavior."))
-        # Now "data[i] <= x <= data[i+1]" must be true.
-
-        #  The following description more exactly matches what is 
-        #  presented in the original paper, but is less efficient.
-        # 
-        #  Define all the functions mentioned in the equation.
-        # 
-        #   upsilon = lambda t: 3*t**2 - 2*t**3
-        #   lamp = lambda t: t**3 - t**2
-        #   hi = data[i+1] - data[i]
-        #   h1 = lambda x:    upsilon( (data[i+1] - x) / hi )
-        #   h2 = lambda x:    upsilon( (x  -  data[i]) / hi )
-        #   h3 = lambda x: -hi * lamp( (data[i+1] - x) / hi )
-        #   h4 = lambda x:  hi * lamp( (x  -  data[i]) / hi )
-        #   value = func[i]*h1(x) + func[i+1]*h2(x) + deriv[i]*h3(x) + deriv[i+1]*h4(x)
-
-        # Shorten the expression of variables to more concisely write
-        # the interpolating function in full form.
-        l = data[i]
-        r = data[i+1]
-        fl = func[i]
-        fr = func[i+1]
-        dl = deriv[i]
-        dr = deriv[i+1]
-        h = (r - l)
-
-        # Compute the value outright.
-        value = ( fr * (l - x)**2 * (l - 3 * r + 2 * x) - (r - x) *
-                  (dr * (l - r) * (l - x)**2 + (r - x) *
-                   (dl * (l - r) * (l - x) + fl *
-                    (-3 * l + r + 2 * x))) ) / (l - r)**3
-
-        # Return the interpolating function evaluation.
-        return value
-
-    # Define an interpolation function for return.
-    def deriv_func(x, data=x, func=y, deriv=deriv):
-        # Handle the boundary cases by linearly extrapolating.
-        if (x <= data[0]):    return deriv[0]
-        elif (x >= data[-1]): return deriv[-1]
-        # Find the interval in which "x" exists.
-        for i in range(len(data)-1):
-            if (data[i] <= x <= data[i+1]): break
-        # If no interval was found, then something unexpected must have happened.
-        else: raise(UnexpectedError("This problem exhibited unexpected behavior."))
-        # Now "data[i] <= x <= data[i+1]" must be true.
-        l = data[i]
-        r = data[i+1]
-        fl = func[i]
-        fr = func[i+1]
-        dl = deriv[i]
-        dr = deriv[i+1]
-        h = (r - l)
-        # Compute the value outright.
-        value = (dr * (l - r) * (l + 2 * r - 3 * x) * (l - x) - \
-                 (-dl * (l - r) * (2 * l + r - 3 * x) + \
-                  6 * fl * (l - x) - 6 * fr * (l - x)) * (r - x)) \
-                  / (l - r)**3
-        # Return the interpolating function derivative evaluation.
-        return value
-
-    # Store the derivative function as an attribute of the
-    # interpolating function.
-    interp_func.derivative = deriv_func
-
-    # Return the interpolating function.
-    return interp_func
-
+    from polynomial import Spline
+    knots = x
+    values = [[f,df] for (f,df) in zip(y, deriv)]
+    return Spline(knots, values)
 
 # Testing code.
 if __name__ == "__main__":
+    TEST_FIT = True
+    SMALL_FIT_DEMO = False
+    TEST_PROJECTION = False
     SHOW_FEASIBLE_REGION = False
+    BUILDING_APPROX_DEMO = False
+    SMALL_PROJECTION_DEMO = False
+
     if SHOW_FEASIBLE_REGION:
         # Compute the circle boundary points (for region 2).
         circ_func = lambda x: (9 - x**2)**(1/2)
@@ -347,8 +282,6 @@ if __name__ == "__main__":
                height=height, file_name="feasible_region.html")
         
 
-
-    SMALL_PROJECTION_DEMO = False
     if SMALL_PROJECTION_DEMO:
         from util.plot import Plot
         # Creat an animated plot.
@@ -390,8 +323,6 @@ if __name__ == "__main__":
                height=400, file_name="demo_projection.html")
 
 
-
-    SMALL_FIT_DEMO = False
     if SMALL_FIT_DEMO:
         from util.plot import Plot
         SEED = 1
@@ -436,13 +367,12 @@ if __name__ == "__main__":
                   color=p.color(0, alpha=.3))
 
         p.add_func(f"DERIVATIVE Fit: mode {mode}, project {project}, ends {ends}, mids {mids}", 
-                   fit.derivative, bounds, color=p.color(mode+2))
+                   fit.derivative(1), bounds, color=p.color(mode+2))
 
         p.show(file_name="demo_fit_deriv.html", show_legend=False,
                width=500, height=400)
 
 
-    TEST_PROJECTION = False
     if TEST_PROJECTION:
         mode = 2
         project = 1
@@ -508,7 +438,6 @@ if __name__ == "__main__":
                        height=700, append=append, file_name="demo_feasible.html")
 
 
-    TEST_FIT = False
     if TEST_FIT:
         from util.plot import Plot
         SEED = 1
@@ -554,8 +483,8 @@ if __name__ == "__main__":
         pchip_fit = PchipInterpolator(x, y)
         # Settings for the  custom fits.
         project = 1
-        ends = 1
-        mids = 2
+        ends = 0
+        mids = 1
         # ------------------------------------------------------------
         #    Add all of the interpolating functions.
         if FUNCS:
@@ -575,14 +504,13 @@ if __name__ == "__main__":
                 fit = cubic_interp(x, y, mode=mode, mids=mids,
                                    project=project, ends=ends)
                 p.add_func(f"DERIVATIVE Fit: mode {mode}, project {project}, ends {ends}, mids {mids}", 
-                           fit.derivative, bounds, color=p.color(mode+2))
+                           fit.derivative(1), bounds, color=p.color(mode+2))
 
         # Add the points last (so they are on top).
         p.add("Points", x, y, color=p.color(0))
         p.show(file_name="demo_fit_many.html")
 
 
-    BUILDING_APPROX_DEMO = True
     if BUILDING_APPROX_DEMO:
         from util.plot import Plot
         from util.stats import cdf_fit, cdf_points
