@@ -10,11 +10,17 @@
 # 
 # The following functions are provided:
 # 
-#   polynomial -- Given x and y values, this produces a Newton
-#                 polynomial that interpolates the provided points.
+#   polynomial       -- Given x and y values, this produces a Newton
+#                       polynomial that interpolates the provided points.
 #   polynomial_piece -- Given a function value and derivatives,
 #                       produce a polynomial that interpolates these
 #                       values at the endpoints of an interval.
+#   fill_derivative  -- Compute all derivatives at points to be
+#                       reasonable values using either a linear or a
+#                       quadratic fit over neighboring points. 
+#   solve_quadratic  -- Given three points, this will solve the equation
+#                       for the quadratic function which interpolates
+#                       all 3 values. Returns coefficient 3-tuple. 
 # 
 
 # A piecewise polynomial function that supports evaluation,
@@ -56,6 +62,9 @@ class Spline:
 
     # Evaluate this Spline at a given x coordinate.
     def __call__(self, x):
+        # If "x" was given as a vector, then iterate over that vector.
+        try:    return [self(v) for v in x]
+        except: pass
         # Deterimine which interval this "x" values lives in.
         if (x <= self.knots[0]):    return self._functions[0](x)
         elif (x >= self.knots[-1]): return self._functions[-1](x)
@@ -268,6 +277,84 @@ def polynomial_piece(left, right, interval=(0,1)):
     coefs = list(reversed(coefs))
     # Return the polynomial function.
     return Polynomial(to_monomial(coefs, points))
+
+# Compute all derivatives between points to be reasonable values
+# using either a linear or a quadratic fit over adjacent points.
+#  
+# ends:
+#   (zero)   endpoints to zero.
+#   (lin)    endpoints to secant slope through endpoint neighbor.
+#   (quad)   endpoints to capped quadratic interpolant slope.
+#   (manual) a 2-tuple provides locked-in values for derivatives.
+# 
+# mids:
+#   (zero)   all slopes are locked into the value 0.
+#   (lin)    secant slope between left and right neighbor.
+#   (quad)   slope of quadratic interpolant over three point window.
+#   (manual) an (n-2)-tuple provides locked-in values for derivatives.
+# 
+def fill_derivative(x, y, ends=1, mids=2):
+    # Initialize the derivatives at all points to be 0.
+    deriv = [0] * len(x)
+    # Set the endpoints according to desired method.
+    if (ends == 0): pass
+    # If the end slopes should be determined by a secant line..
+    elif (ends == 1):
+        deriv[0] = (y[1] - y[0]) / (x[1] - x[0])
+        deriv[-1] = (y[-1] - y[-2]) / (x[-1] - x[-2])
+    # If the end slopes should be determined by a quadratic..
+    elif (ends == 2):
+        # Compute the quadratic fit through the first three points and
+        # use the slope of the quadratic as the estimate for the slope.
+        a,b,c = solve_quadratic(x[:3], y[:3])
+        deriv[0] = 2*a*x[0] + b
+        if non_decreasing:   deriv[0] = max(0, deriv[0])
+        elif non_increasing: deriv[0] = min(0, deriv[0])
+        # Do the same for the right endpoint.
+        a,b,c = solve_quadratic(x[-3:], y[-3:])
+        deriv[-1] = 2*a*x[-1] + b
+        if non_decreasing:   deriv[-1] = max(0, deriv[-1])
+        elif non_increasing: deriv[-1] = min(0, deriv[-1])
+    # If the ends were manually specified..
+    elif (len(ends) == 2):
+        deriv[0], deriv[-1] = ends
+    else:
+        raise(BadUsage("Manually defined endpoints must provide exactly two numbers."))
+    # Initialize all the midpoints according to desired metohd.
+    if (mids == 0): pass
+    elif (mids == 1):
+        for i in range(1, len(x)-1):
+            secant_slope = (y[i+1] - y[i-1]) / (x[i+1] - x[i-1])
+            left_slope = (y[i] - y[i-1]) / (x[i] - x[i-1])
+            right_slope = (y[i+1] - y[i]) / (x[i+1] - x[i])
+            # Only use this slope as long as both slopes are nonzero.
+            if (left_slope != 0) and (right_slope != 0): deriv[i] = secant_slope
+    elif (mids == 2):
+        for i in range(1, len(x)-1):
+            # Compute the quadratic fit of the three points and use
+            # its slope at x[i] to estimate the derivative at x[i].
+            a, b, c = solve_quadratic(x[i-1:i+1+1], y[i-1:i+1+1])
+            slope = 2*a*x[i] + b
+            # Only use this slope as long as both slopes are nonzero.
+            if (y[i-1] != y[i]) and (y[i] != y[i+1]): deriv[i] = slope
+    elif (len(mids) == len(deriv)-2):
+        deriv[1:-1] = mids
+    else:
+        raise(BadUsage("Manually defined endpoints must provide exactly two numbers."))
+    # Return the computed derivatives.
+    return deriv
+
+# Given three points, this will solve the equation for the quadratic
+# function which interpolates all 3 values. Returns coefficient 3-tuple.
+def solve_quadratic(x, y):
+    if len(x) != len(y): raise(BadUsage("X and Y must be the same length."))
+    if len(x) != 3:      raise(BadUsage(f"Exactly 3 (x,y) coordinates must be given, received '{x}'."))
+    x1, x2, x3 = x
+    y1, y2, y3 = y
+    a = -((-x2 * y1 + x3 * y1 + x1 * y2 - x3 * y2 - x1 * y3 + x2 * y3)/((-x1 + x2) * (x2 - x3) * (-x1 + x3)))
+    b = -(( x2**2 * y1 - x3**2 * y1 - x1**2 * y2 + x3**2 * y2 + x1**2 * y3 - x2**2 * y3)/((x1 - x2) * (x1 - x3) * (x2 - x3)))
+    c = -((-x2**2 * x3 * y1 + x2 * x3**2 * y1 + x1**2 * x3 * y2 - x1 * x3**2 * y2 - x1**2 * x2 * y3 + x1 * x2**2 * y3)/((x1 - x2) * (x1 - x3) * (x2 - x3)))
+    return (a,b,c)
 
 # --------------------------------------------------------------------
 #                            TESTING CODE

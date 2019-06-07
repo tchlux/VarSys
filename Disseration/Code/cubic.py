@@ -5,18 +5,6 @@ class BadData(Exception): pass
 class BadValues(Exception): pass
 class UnexpectedError(Exception): pass
 
-# Given three points, this will solve the equation for the quadratic
-# function which interpolates all 3 values. Returns coefficient 3-tuple.
-def solve_quadratic(x, y):
-    if len(x) != len(y): raise(BadUsage("X and Y must be the same length."))
-    if len(x) != 3:      raise(BadUsage(f"Exactly 3 (x,y) coordinates must be given, received '{x}'."))
-    x1, x2, x3 = x
-    y1, y2, y3 = y
-    a = -((-x2 * y1 + x3 * y1 + x1 * y2 - x3 * y2 - x1 * y3 + x2 * y3)/((-x1 + x2) * (x2 - x3) * (-x1 + x3)))
-    b = -(( x2**2 * y1 - x3**2 * y1 - x1**2 * y2 + x3**2 * y2 + x1**2 * y3 - x2**2 * y3)/((x1 - x2) * (x1 - x3) * (x2 - x3)))
-    c = -((-x2**2 * x3 * y1 + x2 * x3**2 * y1 + x1**2 * x3 * y2 - x1 * x3**2 * y2 - x1**2 * x2 * y3 + x1 * x2**2 * y3)/((x1 - x2) * (x1 - x3) * (x2 - x3)))
-    return (a,b,c)
-
 # Given the left and right slope ratios (alpha and beta in paper),
 # compute a new left and right slope ratio that rest in the feasible
 # region for a monotonic cubic interpolating polynomial.
@@ -29,7 +17,7 @@ def solve_quadratic(x, y):
 #   project -- 1 uses the intercept of a line with the region.
 #              2 uses the closest point on the region boundary.
 # 
-def compute_feasible(left_ratio, right_ratio, mode, project):
+def compute_cubic_feasible(left_ratio, right_ratio, mode, project):
     # First check to make sure we have valid ratios (no division by 0).
     if (max(left_ratio, right_ratio) == 0):
         pass
@@ -123,6 +111,9 @@ def compute_feasible(left_ratio, right_ratio, mode, project):
 #              2 uses the closest point on the region boundary.
 # 
 def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
+    # ----------------------------------------------------------------
+    # STEP 0: Check for proper usage, organize data.
+    # 
     # Verify the lengths of the data values and function values are the same.
     if (len(x) != len(y)):
         raise(BadUsage(f"Received '{len(x)}' points and '{len(y)}' function values, should be same number."))
@@ -139,9 +130,6 @@ def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
     non_increasing = all(y[i+1] <= y[i] for i in range(len(y)-1))
     if not (non_increasing or non_decreasing):
         raise(BadValues("Received function values that are not monotone."))
-    # Initialize the derivatives at all points to be 0.
-    deriv = [0] * len(x)
-
     # ----------------------------------------------------------------
     # STEP 1: Initialize all derivatives to reasonable values.
     #  
@@ -156,53 +144,10 @@ def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
     #   (lin)    secant slope between left and right neighbor.
     #   (quad)   slope of quadratic interpolant over three point window.
     #   (manual) an (n-2)-tuple provides locked-in values for derivatives.
-    # 
-    # Set the endpoints according to desired method.
-    if (ends == 0): pass
-    # If the end slopes should be determined by a secant line..
-    elif (ends == 1):
-        deriv[0] = (y[1] - y[0]) / (x[1] - x[0])
-        deriv[-1] = (y[-1] - y[-2]) / (x[-1] - x[-2])
-    # If the end slopes should be determined by a quadratic..
-    elif (ends == 2):
-        # Compute the quadratic fit through the first three points and
-        # use the slope of the quadratic as the estimate for the slope.
-        a,b,c = solve_quadratic(x[:3], y[:3])
-        deriv[0] = 2*a*x[0] + b
-        if non_decreasing:   deriv[0] = max(0, deriv[0])
-        elif non_increasing: deriv[0] = min(0, deriv[0])
-        # Do the same for the right endpoint.
-        a,b,c = solve_quadratic(x[-3:], y[-3:])
-        deriv[-1] = 2*a*x[-1] + b
-        if non_decreasing:   deriv[-1] = max(0, deriv[-1])
-        elif non_increasing: deriv[-1] = min(0, deriv[-1])
-    # If the ends were manually specified..
-    elif (len(ends) == 2):
-        deriv[0], deriv[-1] = ends
-    else:
-        raise(BadUsage("Manually defined endpoints must provide exactly two numbers."))
-    # Initialize all the midpoints according to desired metohd.
-    if (mids == 0): pass
-    elif (mids == 1):
-        for i in range(1, len(x)-1):
-            secant_slope = (y[i+1] - y[i-1]) / (x[i+1] - x[i-1])
-            left_slope = (y[i] - y[i-1]) / (x[i] - x[i-1])
-            right_slope = (y[i+1] - y[i]) / (x[i+1] - x[i])
-            # Only use this slope as long as both slopes are nonzero.
-            if (left_slope != 0) and (right_slope != 0): deriv[i] = secant_slope
-    elif (mids == 2):
-        for i in range(1, len(x)-1):
-            # Compute the quadratic fit of the three points and use
-            # its slope at x[i] to estimate the derivative at x[i].
-            a, b, c = solve_quadratic(x[i-1:i+1+1], y[i-1:i+1+1])
-            slope = 2*a*x[i] + b
-            # Only use this slope as long as both slopes are nonzero.
-            if (y[i-1] != y[i]) and (y[i] != y[i+1]): deriv[i] = slope
-    elif (len(mids) == len(deriv)-2):
-        deriv[1:-1] = mids
-    else:
-        raise(BadUsage("Manually defined endpoints must provide exactly two numbers."))
-    # 
+    #
+    from polynomial import fill_derivative
+    deriv = fill_derivative(x, y, ends, mids)
+    # ----------------------------------------------------------------
     # STEP 2: Fix the derivatives that violate monotonicity.
     # 
     #         We have to be careful though, our procedure must not
@@ -233,14 +178,13 @@ def cubic_interp(x, y, mode=2, ends=0, mids=2, project=1):
         right_ratio = deriv[i+1] / secant_slope
         # Compute the (projected) left and right ratios that ensure
         # the cubic function is monotonic over the interval.
-        left_ratio, right_ratio = compute_feasible(
+        left_ratio, right_ratio = compute_cubic_feasible(
             left_ratio, right_ratio, mode, project)
         # Set the derivative values based on (projected) monotone slope ratios.
         deriv[i]   = left_ratio * secant_slope
         deriv[i+1] = right_ratio * secant_slope
     # ----------------------------------------------------------------
-
-    # Define an interpolation function for return.
+    # STEP 3: Define an piecewise polynomial interpolating function.
     from polynomial import Spline
     knots = x
     values = [[f,df] for (f,df) in zip(y, deriv)]
@@ -300,7 +244,7 @@ if __name__ == "__main__":
                 color = p.color_num + 1
                 p.color_num += 1
                 show = True
-            new_y, new_x = compute_feasible(y, x, mode=mode, project=project)
+            new_y, new_x = compute_cubic_feasible(y, x, mode=mode, project=project)
             p.add(f"Point {color-3} to Region {mode}", [x,new_x], [y,new_y],
                   mode="markers+lines", dash="dot", color=p.color(4),
                   line_color=p.color(mode-1, alpha=.6))
@@ -395,7 +339,7 @@ if __name__ == "__main__":
                         color = p.color_num + 1
                         p.color_num += 1
                         show = True
-                    new_y, new_x = compute_feasible(y, x, mode=mode, project=project)
+                     new_y, new_x = compute_cubic_feasible(y, x, mode=mode, project=project)
                     p.add(f"Point {color-4} to Region {mode}, {project}", [x,new_x], [y,new_y],
                           mode="markers+lines", dash="dot", color=p.color(4),
                           line_color=p.color(mode-1, alpha=.3))
@@ -473,6 +417,7 @@ if __name__ == "__main__":
         # Reserve the "0" color for the points (to be added last).
         p.color_num += 1
         if QUADS:
+            from polynomial import solve_quadratic
             # Add the quadratic fits about pairs of three points.
             for i in range(1, len(x)-1):
                 a,b,c = solve_quadratic(x[i-1:i+2], y[i-1:i+2])
