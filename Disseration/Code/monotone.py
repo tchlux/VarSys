@@ -1,33 +1,36 @@
-# Need to figure out an appropriate method for obtaianing a quintic
-# spline. If an adjustment to one segment causes a neighbor to break,
-# then we have to shrink the derivatives and repeat. There should be
-# an exact value to which we must shrink the derivatives for
-# monotonicity to be achievable. I'll have to algebraically solve for
-# that.
-
-# I need to identify the rescaling for DDX by algebraically solving
-# given fixed DDX vector
-
+# This file provides the function `monotone_quintic_spline` which
+# constructs spline interpolant over provided data. It starts by using
+# the Newton method to construct approximations for the first and
+# second derivative at each of the data points. Then it iteratively
+# adjusts the derivatives and second derivatives until all quintic
+# polynomial pieces are monotone. A `Spline` object is returned.
 
 from polynomial import fit
 
 # Given x and y values, construct a monotonic quintic spline fit.
-def monotone_quintic_spline(x, y):
+def monotone_quintic_spline(x, y, fix_previous=True):
     from polynomial import Spline
     f = fit(x, y, continuity=2)
     values = f.values
     # Make all pieces monotone.
-    for i in range(len(values)-1):
-        monotone_quintic_piece([x[i], x[i+1]], [values[i], values[i+1]])
-
-    # # Continue looping over the polynomial pieces until all pieces are
-    # # monotone because fixing one may accidentally break the previous.
-    # changed = True
-    # while changed:
-    #     changed = False
-    #     for i in range(len(values)-1):
-    #         changed = changed or monotone_quintic_piece(
-    #             [x[i], x[i+1]], [values[i], values[i+1]])
+    i = 0
+    while i < len(values)-1:
+        changed = nondecreasing_quintic(
+            [x[i], x[i+1]], [values[i], values[i+1]])
+        if fix_previous and changed and (i > 0):
+            # While the previous interval is also broken,
+            while not is_quintic_nondecreasing(
+                    [x[i-1], x[i]], [values[i-1], values[i]]):
+                # Shrink the derivative value at this point.
+                values[i][1] *= .99
+                # Fix the previous interval.
+                nondecreasing_quintic(
+                    [x[i-1], x[i]], [values[i-1], values[i]])
+                # Fix this interval again.
+                nondecreasing_quintic(
+                    [x[i], x[i+1]], [values[i], values[i+1]])
+        # Increment to work on the next interval.
+        i += 1
 
     # Construct a new spline over the (updated) values for derivatives.
     return Spline(f.knots, f.values)
@@ -39,123 +42,164 @@ def monotone_cubic_spline(x, y):
     values = f.values
     # Make all pieces monotone.
     for i in range(len(values)-1):
-        monotone_cubic_piece([x[i], x[i+1]], [values[i], values[i+1]])
+        nondecreasing_cubic([x[i], x[i+1]], [values[i], values[i+1]])
     # Construct a new spline over the (updated) values for derivatives.
     return Spline(f.knots, f.values)
 
 # Given a (x1, x2) and ([y1, d1y1], [y2, d1y2]), compute the rescaled
 # y values for a monotone cubic piece.
-def monotone_cubic_piece(x,y):
+def nondecreasing_cubic(x,y):
     # Compute the secant slope, the left slope ratio and the
     # right slope ratio for this interval of the function.
     secant_slope = (y[1][0] - y[0][0]) / (x[1] - x[0])
-    left_ratio = y[0][1] / secant_slope
-    right_ratio = y[1][1] / secant_slope
+    A = y[0][1] / secant_slope # (left slope ratio)
+    B = y[1][1] / secant_slope # (right slope ratio)
     # ----------------------------------------------------------------
     #    USE PROJECTION ONTO CUBE FOR CUBIC SPLINE CONSTRUCTION
     # Determine which line segment it will project onto.
-    mult = 3 / max(left_ratio, right_ratio)
-    # Perform the projection onto the line segment by
-    # shortening the vector to make the max coordinate 3.
-    left_ratio = min(left_ratio, mult*left_ratio)
-    right_ratio = min(right_ratio, mult*right_ratio)
+    mult = 3 / max(A, B)
+    if (mult < 1):
+        # Perform the projection onto the line segment by
+        # shortening the vector to make the max coordinate 3.
+        y[0][1] *= mult
+        y[1][1] *= mult
+        return True
     # ----------------------------------------------------------------
-    # Set the derivative values based on (projected) monotone slope ratios.
-    start_y = (tuple(y[0]), tuple(y[1]))
-    y[0][1] = left_ratio * secant_slope
-    y[1][1] = right_ratio * secant_slope
-    changed = (start_y != (tuple(y[0]), tuple(y[1])))
-    return changed
+    return False
 
 # Given a (x1, x2) and ([y1, d1y1, d2y1], [y2, d1y2, d2y2]), compute
 # the rescaled derivative values for a monotone quintic piece.
-def monotone_quintic_piece(x, y):
+def nondecreasing_quintic(x, y):
     changed = False
     # Extract local variable names from the provided points and
     # derivative information (to match the source paper).
     U0, U1 = x
     X0, DX0, DDX0 = y[0]
     X1, DX1, DDX1 = y[1]
-    print()
-    print("-"*70)
-    print("        ","   DX0      DX1     DDX0     DDX1 ")
-    print("Initial:",("%7.2f  "*4)%(DX0, DX1, DDX0, DDX1))
-    v = X1 - X0
-    h = (U1 - U0) / 2
-    # Functions for evaluating constants in expressions (involving values)
-    two_h_over_v = 2 * h / v
-    h_sq_over_v = h * (h / v)
-    A = lambda: DX0 * two_h_over_v
-    B = lambda: DX1 * two_h_over_v
-    C = lambda: DDX0 * h_sq_over_v 
-    D = lambda: DDX1 * h_sq_over_v
+    function_change = X1 - X0
+    interval_width = U1 - U0
+    interval_slope = function_change / interval_width
     # Set DX0 and DX1 to be the median of these three choices.
-    DX0 = sorted([0, DX0, 7*v / h])[1]
-    DX1 = sorted([0, DX1, 7*v / h])[1]
+    DX0 = sorted([0, DX0, 14*interval_slope])[1]
+    DX1 = sorted([0, DX1, 14*interval_slope])[1]
+    # Compute repeatedly used values "A" (left ratio) and "B" (right ratio).
+    A = DX0 / interval_slope
+    B = DX1 / interval_slope
     # Set A = max(0, A) and B = max(0, B).
-    if A() < 0:
-        DX0 = 0
+    if (A < 0):
+        DX0 = A = 0
         changed = True
-    if B() < 0:
-        DX1 = 0
+    if (B < 0):
+        DX1 = B = 0
         changed = True
     # Use a monotone cubic over this region if AB = 0.
-    if (A()*B() == 0): return monotone_cubic_piece(x, y)
+    if (A*B == 0):
+        y[0][2] = y[1][2] = 0
+        return nondecreasing_cubic(x, y)
+
     # Scale the derivative vector to make tau1 positive.
-    def tau_1(): return 24 + 2*(A()*B())**(1/2) - 3*(A()+B())
-    if (tau_1() <= 0):
-        a = A()
-        b = B()
+    tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
+    if (tau_1 <= 0):
         # Compute the rescale factor necessary to make tau_1 0.
-        rescale = 24 * (3*(a+b) + 2*(a*b)**(1/2)) / (9*(a**2+b**2) + 14*(a*b))
+        rescale = 24 * (3*(A+B) + 2*(A*B)**(1/2)) / (9*(A**2+B**2) + 14*(A*B))
         # Shrink that rescale factor to ensure tau_1 becomes positive.
-        sqrt_eps = 1.4901161193847656*10**(-8) 
-        #          ^^ SQRT(EPSILON( 0.0_REAL64 ))
-        rescale -= sqrt_eps**(1/2)
+        rescale -= rescale * 2**(-26) # SQRT(EPSILON( 0.0_REAL64 ))
         # Rescale the derivatives
         DX0 *= rescale
         DX1 *= rescale
+        # Recompute A and B.
+        A = DX0 / interval_slope
+        B = DX1 / interval_slope
+        # Record the change.
         changed = True
-    assert(tau_1() > 0)
-    # Compute DDX0 and DDX1 that satisfy monotonicity.
+    # Make sure that the condition is met.
+    tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
+    assert(tau_1 > 0)
 
-
-    # Scale (C,D) down until montonicity is achieved by using a simple verification.
+    # Compute DDX0 and DDX1 that satisfy monotonicity by scaling (C,D)
+    # down until montonicity is achieved (using binary search).
+    alpha_constant = 4 * (B**(1/4) / A**(1/4))
+    beta_constant  = (12 * (DX0+DX1) * (U1-U0) + 30 * (X0-X1)) / ((X0-X1) * A**(1/2) * B**(1/2))
+    gamma_constant = 4 * ((DX0 * B**(3/4)) / (DX1 * A**(3/4)))
+    alpha_multiplier = ((U0-U1) / DX1) * B**(1/4) / A**(1/4)
+    beta_multiplier  = (3 * (U0-U1)**2) / (2 * (X0-X1) * A**(1/2) * B**(1/2))
+    gamma_multiplier = ((U1-U0) / DX1) * B**(3/4) / A**(3/4)
     def is_monotone():
-        a = B()
-        b = 4*(B() - D())
-        c = 30 - 6*(D() + C() + 2*B() + 2*A())
-        d = 4*(A() + C())
-        e = A()
-        alpha = b * a**(-3/4) * e**(-1/4)
-        beta  = c * a**(-1/2) * e**(-1/2)
-        gamma = d * a**(-1/4) * e**(-3/4)
-        if beta <= 6: small = - (beta + 2) / 2
-        else:         small = -2 * (beta - 2)**(1/2)
-        return (alpha > small) and (gamma > small)
+        a = alpha_constant + alpha_multiplier * DDX1
+        g = gamma_constant + gamma_multiplier * DDX0
+        b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
+        if b <= 6: bound = - (b + 2) / 2
+        else:      bound = -2 * (b - 2)**(1/2)
+        return (a > bound) and (g > bound)
+
     # Move the second derivative towards a working value until
     # monotonicity is achieved.
-    target_DDX0 = (-(A()**(1/2) / 4) * (7*A()**(1/2) + 3*B()**(1/2)) * v) / h**2
-    target_DDX1 = ( (B()**(1/2) / 4) * (3*A()**(1/2) + 7*B()**(1/2)) * v) / h**2
-    steps = 0
-    while (not is_monotone()):
-        steps += 1
-        DDX0 = .01*(target_DDX0) + .99*(DDX0)
-        DDX1 = .01*(target_DDX1) + .99*(DDX1)
-        if steps >= 1000: break
-    print("Final:  ",("%7.2f  "*4)%(DX0, DX1, DDX0, DDX1))
-    print("target_DDX0: ",target_DDX0)
-    print("target_DDX1: ",target_DDX1)
+    target_DDX0 = - A**(1/2) * (7*A**(1/2) + 3*B**(1/2)) * interval_slope / interval_width
+    target_DDX1 =   B**(1/2) * (3*A**(1/2) + 7*B**(1/2)) * interval_slope / interval_width
+
+    # If this function is not monotone, perform a binary
+    # search for the nearest-to-original monotone DDX values.
+    if not is_monotone():
+        accuracy = 2**(-26) # = SQRT(EPSILON( 0.0_REAL64 ))
+        original_DDX0, original_DDX1 = DDX0, DDX1
+        low_bound,     upp_bound     = 0,    1
+        # Continue dividing the interval in 2 to find the smallest
+        # "upper bound" (amount target) that satisfies monotonicity.
+        while ((upp_bound - low_bound) > accuracy):
+            to_target = (upp_bound + low_bound) / 2
+            # If we found the limit of floating point numbers, break.
+            if ((to_target == upp_bound) or (to_target == low_bound)): break
+            # Recompute DDX0 and DDX1 based on the to_target.
+            DDX0 = (1-to_target) * original_DDX0 + to_target * target_DDX0
+            DDX1 = (1-to_target) * original_DDX1 + to_target * target_DDX1
+            # Otherwise, proceed with a binary seaarch.
+            if is_monotone(): upp_bound = to_target
+            else:             low_bound = to_target
+        # Store the smallest amount "target" for DDX0 and DDX1 that is nondecreasing.
+        DDX0 = (1-upp_bound) * original_DDX0 + upp_bound * target_DDX0
+        DDX1 = (1-upp_bound) * original_DDX1 + upp_bound * target_DDX1
+        changed = True
+        # Verify that the function is monotone (according to check function).
+        assert(is_monotone())
     # Update "y" and return the updated version.
     y[0][:] = X0, DX0, DDX0
     y[1][:] = X1, DX1, DDX1
-    changed = changed or (steps > 0)
     return changed
+
+# Function for testing if a quintic piece is monotone.
+def is_quintic_nondecreasing(x, y):
+    # Extract meaningful components of provided variables.
+    U0, U1 = x
+    X0, DX0, DDX0 = y[0]
+    X1, DX1, DDX1 = y[1]
+    # Compute useful intermediate values.
+    function_change = X1 - X0
+    interval_width = U1 - U0
+    interval_slope = function_change / interval_width
+    # Compute left and right slope ratios.
+    A = DX0 / interval_slope
+    B = DX1 / interval_slope
+    # Compute constants and multipliers for determining monotonicity.
+    alpha_constant = 4 * (B**(1/4) / A**(1/4))
+    beta_constant  = (12 * (DX0+DX1) * (U1-U0) + 30 * (X0-X1)) / ((X0-X1) * A**(1/2) * B**(1/2))
+    gamma_constant = 4 * ((DX0 * B**(3/4)) / (DX1 * A**(3/4)))
+    alpha_multiplier = ((U0-U1) / DX1) * B**(1/4) / A**(1/4)
+    beta_multiplier  = (3 * (U0-U1)**2) / (2 * (X0-X1) * A**(1/2) * B**(1/2))
+    gamma_multiplier = ((U1-U0) / DX1) * B**(3/4) / A**(3/4)
+    # Compute monotonicity.
+    a = alpha_constant + alpha_multiplier * DDX1
+    g = gamma_constant + gamma_multiplier * DDX0
+    b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
+    if b <= 6: bound = - (b + 2) / 2
+    else:      bound = -2 * (b - 2)**(1/2)
+    return (a > bound) and (g > bound)
+
 
 # --------------------------------------------------------------------
 
 # 0, 4 -> Good
 # 1, 4 -> Bad (now good)
+# 0, 13 -> Bad
 
 SEED = 0
 NODES = 13
@@ -195,9 +239,14 @@ p.add_func("continuity 2", fit(x,y,continuity=2), [min(x), max(x)], group='2')
 p.add_func("c2 d1", fit(x,y,continuity=2).derivative(), [min(x), max(x)], 
            dash="dash", color=p.color(p.color_num,alpha=.5), group='2')
 
-f = monotone_quintic_spline(x,y)
-p.add_func("monotone c2", f, [min(x), max(x)], group='2m', color=p.color(6))
-p.add_func("monotone c2d1", f.derivative(), [min(x), max(x)], 
+f = monotone_quintic_spline(x,y, fix_previous=False)
+p.add_func("monotone c2 (no fix)", f, [min(x), max(x)], group='2m', color=p.color(6))
+p.add_func("monotone c2d1 (no fix)", f.derivative(), [min(x), max(x)], 
            dash="dash", color=p.color(6,alpha=.5), group='2m')
 
-p.show(file_name="bad-hermite_interpolant.html")
+f = monotone_quintic_spline(x,y)
+p.add_func("monotone c2", f, [min(x), max(x)], group='2mf', color=p.color(7))
+p.add_func("monotone c2d1", f.derivative(), [min(x), max(x)], 
+           dash="dash", color=p.color(7,alpha=.5), group='2mf')
+
+p.show(file_name="monotone_quintic_interpolating_spline.html")
