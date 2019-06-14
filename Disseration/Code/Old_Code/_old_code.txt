@@ -114,3 +114,12 @@
 
 
 
+    tau1 = lambda: 24 + 2*(A()*B())**(1/2) - 3*(A() + B())
+    alpha = lambda eta: (4 * (B() - eta[1])) / (A()**(1/4) * B()**(3/4))
+    beta = lambda eta: ( 6*(eta[1] - eta[0] - 2*B() - 2*A() + 5) /
+                         (A()**(1/2) + B()**(1/2)) )
+    gamma = lambda eta: (4 * (A() + eta[0])) / (A()**(3/4) * B()**(1/4))
+    eta_star = lambda eta, rho: (rho*eta[0] + (1 - rho)*eta[0],
+                                 rho*eta[1] + (1 - rho)*eta[1])
+
+
