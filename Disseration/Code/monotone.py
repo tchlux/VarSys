@@ -10,7 +10,7 @@ from polynomial import fit
 # Given x and y values, construct a monotonic quintic spline fit.
 def monotone_quintic_spline(x, y, fix_previous=True):
     from polynomial import Spline
-    f = fit(x, y, continuity=2)
+    f = fit(x, y, continuity=2, non_decreasing=True, ends=2, mids=2)
     values = f.values
     # Make all pieces monotone.
     i = 0
@@ -23,12 +23,14 @@ def monotone_quintic_spline(x, y, fix_previous=True):
                     [x[i-1], x[i]], [values[i-1], values[i]]):
                 # Shrink the derivative value at this point.
                 values[i][1] *= .99
+
                 # Fix the previous interval.
                 nondecreasing_quintic(
                     [x[i-1], x[i]], [values[i-1], values[i]])
                 # Fix this interval again.
                 nondecreasing_quintic(
                     [x[i], x[i+1]], [values[i], values[i+1]])
+
         # Increment to work on the next interval.
         i += 1
 
@@ -38,7 +40,7 @@ def monotone_quintic_spline(x, y, fix_previous=True):
 # Given x and y values, construct a monotonic quintic spline fit.
 def monotone_cubic_spline(x, y):
     from polynomial import Spline
-    f = fit(x, y, continuity=1)
+    f = fit(x, y, continuity=1, non_decreasing=True)
     values = f.values
     # Make all pieces monotone.
     for i in range(len(values)-1):
@@ -97,7 +99,7 @@ def nondecreasing_quintic(x, y):
         y[0][2] = y[1][2] = 0
         return nondecreasing_cubic(x, y)
 
-    # Scale the derivative vector to make tau1 positive.
+    # Scale the derivative vector to make tau_1 positive.
     tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
     if (tau_1 <= 0):
         # Compute the rescale factor necessary to make tau_1 0.
@@ -115,6 +117,16 @@ def nondecreasing_quintic(x, y):
     # Make sure that the condition is met.
     tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
     assert(tau_1 > 0)
+
+    # Clip values that are too large (to ensure that the neighboring
+    # regions can be adjusted without worry).
+    mult = 8 / max(A, B)
+    if (mult < 1):
+        DX0 *= mult
+        DX1 *= mult
+        A = DX0 / interval_slope
+        B = DX1 / interval_slope
+        changed = True
 
     # Compute DDX0 and DDX1 that satisfy monotonicity by scaling (C,D)
     # down until montonicity is achieved (using binary search).
@@ -199,10 +211,11 @@ def is_quintic_nondecreasing(x, y):
 
 # 0, 4 -> Good
 # 1, 4 -> Bad (now good)
-# 0, 13 -> Bad
+# 0, 13 -> Bad (now good)
+# 0, 100 -> Bad
 
 SEED = 0
-NODES = 13
+NODES = 100
 
 # Generate random data to test the monotonic fit function.
 import numpy as np
@@ -222,29 +235,34 @@ from util.plot import Plot
 p = Plot()
 p.add("Points", x, y)
 
-p.add_func("continuity 0", fit(x,y,continuity=0), [min(x), max(x)], group='0')
-p.add_func("c0 d1", fit(x,y,continuity=0).derivative(), [min(x), max(x)], 
-           dash="dash", color=p.color(p.color_num,alpha=.5), group='0')
+p.add_func("continuity 0", fit(x,y,continuity=0, non_decreasing=True),
+           [min(x), max(x)], group='0')
+p.add_func("c0 d1", fit(x,y,continuity=0, non_decreasing=True).derivative(),
+           [min(x), max(x)], dash="dash", color=p.color(p.color_num,alpha=.5), group='0')
 
-p.add_func("continuity 1", fit(x,y,continuity=1), [min(x), max(x)], group='1')
-p.add_func("c1 d1", fit(x,y,continuity=1).derivative(), [min(x), max(x)], 
-           dash="dash", color=p.color(p.color_num,alpha=.5), group='1')
+p.add_func("continuity 1", fit(x,y,continuity=1, non_decreasing=True), 
+           [min(x), max(x)], group='1')
+p.add_func("c1 d1", fit(x,y,continuity=1, non_decreasing=True).derivative(), 
+           [min(x), max(x)], dash="dash", color=p.color(p.color_num,alpha=.5), group='1')
 
 f = monotone_cubic_spline(x,y)
 p.add_func("monotone c1", f, [min(x), max(x)], group='1m')
 p.add_func("monotone c1 d1", f.derivative(), [min(x), max(x)], 
            dash="dash", color=p.color(p.color_num,alpha=.5), group='1m')
 
-p.add_func("continuity 2", fit(x,y,continuity=2), [min(x), max(x)], group='2')
-p.add_func("c2 d1", fit(x,y,continuity=2).derivative(), [min(x), max(x)], 
-           dash="dash", color=p.color(p.color_num,alpha=.5), group='2')
+p.add_func("continuity 2", fit(x,y,continuity=2, non_decreasing=True), 
+           [min(x), max(x)], group='2')
+p.add_func("c2 d1", fit(x,y,continuity=2, non_decreasing=True).derivative(), 
+           [min(x), max(x)], dash="dash", color=p.color(p.color_num,alpha=.5), group='2')
 
 f = monotone_quintic_spline(x,y, fix_previous=False)
 p.add_func("monotone c2 (no fix)", f, [min(x), max(x)], group='2m', color=p.color(6))
 p.add_func("monotone c2d1 (no fix)", f.derivative(), [min(x), max(x)], 
            dash="dash", color=p.color(6,alpha=.5), group='2m')
 
+print("Making full working spline..")
 f = monotone_quintic_spline(x,y)
+print("done.")
 p.add_func("monotone c2", f, [min(x), max(x)], group='2mf', color=p.color(7))
 p.add_func("monotone c2d1", f.derivative(), [min(x), max(x)], 
            dash="dash", color=p.color(7,alpha=.5), group='2mf')

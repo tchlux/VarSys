@@ -285,13 +285,22 @@ def polynomial_piece(left, right, interval=(0,1)):
 # Given data points "x" and data values "y", construct a monotone
 # interpolating spline over the given points with specified level of
 # continuity using the Newton divided difference method.
-def fit(x, y, continuity=0):
+#  
+# x: A strictly increasing sequences of numbers.
+# y: The function values associated with each point.
+# 
+# continuity:
+#   The level of continuity desired in the interpolating function.
+# 
+# fill_kwargs:
+#   Any keyword arguments for the `fill` function.
+def fit(x, y, continuity=0, **fill_kwargs):
     knots = list(x)
     values = [[v] for v in y]
     # Construct further derivatives and refine the approximation
     # ensuring monotonicity in the process.
     for i in range(1,continuity+1):
-        deriv = fill_derivative(knots, [v[-1] for v in values])
+        deriv = fill_derivative(knots, [v[-1] for v in values], **fill_kwargs)
         for v,d in zip(values,deriv): v.append(d)
     # Return the interpolating spline.
     return Spline(knots, values)
@@ -311,7 +320,7 @@ def fit(x, y, continuity=0):
 #   (quad)   slope of quadratic interpolant over three point window.
 #   (manual) an (n-2)-tuple provides locked-in values for derivatives.
 # 
-def fill_derivative(x, y, ends=1, mids=1):
+def fill_derivative(x, y, ends=1, mids=1, non_decreasing=False, non_increasing=False):
     # Initialize the derivatives at all points to be 0.
     deriv = [0] * len(x)
     # Set the endpoints according to desired method.
