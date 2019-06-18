@@ -59,10 +59,43 @@ class Spline:
         # Create the polynomial functions for all the pieces.
         self._functions = []
         for i in range(len(knots)-1):
-            self._functions.append(
-                polynomial_piece(self.values[i], self.values[i+1],
-                                 (self.knots[i], self.knots[i+1]))
-            )
+            v0, v1 = self.values[i], self.values[i+1]
+            k0, k1 = self.knots[i], self.knots[i+1]
+            # Make the polynomial over a range starting a 0 to
+            # increase stability of the resulting piece.
+            f = polynomial_piece(v0, v1, (k0, k1))
+            # Make sure all the function values match.
+            for i in range(len(v0)):
+                try: assert( abs(f.derivative(i)(k0) - v0[i]) < 2**(-26) )
+                except:
+                    print("")
+                    print("-"*70)
+                    print("k0, k1: ",k0, k1)
+                    print("v0:     ",v0)
+                    print("v1:     ",v1)
+                    print(f"f.derivative({i})({k0}): ",f.derivative(i)(k0))
+                    print(f"f.derivative({i})({k1}): ",f.derivative(i)(k1))
+                    print("f: ",f)
+                    print("-"*70)
+                    print("")
+                    f = polynomial_piece(v0, v1, (k0, k1))
+                    raise(Exception("The generated function is unstable."))
+            for i in range(len(v1)):
+                try: assert( abs(f.derivative(i)(k1) - v1[i]) < 2**(-26) )
+                except:
+                    print()
+                    print('-'*70)
+                    print("k0, k1: ",k0, k1)
+                    print("v0:     ",v0)
+                    print("v1:     ",v1)
+                    print(f"f.derivative({i})({k0}): ",f.derivative(i)(k0))
+                    print(f"f.derivative({i})({k1}): ",f.derivative(i)(k1))
+                    print("f: ",f)
+                    print('-'*70)
+                    print()
+                    raise(Exception("The generated function is unstable."))
+            # Store the function (assuming it's correct).
+            self._functions.append( f )
 
     # Evaluate this Spline at a given x coordinate.
     def __call__(self, x):
@@ -94,7 +127,7 @@ class Spline:
 
     # Produce a string description of this spline.
     def __str__(self):
-        s = "Spline:\n"
+        s = "Spline: (all polynomial pieces are shifted to start at 0)\n"
         s += f" [-inf, {self.knots[1]}]  =  "
         s += str(self._functions[0]) + "\n"
         for i in range(1,len(self.knots)-2):
@@ -112,6 +145,9 @@ class Spline:
 #    Given coefficients (or optionally a "NewtonPolynomial")
 #    initialize this Monomial representation of a polynomial function.
 class Polynomial:
+    # Store a shift and scale (for numerical stabile evaluation).
+    _shift = None
+    _scale = None
     # Initialize internal storage for this Newton Polynomial.
     _coefficients = None
     # Protect the "coefficients" of this class with a getter and
@@ -126,18 +162,21 @@ class Polynomial:
     @coefs.setter
     def coefs(self, coefs): self._coefficients = list(coefs)
 
-    def __init__(self, coefficients):
+    def __init__(self, coefficients, shift=0, scale=1):
         # If the user initialized this Polynomial with a Newton
         # Polynomial, then extract the points and coefficients.
         if (type(coefficients) == NewtonPolynomial):
             coefficients = to_monomial(coefficients.coefficients,
                                        coefficients.points)
         self.coefficients = coefficients
+        self._shift = shift
+        self._scale = scale
 
     # Evaluate this Polynomial at a point "x" in a numerically stable way.
     def __call__(self, x):
         if (len(self.coefficients) == 0): return 0
         total = self.coefficients[0]
+        x = (x - self._shift) / self._scale
         for d in range(1,len(self.coefficients)):
             total = self.coefficients[d] + x * total
         return total
@@ -146,8 +185,9 @@ class Polynomial:
     def derivative(self, d=1):
         if (d == 0):  return self
         elif (d > 1): return self.derivative().derivative(d-1)
-        else:         return Polynomial([c*i for (c,i) in zip(
-                self.coefficients, range(len(self.coefficients)-1,0,-1))])
+        else:         return Polynomial([c*i/self._scale for (c,i) in zip(
+                self.coefficients, range(len(self.coefficients)-1,0,-1))],
+                                        shift=self._shift, scale=self._scale)
 
     # Construct a string representation of this Polynomial.
     def __str__(self):
@@ -159,7 +199,12 @@ class Polynomial:
             else:   x = f"x^{len(self.coefficients)-1-i}"
             s += f"{self.coefficients[i]} {x}  +  "
         # Remove the trailing 
-        return s.rstrip(" +")
+        s = s.rstrip(" +")
+        # Add a normalization condition if appropriate.
+        if ((self._shift != 0) or (self._scale != 1)):
+            s += f"  [normalized by (x - {self._shift}) / {self._scale}]"
+        # Return the final string.
+        return s
 
 # Extend the standard Polymomial class to hold Newton polynomials with
 # points in addition to the coefficients.
@@ -238,10 +283,19 @@ def polynomial(x, y):
 # pair of tuples, return the lowest order polynomial necessary to
 # exactly match those values and derivatives at interval[0] on the left
 # and interval[1] on the right ("interval" is optional, default [0,1]).
+# Construct the polynomial by shifting and scaling the the interval to
+# [0,1] for numerical stability.
 def polynomial_piece(left, right, interval=(0,1)):
     # Make sure both are lists.
     left  = list(left)
     right = list(right)
+    # Compute the renormalization values.
+    shift = interval[0]
+    scale = interval[1] - interval[0]
+    interval = (0,1)
+    # Rescale all of the derivatives appropriately.
+    for i in range(1, len(left)):  left[i]  *= scale**i
+    for i in range(1, len(right)): right[i] *= scale**i
     # Fill values by matching them on both sides of interval (reducing order).
     for i in range(len(left) - len(right)):
         right.append( left[len(right)] )
@@ -280,7 +334,7 @@ def polynomial_piece(left, right, interval=(0,1)):
     points = [interval[1]]*len(left) + [interval[0]]*len(left)
     coefs = list(reversed(coefs))
     # Return the polynomial function.
-    return Polynomial(to_monomial(coefs, points))
+    return Polynomial(to_monomial(coefs, points), shift=shift, scale=scale)
 
 # Given data points "x" and data values "y", construct a monotone
 # interpolating spline over the given points with specified level of
@@ -294,16 +348,50 @@ def polynomial_piece(left, right, interval=(0,1)):
 # 
 # fill_kwargs:
 #   Any keyword arguments for the `fill` function.
-def fit(x, y, continuity=0, **fill_kwargs):
+def fit(x, y, continuity=0, non_decreasing=False,
+        non_increasing=False, **fill_kwargs):
     knots = list(x)
     values = [[v] for v in y]
     # Construct further derivatives and refine the approximation
     # ensuring monotonicity in the process.
     for i in range(1,continuity+1):
         deriv = fill_derivative(knots, [v[-1] for v in values], **fill_kwargs)
+        # Adjust for monotonicity conditions if appropriate.
+        if (i == 1) and non_increasing: deriv = [min(0,d) for d in deriv]
+        if (i == 1) and non_decreasing: deriv = [max(0,d) for d in deriv]
+        # Append all derivative values.
         for v,d in zip(values,deriv): v.append(d)
+    f = Spline(knots, values)
+    # Verify the correctness of the inteprolant.
+    for d in range(continuity):
+        df = f.derivative(d)
+        for (k,v) in zip(knots,values):
+            try: assert(abs(df(k) - v[d]) < 2**(-26))
+            except:
+                print()
+                print('-'*70)
+                print("Knots and values:")
+                for (k,v) in zip(knots, values):
+                    print(f"{k:6.2f}  {v}")
+                print()
+                print("f (spline):")
+                print(f)
+                print()
+                print(f"{'d'*d}f (spline after {d} derivative{'s' if d != 1 else ''}):")
+                print(df)
+                print()
+                s = "d"*d + f"f({k})"
+                print(f"Expected {s} == {v[d]}")
+                print(f"  got    {len(s)*' '} == {df(k)}")
+                print()
+                p = polynomial_piece(values[-2], values[-1], (knots[-2],knots[-1]))
+                print("p: ",p)
+                print("p.derivative(d)(k): ",p.derivative(d)(k))
+                print('-'*70)
+                print()
+                raise(Exception("The constructed spline does not work."))
     # Return the interpolating spline.
-    return Spline(knots, values)
+    return f
 
 # Compute all derivatives between points to be reasonable values
 # using either a linear or a quadratic fit over adjacent points.
@@ -320,7 +408,7 @@ def fit(x, y, continuity=0, **fill_kwargs):
 #   (quad)   slope of quadratic interpolant over three point window.
 #   (manual) an (n-2)-tuple provides locked-in values for derivatives.
 # 
-def fill_derivative(x, y, ends=1, mids=1, non_decreasing=False, non_increasing=False):
+def fill_derivative(x, y, ends=1, mids=1):
     # Initialize the derivatives at all points to be 0.
     deriv = [0] * len(x)
     # Set the endpoints according to desired method.
@@ -335,13 +423,9 @@ def fill_derivative(x, y, ends=1, mids=1, non_decreasing=False, non_increasing=F
         # use the slope of the quadratic as the estimate for the slope.
         a,b,c = solve_quadratic(x[:3], y[:3])
         deriv[0] = 2*a*x[0] + b
-        if non_decreasing:   deriv[0] = max(0, deriv[0])
-        elif non_increasing: deriv[0] = min(0, deriv[0])
         # Do the same for the right endpoint.
         a,b,c = solve_quadratic(x[-3:], y[-3:])
         deriv[-1] = 2*a*x[-1] + b
-        if non_decreasing:   deriv[-1] = max(0, deriv[-1])
-        elif non_increasing: deriv[-1] = min(0, deriv[-1])
     # If the ends were manually specified..
     elif (len(ends) == 2):
         deriv[0], deriv[-1] = ends
@@ -351,19 +435,13 @@ def fill_derivative(x, y, ends=1, mids=1, non_decreasing=False, non_increasing=F
     if (mids == 0): pass
     elif (mids == 1):
         for i in range(1, len(x)-1):
-            secant_slope = (y[i+1] - y[i-1]) / (x[i+1] - x[i-1])
-            left_slope = (y[i] - y[i-1]) / (x[i] - x[i-1])
-            right_slope = (y[i+1] - y[i]) / (x[i+1] - x[i])
-            # Only use this slope as long as both slopes are nonzero.
-            if (left_slope != 0) and (right_slope != 0): deriv[i] = secant_slope
+            deriv[i] = (y[i+1] - y[i-1]) / (x[i+1] - x[i-1])
     elif (mids == 2):
         for i in range(1, len(x)-1):
             # Compute the quadratic fit of the three points and use
             # its slope at x[i] to estimate the derivative at x[i].
             a, b, c = solve_quadratic(x[i-1:i+1+1], y[i-1:i+1+1])
-            slope = 2*a*x[i] + b
-            # Only use this slope as long as both slopes are nonzero.
-            if (y[i-1] != y[i]) and (y[i] != y[i+1]): deriv[i] = slope
+            deriv[i] = 2*a*x[i] + b
     elif (len(mids) == len(deriv)-2):
         deriv[1:-1] = mids
     else:
@@ -392,21 +470,21 @@ def _test_Polynomial():
     assert(str(f) == "3 x^2  +  1")
     f = Polynomial([3,2,1])
     assert(str(f) == "3 x^2  +  2 x  +  1")
-    assert(str(f.derivative()) == "6 x  +  2")
-    assert(str(f.derivative(2)) == "6")
+    assert(str(f.derivative()) == "6.0 x  +  2.0")
+    assert(str(f.derivative(2)) == "6.0")
     assert(str(f.derivative(3)) == "")
     assert(str(f.derivative(4)) == "")
     assert(f.derivative(3)(10) == 0)
     f = Polynomial(NewtonPolynomial([3,2,1],[0,0,0]))
     assert(str(f) == "3 x^2  +  2 x  +  1")
-    assert(str(f.derivative()) == "6 x  +  2")
-    assert(str(f.derivative(2)) == "6")
+    assert(str(f.derivative()) == "6.0 x  +  2.0")
+    assert(str(f.derivative(2)) == "6.0")
     assert(str(f.derivative(3)) == "")
     assert(str(f.derivative(4)) == "")
     assert(f.derivative(3)(5) == 0)
     f = Polynomial(to_monomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1]))
     assert(str(f) == "-1 x^5  +  9 x^4  +  6 x^3  +  -22 x^2  +  11 x  +  -3")
-    assert(str(f.derivative()) == "-5 x^4  +  36 x^3  +  18 x^2  +  -44 x  +  11")
+    assert(str(f.derivative()) == "-5.0 x^4  +  36.0 x^3  +  18.0 x^2  +  -44.0 x  +  11.0")
 
 # Test the Polynomial class for basic operation.
 def _test_NewtonPolynomial():
@@ -451,23 +529,25 @@ def _test_polynomial_piece(plot=False):
         ([0,1,10], [0,-1,-10]),
         ([-2,2,10,6], [0,0,20,-6]),
     ]
+    interval = (1,3)
     # Plot a bunch of sample functions.
     for (left, right) in left_rights:
-        f = polynomial_piece( left, right )
+        f = polynomial_piece( left, right, interval=interval )
         exact_coefs = list(map(round,f.coefs))[::-1]
-        left_evals = [f(0)]
-        right_evals = [f(1)]
+        left_evals = [f(interval[0])]
+        right_evals = [f(interval[1])]
         for i in range(1,len(left)):
             df = f.derivative(i)
-            left_evals.append( df(0) )
-            right_evals.append( df(1) )
+            left_evals.append( df(interval[0]) )
+            right_evals.append( df(interval[1]) )
         # TODO: Print out an error if the assert statement fails.
         assert(0 == sum(abs(true - app) for (true, app) in zip(left,left_evals)))
         assert(0 == sum(abs(true - app) for (true, app) in zip(right,right_evals)))
         # Create a plot of the functions if a demo is desired.
-        if plot: p.add_func(f"{left}  {right}", f, [-.1, 1.1],
+        if plot: p.add_func(f"{left}  {right}", f, [interval[0]-.1, interval[1]+.1],
                             )#mode="markers", marker_size=2)
     if plot: p.show(file_name="piecewise_polynomial.html")
+
 
 # Test the Spline class for basic operation.
 def _test_Spline():
@@ -476,12 +556,57 @@ def _test_Spline():
     f = Spline(knots, values)
     for (k,v) in zip(knots,values):
         for d in range(len(v)):
-            assert(f.derivative(d)(k) == v[d])
+            try: assert(f.derivative(d)(k) == v[d])
+            except:
+                print()
+                print('-'*70)
+                print("      TEST CASE")
+                print("Knot:           ", k)
+                print("Derivative:     ", d)
+                print("Expected value: ", v[d])
+                print("Received value: ", f.derivative(d)(k))
+                print()
+                print(f)
+                print('-'*70)
+                raise(Exception("Failed test case."))
+
+
+# Test the "fit" function. (there is testing code built in, so this
+# test is strictly for generating a visual to verify).
+def _test_fit(plot=False):
+    x_vals = [0,.5,2,3.5,4,5.3,6]
+    # y_vals = [1,2,-1,3,1,4,3]
+    y_vals = [1,2,2.2,3,3.5,4,4]
+    # Execute with different operational modes, (tests happen internally).
+    kwargs = dict(non_decreasing=True)
+    f = fit(x_vals, y_vals, continuity=2, mids=0, ends=0, **kwargs)
+    f = fit(x_vals, y_vals, continuity=2, mids=1, ends=1, **kwargs)
+    f = fit(x_vals, y_vals, continuity=2, mids=2, ends=2, **kwargs)
+    if plot:
+        from util.plot import Plot
+        plot_range = [min(x_vals)-.1, max(x_vals)+.1]
+        p = Plot()
+        p.add("Points", x_vals, y_vals)
+        f = fit(x_vals, y_vals, continuity=2, mids=0, ends=0, **kwargs)
+        p.add_func("f (mids=0)", f, plot_range)
+        p.add_func("f deriv (m0)", f.derivative(1), plot_range, dash="dash")
+        p.add_func("f dd (m0)", f.derivative(2), plot_range, dash="dot")
+        f = fit(x_vals, y_vals, continuity=2, mids=1, ends=1, **kwargs)
+        p.add_func("f (mids=1)", f, plot_range)
+        p.add_func("f deriv (m1)", f.derivative(1), plot_range, dash="dash")
+        p.add_func("f dd (m1)", f.derivative(2), plot_range, dash="dot")
+        f = fit(x_vals, y_vals, continuity=2, mids=2, ends=2, **kwargs)
+        p.add_func("f (mids=2)", f, plot_range)
+        p.add_func("f deriv (m2)", f.derivative(1), plot_range, dash="dash")
+        p.add_func("f dd (m2)", f.derivative(2), plot_range, dash="dot")
+        p.show()
+
 
 if __name__ == "__main__":
     # Run the tests on this file.
     _test_Polynomial()
     _test_NewtonPolynomial()
     _test_polynomial()
-    _test_polynomial_piece()
+    _test_polynomial_piece(plot=False)
     _test_Spline()
+    _test_fit(plot=False)
