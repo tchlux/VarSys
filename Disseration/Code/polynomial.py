@@ -64,36 +64,6 @@ class Spline:
             # Make the polynomial over a range starting a 0 to
             # increase stability of the resulting piece.
             f = polynomial_piece(v0, v1, (k0, k1))
-            # Make sure all the function values match.
-            for i in range(len(v0)):
-                try: assert( abs(f.derivative(i)(k0) - v0[i]) < 2**(-26) )
-                except:
-                    print("")
-                    print("-"*70)
-                    print("k0, k1: ",k0, k1)
-                    print("v0:     ",v0)
-                    print("v1:     ",v1)
-                    print(f"f.derivative({i})({k0}): ",f.derivative(i)(k0))
-                    print(f"f.derivative({i})({k1}): ",f.derivative(i)(k1))
-                    print("f: ",f)
-                    print("-"*70)
-                    print("")
-                    f = polynomial_piece(v0, v1, (k0, k1))
-                    raise(Exception("The generated function is unstable."))
-            for i in range(len(v1)):
-                try: assert( abs(f.derivative(i)(k1) - v1[i]) < 2**(-26) )
-                except:
-                    print()
-                    print('-'*70)
-                    print("k0, k1: ",k0, k1)
-                    print("v0:     ",v0)
-                    print("v1:     ",v1)
-                    print(f"f.derivative({i})({k0}): ",f.derivative(i)(k0))
-                    print(f"f.derivative({i})({k1}): ",f.derivative(i)(k1))
-                    print("f: ",f)
-                    print('-'*70)
-                    print()
-                    raise(Exception("The generated function is unstable."))
             # Store the function (assuming it's correct).
             self._functions.append( f )
 
@@ -139,15 +109,12 @@ class Spline:
 
 # A generic Polynomial class that stores coefficients in monomial
 # form. Provides numerically stable evaluation, derivative, and string
-# operations for convenience.
+# operations for convenience. Coefficients should go highest to lowest order.
 # 
 # Polynomial(coefficients):
 #    Given coefficients (or optionally a "NewtonPolynomial")
 #    initialize this Monomial representation of a polynomial function.
 class Polynomial:
-    # Store a shift and scale (for numerical stabile evaluation).
-    _shift = None
-    _scale = None
     # Initialize internal storage for this Newton Polynomial.
     _coefficients = None
     # Protect the "coefficients" of this class with a getter and
@@ -162,21 +129,18 @@ class Polynomial:
     @coefs.setter
     def coefs(self, coefs): self._coefficients = list(coefs)
 
-    def __init__(self, coefficients, shift=0, scale=1):
+    def __init__(self, coefficients):
         # If the user initialized this Polynomial with a Newton
         # Polynomial, then extract the points and coefficients.
         if (type(coefficients) == NewtonPolynomial):
             coefficients = to_monomial(coefficients.coefficients,
                                        coefficients.points)
         self.coefficients = coefficients
-        self._shift = shift
-        self._scale = scale
 
     # Evaluate this Polynomial at a point "x" in a numerically stable way.
     def __call__(self, x):
         if (len(self.coefficients) == 0): return 0
         total = self.coefficients[0]
-        x = (x - self._shift) / self._scale
         for d in range(1,len(self.coefficients)):
             total = self.coefficients[d] + x * total
         return total
@@ -185,9 +149,8 @@ class Polynomial:
     def derivative(self, d=1):
         if (d == 0):  return self
         elif (d > 1): return self.derivative().derivative(d-1)
-        else:         return Polynomial([c*i/self._scale for (c,i) in zip(
-                self.coefficients, range(len(self.coefficients)-1,0,-1))],
-                                        shift=self._shift, scale=self._scale)
+        else:         return Polynomial([c*i for (c,i) in zip(
+                self.coefficients, range(len(self.coefficients)-1,0,-1))])
 
     # Construct a string representation of this Polynomial.
     def __str__(self):
@@ -200,9 +163,6 @@ class Polynomial:
             s += f"{self.coefficients[i]} {x}  +  "
         # Remove the trailing 
         s = s.rstrip(" +")
-        # Add a normalization condition if appropriate.
-        if ((self._shift != 0) or (self._scale != 1)):
-            s += f"  [normalized by (x - {self._shift}) / {self._scale}]"
         # Return the final string.
         return s
 
@@ -283,19 +243,18 @@ def polynomial(x, y):
 # pair of tuples, return the lowest order polynomial necessary to
 # exactly match those values and derivatives at interval[0] on the left
 # and interval[1] on the right ("interval" is optional, default [0,1]).
-# Construct the polynomial by shifting and scaling the the interval to
-# [0,1] for numerical stability.
+# This function uses a rational number system to ensure no precision
+# is lost in the process of creating an approximation.
 def polynomial_piece(left, right, interval=(0,1)):
+    from fraction import Fraction
+    # Store the unscaled version for stability checks afterwards.
+    v0, v1 = left,  right
     # Make sure both are lists.
-    left  = list(left)
-    right = list(right)
+    left  = [Fraction(v) for v in left]
+    right = [Fraction(v) for v in right]
     # Compute the renormalization values.
-    shift = interval[0]
-    scale = interval[1] - interval[0]
-    interval = (0,1)
-    # Rescale all of the derivatives appropriately.
-    for i in range(1, len(left)):  left[i]  *= scale**i
-    for i in range(1, len(right)): right[i] *= scale**i
+    interval = (Fraction(interval[0]), Fraction(interval[1]))
+
     # Fill values by matching them on both sides of interval (reducing order).
     for i in range(len(left) - len(right)):
         right.append( left[len(right)] )
@@ -327,14 +286,47 @@ def polynomial_piece(left, right, interval=(0,1)):
     row = [left[-1]] + dds + [right[-1]]
     # Build out the divided difference table.
     while (len(row) > 1):
-        row = [(row[i+1]-row[i])/interval_width for i in range(len(row)-1)]
+        row = [ (row[i+1]-row[i])/interval_width for i in range(len(row)-1) ]
         coefs.append(row[0])
-    # Reverse the coefficients to go from highest order (most nested)
-    # to lowest order, making evaluation slightly more clean.
+    # Reverse the coefficients to go from highest order (most nested) to
+    # lowest order, then convert into monomial form for easy differentiation.
     points = [interval[1]]*len(left) + [interval[0]]*len(left)
-    coefs = list(reversed(coefs))
+    coefs = to_monomial(list(reversed(coefs)), points)
+    # Finally, construct a polynomial from these coefficients.
+    f = Polynomial(coefs)
+
+    # Check for errors in this polynomial, see if it its values are correct.
+    error_tolerance = 2**(-26)
+    k0, k1 = interval
+    # Make sure all the function values match.
+    for i in range(len(v0)):
+        df = f.derivative(i)
+        bad_left  = abs(df(k0) - (v0[i] if i < len(v0) else v1[i])) >= error_tolerance
+        bad_right = abs(df(k1) - (v1[i] if i < len(v1) else v0[i])) >= error_tolerance
+        if (bad_left or bad_right):
+            print()
+            print("-"*70)
+            print("error_tolerance: ",error_tolerance)
+            print(f"Interval:              [{k0: .3f}, {k1: .3f}]")
+            print("Assigned left values: ", v0)
+            print("Assigned right values:", v1)
+            print()
+            lf = f"{'d'*i}f({k0: .3f})"
+            print(f"Expected {lf} == {v0[i]: .3f}")
+            print(f"     got {' '*len(lf)} == {df(k0): .3f}")
+            rf = f"{'d'*i}f({k1: .3f})"
+            print(f"Expected {rf} == {v1[i]: .3f}")
+            print(f"     got {' '*len(rf)} == {df(k1): .3f}")
+            print()
+            print(f"{' '*i}coefs:",coefs)
+            print(f"{' '*i}f:    ",f)
+            print(f"{'d'*i}f:    ",df)
+            print("-"*70)
+            print()
+            raise(Exception("The generated polynomial piece is numerically unstable."))
+
     # Return the polynomial function.
-    return Polynomial(to_monomial(coefs, points), shift=shift, scale=scale)
+    return f
 
 # Given data points "x" and data values "y", construct a monotone
 # interpolating spline over the given points with specified level of
@@ -361,37 +353,8 @@ def fit(x, y, continuity=0, non_decreasing=False,
         if (i == 1) and non_decreasing: deriv = [max(0,d) for d in deriv]
         # Append all derivative values.
         for v,d in zip(values,deriv): v.append(d)
-    f = Spline(knots, values)
-    # Verify the correctness of the inteprolant.
-    for d in range(continuity):
-        df = f.derivative(d)
-        for (k,v) in zip(knots,values):
-            try: assert(abs(df(k) - v[d]) < 2**(-26))
-            except:
-                print()
-                print('-'*70)
-                print("Knots and values:")
-                for (k,v) in zip(knots, values):
-                    print(f"{k:6.2f}  {v}")
-                print()
-                print("f (spline):")
-                print(f)
-                print()
-                print(f"{'d'*d}f (spline after {d} derivative{'s' if d != 1 else ''}):")
-                print(df)
-                print()
-                s = "d"*d + f"f({k})"
-                print(f"Expected {s} == {v[d]}")
-                print(f"  got    {len(s)*' '} == {df(k)}")
-                print()
-                p = polynomial_piece(values[-2], values[-1], (knots[-2],knots[-1]))
-                print("p: ",p)
-                print("p.derivative(d)(k): ",p.derivative(d)(k))
-                print('-'*70)
-                print()
-                raise(Exception("The constructed spline does not work."))
     # Return the interpolating spline.
-    return f
+    return Spline(knots, values)
 
 # Compute all derivatives between points to be reasonable values
 # using either a linear or a quadratic fit over adjacent points.
@@ -470,21 +433,21 @@ def _test_Polynomial():
     assert(str(f) == "3 x^2  +  1")
     f = Polynomial([3,2,1])
     assert(str(f) == "3 x^2  +  2 x  +  1")
-    assert(str(f.derivative()) == "6.0 x  +  2.0")
-    assert(str(f.derivative(2)) == "6.0")
+    assert(str(f.derivative()) == "6 x  +  2")
+    assert(str(f.derivative(2)) == "6")
     assert(str(f.derivative(3)) == "")
     assert(str(f.derivative(4)) == "")
     assert(f.derivative(3)(10) == 0)
     f = Polynomial(NewtonPolynomial([3,2,1],[0,0,0]))
     assert(str(f) == "3 x^2  +  2 x  +  1")
-    assert(str(f.derivative()) == "6.0 x  +  2.0")
-    assert(str(f.derivative(2)) == "6.0")
+    assert(str(f.derivative()) == "6 x  +  2")
+    assert(str(f.derivative(2)) == "6")
     assert(str(f.derivative(3)) == "")
     assert(str(f.derivative(4)) == "")
     assert(f.derivative(3)(5) == 0)
     f = Polynomial(to_monomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1]))
     assert(str(f) == "-1 x^5  +  9 x^4  +  6 x^3  +  -22 x^2  +  11 x  +  -3")
-    assert(str(f.derivative()) == "-5.0 x^4  +  36.0 x^3  +  18.0 x^2  +  -44.0 x  +  11.0")
+    assert(str(f.derivative()) == "-5 x^4  +  36 x^3  +  18 x^2  +  -44 x  +  11")
 
 # Test the Polynomial class for basic operation.
 def _test_NewtonPolynomial():

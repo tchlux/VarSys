@@ -16,16 +16,13 @@ def monotone_quintic_spline(x, y, ends=2, mids=2, fix_previous=True):
     i = 0
     print()
     while i < len(values)-1:
-        print(f"Interval {i}: {x[i]:.3f} {x[i+1]:.3f}")
         changed = nondecreasing_quintic(
             [x[i], x[i+1]], [values[i], values[i+1]])
         if fix_previous and changed and (i > 0):
             step = 0
-            print("This interval was changed..")
             # While the previous interval is also broken,
             while not is_quintic_nondecreasing(
                     [x[i-1], x[i]], [values[i-1], values[i]]):
-                print("Attempting fix on previous..")
                 step += 1
                 # Shrink the derivative value at this point.
                 values[i][1] *= .99
@@ -37,8 +34,14 @@ def monotone_quintic_spline(x, y, ends=2, mids=2, fix_previous=True):
                 nondecreasing_quintic(
                     [x[i], x[i+1]], [values[i], values[i+1]])
                 if step >= 100:
-                    print("Error for this interval..")
-                    break
+                    print()
+                    print('-'*70)
+                    print()
+                    print(f"Interval {i}: {x[i]:.3f} {x[i+1]:.3f}")
+                    print()
+                    print('-'*70)
+                    print()
+                    raise(Exception("Error for this interval.."))
         # Increment to work on the next interval.
         i += 1
     # Construct a new spline over the (updated) values for derivatives.
