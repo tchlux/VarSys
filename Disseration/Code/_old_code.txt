@@ -1,0 +1,27 @@
+    # Set A = max(0, A) and B = max(0, B).
+    if (A < 0): DX0 = A = 0
+    if (B < 0): DX1 = B = 0
+
+    # # Scale the derivative vector to make tau_1 positive.
+    # tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
+    # if (tau_1 <= 0):
+    #     # Compute the rescale factor necessary to make tau_1 0.
+    #     rescale = 24 * (3*(A+B) + 2*(A*B)**(1/2)) / (9*(A**2+B**2) + 14*(A*B))
+    #     # Rescale the derivatives
+    #     DX0 *= rescale
+    #     DX1 *= rescale
+    #     # Recompute A and B.
+    #     A = DX0 / interval_slope
+    #     B = DX1 / interval_slope
+    #     # Record the change.
+    #     changed = True
+    from util.system import Timer
+    a = Timer()
+    f = monotone_quintic_spline(x,y, fix_previous=False)
+    print("Time:",a(),"seconds")
+    exit()
+
+
+
+
+

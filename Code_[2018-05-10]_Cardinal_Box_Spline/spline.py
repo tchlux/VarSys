@@ -7,7 +7,7 @@ from util.plot import Plot
 import numpy as np
 
 def bspline(x, degree, index=0, knots=None):
-    # Initialize knots for a cardinal b-spline if none are given.
+    # Initialize knots for a cardinal B-spline if none are given [0,...,degree+1].
     if (type(knots) == type(None)): knots = list(range((degree+1)+1))
     # Body of function
     if (degree == 0):

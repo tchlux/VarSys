@@ -27,10 +27,27 @@
 #                       all 3 values. Returns coefficient 3-tuple. 
 # 
 
+from fraction import Fraction
+
+# This class-method wrapper function ensures that the class method
+# recieves a fraction and returns a "float" if a fraction was not
+# provided as input (ensuring internal methods only recieve fractions).
+def float_fallback(class_method):
+    def wrapped_method(obj, x):
+        # Return perfect precision if that was provided.
+        if (type(x) == Fraction): return class_method(obj, x)
+        # Otherwise, use exact arithmetic internally and return as float.
+        else: return float(class_method(obj, Fraction(x)))
+    return wrapped_method
+
+
 # A piecewise polynomial function that supports evaluation,
 # differentiation, and stitches together an arbitrary sequence of
 # function values (and any number of derivatives) at data points
 # (knots). Provides evaluation, derivation, and string methods.
+# This object uses EXACT ARITHMETIC internally and automatically
+# returns floats unless Fraction objects are provided as evaluation
+# points.
 # 
 # Spline(knots, values):
 #   Given a sequence of "knots" [float, ...] and an equal-length
@@ -46,11 +63,11 @@ class Spline:
     @property
     def knots(self): return self._knots
     @knots.setter
-    def knots(self, knots): self._knots = list(knots)
+    def knots(self, knots): self._knots = [Fraction(k) for k in knots]
     @property
     def values(self): return self._values
     @values.setter
-    def values(self, values): self._values = [list(v) for v in values]
+    def values(self, values): self._values = [[Fraction(v) for v in vals] for vals in values]
     
     def __init__(self, knots, values):
         assert(len(knots) == len(values))
@@ -68,6 +85,7 @@ class Spline:
             self._functions.append( f )
 
     # Evaluate this Spline at a given x coordinate.
+    @float_fallback
     def __call__(self, x):
         # If "x" was given as a vector, then iterate over that vector.
         try:    return [self(v) for v in x]
@@ -97,7 +115,7 @@ class Spline:
 
     # Produce a string description of this spline.
     def __str__(self):
-        s = "Spline: (all polynomial pieces are shifted to start at 0)\n"
+        s = "Spline:\n"
         s += f" [-inf, {self.knots[1]}]  =  "
         s += str(self._functions[0]) + "\n"
         for i in range(1,len(self.knots)-2):
@@ -246,9 +264,8 @@ def polynomial(x, y):
 # This function uses a rational number system to ensure no precision
 # is lost in the process of creating an approximation.
 def polynomial_piece(left, right, interval=(0,1)):
-    from fraction import Fraction
     # Store the unscaled version for stability checks afterwards.
-    v0, v1 = left,  right
+    v0, v1 = left, right
     # Make sure both are lists.
     left  = [Fraction(v) for v in left]
     right = [Fraction(v) for v in right]
@@ -304,6 +321,9 @@ def polynomial_piece(left, right, interval=(0,1)):
         bad_left  = abs(df(k0) - (v0[i] if i < len(v0) else v1[i])) >= error_tolerance
         bad_right = abs(df(k1) - (v1[i] if i < len(v1) else v0[i])) >= error_tolerance
         if (bad_left or bad_right):
+            # Convert knots and values to floats for printing.
+            k0, k1 = map(float, interval)
+            v0, v1 = list(map(float,left)), list(map(float,right))
             print()
             print("-"*70)
             print("error_tolerance: ",error_tolerance)
@@ -314,9 +334,11 @@ def polynomial_piece(left, right, interval=(0,1)):
             lf = f"{'d'*i}f({k0: .3f})"
             print(f"Expected {lf} == {v0[i]: .3f}")
             print(f"     got {' '*len(lf)} == {df(k0): .3f}")
+            print(f"     error {' '*(len(lf) - 2)} == {v0[i] - df(k0): .3e}")
             rf = f"{'d'*i}f({k1: .3f})"
             print(f"Expected {rf} == {v1[i]: .3f}")
             print(f"     got {' '*len(rf)} == {df(k1): .3f}")
+            print(f"     error {' '*(len(rf) - 2)} == {v1[i] - df(k1): .3e}")
             print()
             print(f"{' '*i}coefs:",coefs)
             print(f"{' '*i}f:    ",f)
@@ -342,8 +364,8 @@ def polynomial_piece(left, right, interval=(0,1)):
 #   Any keyword arguments for the `fill` function.
 def fit(x, y, continuity=0, non_decreasing=False,
         non_increasing=False, **fill_kwargs):
-    knots = list(x)
-    values = [[v] for v in y]
+    knots = [Fraction(v) for v in x]
+    values = [[Fraction(v)] for v in y]
     # Construct further derivatives and refine the approximation
     # ensuring monotonicity in the process.
     for i in range(1,continuity+1):
@@ -371,9 +393,17 @@ def fit(x, y, continuity=0, non_decreasing=False,
 #   (quad)   slope of quadratic interpolant over three point window.
 #   (manual) an (n-2)-tuple provides locked-in values for derivatives.
 # 
-def fill_derivative(x, y, ends=1, mids=1):
+# exact:
+#   `True` if exact arithmetic should be used for derivative
+#   computations, `False` otherwise.
+def fill_derivative(x, y, ends=1, mids=1, exact=True):
     # Initialize the derivatives at all points to be 0.
     deriv = [0] * len(x)
+    # Switch to an exact representaiton if specified.
+    if exact:
+        x = list(map(Fraction, x))
+        y = list(map(Fraction, y))
+        deriv = list(map(Fraction, deriv))
     # Set the endpoints according to desired method.
     if (ends == 0): pass
     # If the end slopes should be determined by a secant line..
@@ -564,6 +594,52 @@ def _test_fit(plot=False):
         p.add_func("f dd (m2)", f.derivative(2), plot_range, dash="dot")
         p.show()
 
+# Test "fill_derivative" function.
+def _test_fill_derivative():
+    x = [0,1,2,4,5,7]
+    y = [0,1,2,3,4,5]
+    # Test "0" values.
+    d00 = [0, 0, 0, 0, 0, 0]
+    assert( d00 == fill_derivative(x, y, ends=0, mids=0) )
+    # Test "1" values (linear interpolation).
+    d11 = [1, 1, Fraction(2, 3), Fraction(2, 3), Fraction(2, 3), Fraction(1, 2)]
+    assert( d11 == fill_derivative(x, y, ends=1, mids=1) )
+    # Test "2" values (quadratic interpolation).
+    d22 = [1, 1, Fraction(5, 6), Fraction(5, 6), Fraction(5, 6), Fraction(1, 6)]
+    assert( d22 == fill_derivative(x, y, ends=2, mids=2) )
+
+# Test "solve_quadratic" function.
+def _test_solve_quadratic():
+    # Case 1
+    x = [-1, 0, 1]
+    y = [1, 0 , 1]
+    a,b,c = solve_quadratic(x,y)
+    assert(a == 1)
+    assert(b == 0)
+    assert(c == 0)
+    # Case 2
+    x = [-1, 0, 1]
+    y = [-1, 0 , -1]
+    a,b,c = solve_quadratic(x,y)
+    assert(a == -1)
+    assert(b == 0)
+    assert(c == 0)
+    # Case 3
+    x = [-1, 0, 1]
+    y = [0, 0 , 2]
+    a,b,c = solve_quadratic(x,y)
+    assert(a == 1)
+    assert(b == 1)
+    assert(c == 0)
+    # Case 4
+    x = [-1, 0, 1]
+    y = [1, 1 , 3]
+    a,b,c = solve_quadratic(x,y)
+    assert(a == 1)
+    assert(b == 1)
+    assert(c == 1)
+
+
 
 if __name__ == "__main__":
     # Run the tests on this file.
@@ -573,3 +649,5 @@ if __name__ == "__main__":
     _test_polynomial_piece(plot=False)
     _test_Spline()
     _test_fit(plot=False)
+    _test_fill_derivative()
+    _test_solve_quadratic()

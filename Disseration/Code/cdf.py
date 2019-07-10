@@ -17,6 +17,7 @@ if __name__ == "__main__":
     for i in range(step):
         indices = np.arange(i,len(points),step)
         sub_points = points[indices]
+        print()
         print(f"Constructing function {i+1}..", end=" ", flush=True)
         funcs.append( monotone_quintic_spline(*(sub_points.T), mids=1, ends=0) )
         print("adding..", end=" ", flush=True)

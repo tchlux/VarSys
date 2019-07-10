@@ -4,24 +4,22 @@
 from math import gcd
 class UsageError(Exception): pass
 
-
-# This is a wrapper function that makes operators return the type
-# they are given, with the exception of excluded types.
-def _match_type(exclude=set()):
-    def wrapper(operator):
-        def wrapped_operator(primary, other):
-            # Call the standard operator if the types match.
-            if (type(other) == type(primary)):
-                return operator(primary, other)
-            # If the other type should be backwards cast, only cast to primary.
-            elif (type(other) in exclude):
-                return operator(primary, type(primary)(other))
-            # Otherwise, cast "other" to the type of "primary", call the
-            # operator, then cast the result back to the type of "other".
-            else:
-                return type(other)(operator(primary, type(primary)(other)))
-        return wrapped_operator
-    return wrapper
+# This class-operator wrapper automatially returns a `float` type if
+# the operand is neither the same type as the operator nor an `int`.
+def float_fallback(operator):
+    def wrapped_operator(primary, other):
+        # Call the standard operator if the types match.
+        if (type(other) == type(primary)):
+            return operator(primary, other)
+        # Handle integers in a special way (so that users can put ints
+        # in code without breaking fractions).
+        elif (type(other) == int):
+            return operator(primary, type(primary)(other))
+        # Otherwise, cast "other" to the type of "primary", call the
+        # operator, then cast the result back to a 'float' type.
+        else:
+            return float(operator(primary, type(primary)(other)))
+    return wrapped_operator
 
 # A fraction instance. Initialized as:
 # 
@@ -77,7 +75,7 @@ class Fraction:
         # Transfer the negativity to the numerator if possible.
         if   (numerator < 0) and (denominator < 0):
             numerator, denominator = -numerator, -denominator
-        elif (numerator > 0) and (denominator < 0):
+        elif (numerator >= 0) and (denominator < 0):
             numerator, denominator = -numerator, -denominator
         # Simplify the numerator and denomninator if appropriate.
         if reduce:
@@ -100,40 +98,40 @@ class Fraction:
     def __int__(self):   return (self.numerator // self.denominator)
 
     # Provide a represenation of this Fraction.
-    def __repr__(self): return f"{self.__class__.__name__} ({self.numerator} / {self.denominator})"
+    def __repr__(self): return f"{self.__class__.__name__}({self.numerator}, {self.denominator})"
     # Provide a string representation of this Fraction.
     def __str__(self): return f"{self.numerator} / {self.denominator}"
 
     # Add two fractions.
-    @_match_type(exclude={int})
+    @float_fallback
     def __add__(a, b):
         an, bn = a.numerator, b.numerator
         ad, bd = a.denominator, b.denominator
         return Fraction( an * bd + bn * ad,  ad * bd )
-    @_match_type(exclude={int})
+    @float_fallback
     def __radd__(b, a): return a + b
 
     #  Subtract two fractions.
-    @_match_type(exclude={int})
+    @float_fallback
     def __sub__(a, b):
         an, bn = a.numerator, b.numerator
         ad, bd = a.denominator, b.denominator
         return Fraction( an * bd - bn * ad,  ad * bd )
-    @_match_type(exclude={int})
+    @float_fallback
     def __rsub__(a, b): return -a + b
 
     # Multiply two fractions.
-    @_match_type(exclude={int})
+    @float_fallback
     def __mul__(a, b):
         return Fraction(a.numerator * b.numerator, a.denominator * b.denominator)
-    @_match_type(exclude={int})
+    @float_fallback
     def __rmul__(a, b): return a * b
 
     # Divide two fractions.
-    @_match_type(exclude={int})
+    @float_fallback
     def __truediv__(a, b):
         return Fraction(a.numerator * b.denominator, a.denominator * b.numerator)
-    @_match_type(exclude={int})
+    @float_fallback
     def __rtruediv__(b, a):
         return a / b
 
@@ -148,11 +146,11 @@ class Fraction:
         return a // b
 
     # Compute a mod b (and b mod a).
-    @_match_type(exclude={int})
+    @float_fallback
     def __mod__(a, b):
         mult = a // b
         return a - b * mult
-    @_match_type(exclude={int})
+    @float_fallback
     def __rmod__(b, a):
         return a % b
 
@@ -245,16 +243,16 @@ if __name__ == "__main__":
     print("c = Fraction(float('inf')): ",Fraction(float('inf')))
     c = Fraction(float('inf'))
     print("Fraction(-float('inf')):    ",Fraction(-float('inf')))
-    print("Fraction(10) / c:  ",Fraction(10) / c)
-    print("c / Fraction(10):  ",c / Fraction(10))
-    print("c * Fraction(100): ",c * Fraction(100))
-    print("-c:               ",-c)
+    print("10 / c:  ",Fraction(10) / c)
+    print("c / 10:  ",c / Fraction(10))
+    print("c * 100: ",c * Fraction(100))
+    print("-c:      ",-c)
     print()
 
     print("d = Fraction(1,float('inf')): ",Fraction(1,float('inf')))
     d = Fraction(1,float('inf'))
     print("Fraction(1,-float('inf')):    ",Fraction(1,-float('inf')))
-    print("Fraction(10) / d: ",Fraction(10) / d)
-    print("d / 10:           ",d / 10)
-    print("d * 100:          ",d * 100)
-    print("-d:               ",-d)
+    print("10 / d:  ",Fraction(10) / d)
+    print("d / 10:  ",d / 10)
+    print("d * 100: ",d * 100)
+    print("-d:      ",-d)
