@@ -45,9 +45,10 @@ def float_fallback(class_method):
 # differentiation, and stitches together an arbitrary sequence of
 # function values (and any number of derivatives) at data points
 # (knots). Provides evaluation, derivation, and string methods.
-# This object uses EXACT ARITHMETIC internally and automatically
-# returns floats unless Fraction objects are provided as evaluation
-# points.
+# It is recommended to use EXACT ARITHMETIC internally (which will
+# automatically return floats unless Fraction objects are provided as
+# evaluation points). Exact arithmetic is achieved by providing knots
+# and values composed of Fraction objects.
 # 
 # Spline(knots, values):
 #   Given a sequence of "knots" [float, ...] and an equal-length
@@ -63,11 +64,11 @@ class Spline:
     @property
     def knots(self): return self._knots
     @knots.setter
-    def knots(self, knots): self._knots = [Fraction(k) for k in knots]
+    def knots(self, knots): self._knots = [k for k in knots]
     @property
     def values(self): return self._values
     @values.setter
-    def values(self, values): self._values = [[Fraction(v) for v in vals] for vals in values]
+    def values(self, values): self._values = [[v for v in vals] for vals in values]
     
     def __init__(self, knots, values):
         assert(len(knots) == len(values))
@@ -251,7 +252,7 @@ def polynomial(x, y):
             slopes.append( dd )
         dd_values.append( slopes )
     # Get the divided difference (polynomial coefficients) in reverse
-    # order so that the most nested value is first.
+    # order so that the most nested value (highest order) is first.
     coefs = [row[0] for row in reversed(dd_values)]
     points = list(reversed(x))
     # Return the interpolating polynomial.
@@ -267,10 +268,8 @@ def polynomial_piece(left, right, interval=(0,1)):
     # Store the unscaled version for stability checks afterwards.
     v0, v1 = left, right
     # Make sure both are lists.
-    left  = [Fraction(v) for v in left]
-    right = [Fraction(v) for v in right]
-    # Compute the renormalization values.
-    interval = (Fraction(interval[0]), Fraction(interval[1]))
+    left  = list(left)
+    right = list(right)
 
     # Fill values by matching them on both sides of interval (reducing order).
     for i in range(len(left) - len(right)):
@@ -364,8 +363,8 @@ def polynomial_piece(left, right, interval=(0,1)):
 #   Any keyword arguments for the `fill` function.
 def fit(x, y, continuity=0, non_decreasing=False,
         non_increasing=False, **fill_kwargs):
-    knots = [Fraction(v) for v in x]
-    values = [[Fraction(v)] for v in y]
+    knots = [v for v in x]
+    values = [[v] for v in y]
     # Construct further derivatives and refine the approximation
     # ensuring monotonicity in the process.
     for i in range(1,continuity+1):
@@ -396,14 +395,9 @@ def fit(x, y, continuity=0, non_decreasing=False,
 # exact:
 #   `True` if exact arithmetic should be used for derivative
 #   computations, `False` otherwise.
-def fill_derivative(x, y, ends=1, mids=1, exact=True):
+def fill_derivative(x, y, ends=1, mids=1):
     # Initialize the derivatives at all points to be 0.
     deriv = [0] * len(x)
-    # Switch to an exact representaiton if specified.
-    if exact:
-        x = list(map(Fraction, x))
-        y = list(map(Fraction, y))
-        deriv = list(map(Fraction, deriv))
     # Set the endpoints according to desired method.
     if (ends == 0): pass
     # If the end slopes should be determined by a secant line..
@@ -525,6 +519,12 @@ def _test_polynomial_piece(plot=False):
     interval = (1,3)
     # Plot a bunch of sample functions.
     for (left, right) in left_rights:
+        name = f"{left}  {right}"
+        # Convert to exact for testing correctness.
+        left = list(map(Fraction, left))
+        right = list(map(Fraction, right))
+        interval = (Fraction(interval[0]), Fraction(interval[1]))
+        # Construct the polynomial piece.
         f = polynomial_piece( left, right, interval=interval )
         exact_coefs = list(map(round,f.coefs))[::-1]
         left_evals = [f(interval[0])]
@@ -537,7 +537,7 @@ def _test_polynomial_piece(plot=False):
         assert(0 == sum(abs(true - app) for (true, app) in zip(left,left_evals)))
         assert(0 == sum(abs(true - app) for (true, app) in zip(right,right_evals)))
         # Create a plot of the functions if a demo is desired.
-        if plot: p.add_func(f"{left}  {right}", f, [interval[0]-.1, interval[1]+.1],
+        if plot: p.add_func(name, f, [interval[0]-.1, interval[1]+.1],
                             )#mode="markers", marker_size=2)
     if plot: p.show(file_name="piecewise_polynomial.html")
 
@@ -567,9 +567,9 @@ def _test_Spline():
 # Test the "fit" function. (there is testing code built in, so this
 # test is strictly for generating a visual to verify).
 def _test_fit(plot=False):
-    x_vals = [0,.5,2,3.5,4,5.3,6]
+    x_vals = list(map(Fraction, [0,.5,2,3.5,4,5.3,6]))
     # y_vals = [1,2,-1,3,1,4,3]
-    y_vals = [1,2,2.2,3,3.5,4,4]
+    y_vals = list(map(Fraction, [1,2,2.2,3,3.5,4,4]))
     # Execute with different operational modes, (tests happen internally).
     kwargs = dict(non_decreasing=True)
     f = fit(x_vals, y_vals, continuity=2, mids=0, ends=0, **kwargs)
@@ -579,7 +579,7 @@ def _test_fit(plot=False):
         from util.plot import Plot
         plot_range = [min(x_vals)-.1, max(x_vals)+.1]
         p = Plot()
-        p.add("Points", x_vals, y_vals)
+        p.add("Points", list(map(float,x_vals)), list(map(float,y_vals)))
         f = fit(x_vals, y_vals, continuity=2, mids=0, ends=0, **kwargs)
         p.add_func("f (mids=0)", f, plot_range)
         p.add_func("f deriv (m0)", f.derivative(1), plot_range, dash="dash")
@@ -596,8 +596,8 @@ def _test_fit(plot=False):
 
 # Test "fill_derivative" function.
 def _test_fill_derivative():
-    x = [0,1,2,4,5,7]
-    y = [0,1,2,3,4,5]
+    x = list(map(Fraction, [0,1,2,4,5,7]))
+    y = list(map(Fraction, [0,1,2,3,4,5]))
     # Test "0" values.
     d00 = [0, 0, 0, 0, 0, 0]
     assert( d00 == fill_derivative(x, y, ends=0, mids=0) )

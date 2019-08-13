@@ -1,4 +1,11 @@
-# - implement the four solutions that can replace the binary search
+# - Rearrange the cubic polynomial conditions to see how they look in
+#   terms of the assigned first and second derivatives.
+# - Rewrite cubic code to modify conditions appropriately.
+# - Identify situation in which fixing one interval breaks previous.
+# - Identify if, post-fix, an interval can be the left side of ^^
+# - Guarantee that fixing an interval cannot break interval to right.
+
+
 # - identify a scaling vector that can be applied to the derivative
 #   and second derivative at one end of an interval that is guaranteed
 #   not to break monotonicity.
@@ -17,8 +24,13 @@
 from polynomial import fit
 
 # Given x and y values, construct a monotonic quintic spline fit.
-def monotone_quintic_spline(x, y, ends=2, mids=2, fix_previous=True):
+def monotone_quintic_spline(x, y, ends=2, mids=2, fix_previous=True, exact=True):
     from polynomial import Spline
+    if exact:
+        from fraction import Fraction
+        x = list(map(Fraction, x))
+        y = list(map(Fraction, y))
+    # Construct an initial fit that is twice continuous.
     f = fit(x, y, continuity=2, non_decreasing=True, ends=ends, mids=mids)
     values = f.values
     # Make all pieces monotone.
@@ -26,31 +38,48 @@ def monotone_quintic_spline(x, y, ends=2, mids=2, fix_previous=True):
     while i < len(values)-1:
         changed = monotone_quintic(
             [x[i], x[i+1]], [values[i], values[i+1]])
+        # Maintain exactness if necessary!
+        if exact:
+            values[i][:] = map(Fraction, values[i])
+            values[i+1][:] = map(Fraction, values[i+1])
+
         if fix_previous and changed and (i > 0):
             step = 0
-            changed = False
+            changed = True
+
             # While the previous interval is also broken,
-            while not changed:
+            while changed:
                 step += 1
-                # Shrink the derivative value at this point.
-                values[i][1] *= .99
+                # Shrink the derivative value at the point between intervals.
+                values[i][1] *= 99
+                values[i][1] /= 100
 
                 # Fix the previous interval.
                 changed = monotone_quintic(
                     [x[i-1], x[i]], [values[i-1], values[i]])
+                if exact:
+                    values[i][:] = map(Fraction, values[i-1])
+                    values[i+1][:] = map(Fraction, values[i])
                 # Fix this interval again.
                 changed = monotone_quintic(
                     [x[i], x[i+1]], [values[i], values[i+1]]) or changed
-                if step >= 1000:
+                if exact:
+                    values[i][:] = map(Fraction, values[i])
+                    values[i+1][:] = map(Fraction, values[i+1])
+                if step >= 100:
                     print()
                     print('-'*70)
                     print()
-                    print(f"Interval {i}: {x[i]:.3f} {x[i+1]:.3f}")
+                    print(f"Bad interval {i}: ({x[i]:.3f}, {x[i+1]:.3f})")
+                    print(f"  {x[i-1]}: {values[i-1]}")
+                    print(f"  {x[i]}: {values[i]}")
+                    print(f"  {x[i+1]}: {values[i+1]}")
                     print()
                     print('-'*70)
                     print()
                     raise(Exception("Error for this interval.."))
-            print("Steps:", step)
+            print(f"Point {i+1} ({step-1} corrections)")
+            print()
         # Increment to work on the next interval.
         i += 1
 
@@ -101,44 +130,35 @@ def monotone_quintic(x, y):
     function_change = X1 - X0
     interval_width = U1 - U0
     interval_slope = function_change / interval_width
+    # Handle an unchanging interval.
+    if (interval_slope == 0):
+        changed = any(v != 0 for v in (DX0, DX1, DDX0, DDX1))
+        y[0][:] = X0, 0, 0
+        y[1][:] = X1, 0, 0
+        print("flat function..")
+        return changed
     sign = (-1) ** int(function_change < 0)
     # Set DX0 and DX1 to be the median of these three choices.
     if not (0 <= sign*DX0 <= sign*14*interval_slope):
-        DX0 = sign * (sorted([0, sign*DX0, sign*14*interval_slope])[1])
-        changed = True
+        new_val = sign * (sorted([0, sign*DX0, sign*14*interval_slope])[1])
+        changed = (new_val != DX0)
+        if changed: DX0 = new_val
     if not (0 <= sign*DX1 <= sign*14*interval_slope):
-        DX1 = sign * (sorted([0, sign*DX1, sign*14*interval_slope])[1])
-        changed = True
+        new_val = sign * (sorted([0, sign*DX1, sign*14*interval_slope])[1])
+        changed = (new_val != DX1)
+        if changed: DX1 = new_val
     # Compute repeatedly used values "A" (left ratio) and "B" (right ratio).
     A = DX0 / interval_slope
     B = DX1 / interval_slope
     assert(A >= 0)
     assert(B >= 0)
     # Use a monotone cubic over this region if AB = 0.
-    if (A*B <= 0):
-        y[0][:] = X0, DX0, DDX0
-        y[1][:] = X1, DX1, DDX1
-        return monotone_cubic(x, y) or True
-
-    # # Scale the derivative vector to make tau_1 positive.
-    # tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
-    # if (tau_1 <= 0):
-    #     # Compute the rescale factor necessary to make tau_1 0.
-    #     rescale = 24 * (3*(A+B) + 2*(A*B)**(1/2)) / (9*(A**2+B**2) + 14*(A*B))
-    #     rescale -= 2**(-26) * rescale
-    #     # Rescale the derivatives
-    #     DX0 *= rescale
-    #     DX1 *= rescale
-    #     # Recompute A and B.
-    #     A = DX0 / interval_slope
-    #     B = DX1 / interval_slope
-    #     # Record the change.
-    #     changed = True
+    if (A*B <= 0): return monotone_cubic(x, y) or True
 
     # Clip derivative values that are too large (to ensure that
     # shrinking the derivative vectors on either end will not break
     # monotonicity). (clipping at 6 alone is enough, with 8 needs more)
-    mult = 6 / max(A, B)
+    mult = (6 / max(A, B))
     if (mult < 1):
         DX0 *= mult
         DX1 *= mult
@@ -147,10 +167,10 @@ def monotone_quintic(x, y):
         changed = True
     # Make sure that the first monotonicity condition is met.
     tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
-    try: assert(tau_1 > 0)
+    try: assert(tau_1 >= 0)
     except:
-        class BadTau(Exception): pass
-        raise(NonMonotoneTau(f"Bad Tau 1 value: {tau_1}"))
+        class NonMonotoneTau(Exception): pass
+        raise(NonMonotoneTau(f"Bad Tau 1 value: {tau_1}\n A: {A}\n B: {B}"))
 
     # Compute DDX0 and DDX1 that satisfy monotonicity by scaling (C,D)
     # down until montonicity is achieved (using binary search).
@@ -166,30 +186,7 @@ def monotone_quintic(x, y):
         b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
         if b <= 6: bound = - (b + 2) / 2
         else:      bound = -2 * (b - 2)**(1/2)
-        return (a > bound) and (g > bound)
-    def print_abg():
-        DDX0 = ratio * original_DDX0 + (1-ratio) * target_DDX0
-        DDX1 = ratio * original_DDX1 + (1-ratio) * target_DDX1
-        a = alpha_constant + alpha_multiplier * DDX1
-        g = gamma_constant + gamma_multiplier * DDX0
-        b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
-        print()
-        print(f"ratio = {ratio}")
-        print(f"DDX0 = {DDX0}")
-        print(f"DDX1 = {DDX1}")
-        print(f" alpha = {a}")
-        print(f" gamma = {g}")
-        print(f" beta  = {b}")
-        if b <= 6:
-            bound = - (b + 2) / 2
-            print("  SMALL, b <= 6")
-        else:
-            bound = -2 * (b - 2)**(1/2)
-            print("  BIG,   b > 6")
-        print(f"  bound = {bound}")
-        print(f"  alpha > bound  ->  {a > bound}")
-        print(f"  gamma > bound  ->  {g > bound}")
-        print()
+        return (a+2**(-26) > bound) and (g+2**(-26) > bound)
 
     # Move the second derivative towards a working value until
     # monotonicity is achieved.
@@ -201,93 +198,24 @@ def monotone_quintic(x, y):
     if not is_monotone():
         accuracy = 2**(-26) # = SQRT(EPSILON( 0.0_REAL64 ))
         original_DDX0, original_DDX1 = DDX0, DDX1
-
-        print("-" * 70)
-        print()
-        print("DDX0:  ",float(original_DDX0))
-        print("DDX1:  ",float(original_DDX1))
-        print()
-        print("DDX TARGET")
-
-        DDX0 = target_DDX0
-        DDX1 = target_DDX1
-        ratio = 0
-        print_abg()
-
-        from math import sqrt
-        # CASE 1:  (alpha == bound) and (beta <= 6)
-        try:
-            print("CASE 1   (alpha == bound) and  (beta <= 6)")
-            ratio = (3*B**0.25*DX0*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 4*(original_DDX0 - original_DDX1)*(X0 - X1)) + 2*sqrt(A)*B**0.75*DX0*(9*U0**2 - 18*U0*U1 + 9*U1**2 + 8*X0 - 8*X1)*(X0 - X1) - 12*A**1.75*sqrt(B)*(U0 - U1)*(X0 - X1)**2 - 4*A**1.25*(U0 - U1)*(X0 - X1)*(7*DX1*(U0 - U1) + 4*original_DDX1*(-X0 + X1)))/(3*B**0.25*DX0*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*X0 - 32*X1) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*X0 - 32*X1) - 80*(X0 - X1)**2) + 18*sqrt(A)*B**0.75*DX0*(U0 - U1)**2*(X0 - X1) - 4*A**1.25*DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*(X0 - X1))*(X0 - X1) - 12*A**1.75*sqrt(B)*(U0 - U1)*(X0 - X1)**2)
-            print_abg()
-        except:
-            print()
-            print("Failed..")
-            print()
-        # CASE 2:  (gamma == bound) and (beta <= 6)
-        try:
-            print("CASE 2   (gamma == bound) and  (beta <= 6)")
-            ratio = (21*DX0**2*(U0 - U1)**3 + 21*DX0*DX1*(U0 - U1)**3 + 2*DX0*(-14*A**0.75*B**0.25*(U0 - U1)**2 + 6*(original_DDX0 - original_DDX1)*(U0 - U1)**2 + sqrt(A)*sqrt(B)*(9*U0**2 - 18*U0*U1 + 9*U1**2 + 8*X0 - 8*X1))*(X0 - X1) - 4*A**0.75*B**0.25*(3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(U0 - U1)*(X0 - X1)**2)/(3*DX0**2*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 3*DX0*DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) - 2*DX0*(-9*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 2*A**0.75*B**0.25*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 120*(X0 - X1))*(X0 - X1) - 12*A**1.25*B**0.75*(U0 - U1)*(X0 - X1)**2)
-            print_abg()
-        except:
-            print()
-            print("Failed..")
-            print()
-        # CASE 3:  (alpha == bound) and (beta > 6)
-        try:
-            print("CASE 3a  (alpha == bound) and (beta > 6)")
-            ratio = (B**1.5*DX0**2*(X0 - X1)**2*((A**1.5*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(B**1.5*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) - 2*sqrt(2)*sqrt((3*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(A*DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*A**1.5*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**2.5*sqrt(B)*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A**2*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*B*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B**2*DX0**2*(X0 - X1)**4))))/(A**1.5*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
-            print_abg()
-        except:
-            print()
-            print("Failed..")
-            print()
-        try:
-            print("CASE 3b")
-            ratio = (B**1.5*DX0**2*(X0 - X1)**2*((A**1.5*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(B**1.5*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) + 2*sqrt(2)*sqrt((3*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(A*DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*A**1.5*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**2.5*sqrt(B)*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A**2*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*B*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B**2*DX0**2*(X0 - X1)**4))))/(A**1.5*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
-            print_abg()
-        except:
-            print()
-            print("Failed..")
-            print()
-        # CASE 4:  (gamma == bound) and (beta > 6)
-        try:
-            print("CASE 4a  (gamma == bound) and (beta > 6)")
-            ratio = (sqrt(B)*DX0**2*(X0 - X1)**2*((sqrt(A)*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(sqrt(B)*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) - 2*sqrt(2)*sqrt((3*A*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**1.5*sqrt(B)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B*DX0**2*(X0 - X1)**4))))/(sqrt(A)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
-            print_abg()
-        except:
-            print()
-            print("Failed..")
-            print()
-        try:
-            print("CASE 4b  (gamma == bound) and (beta > 6)")
-            ratio = (sqrt(B)*DX0**2*(X0 - X1)**2*((sqrt(A)*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(sqrt(B)*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) + 2*sqrt(2)*sqrt((3*A*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**1.5*sqrt(B)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B*DX0**2*(X0 - X1)**4))))/(sqrt(A)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
-            print_abg()
-        except:
-            print()
-            print("Failed..")
-            print()
-
-        print()
-
-        # low_bound,     upp_bound     = 0,    1
-        # # Continue dividing the interval in 2 to find the smallest
-        # # "upper bound" (amount target) that satisfies monotonicity.
-        # while ((upp_bound - low_bound) > accuracy):
-        #     to_target = upp_bound / 2  +  low_bound / 2
-        #     # If we found the limit of floating point numbers, break.
-        #     if ((to_target == upp_bound) or (to_target == low_bound)): break
-        #     # Recompute DDX0 and DDX1 based on the to_target.
-        #     DDX0 = (1-to_target) * original_DDX0 + to_target * target_DDX0
-        #     DDX1 = (1-to_target) * original_DDX1 + to_target * target_DDX1
-        #     # Otherwise, proceed with a binary seaarch.
-        #     if is_monotone(): upp_bound = to_target
-        #     else:             low_bound = to_target
-        # # Store the smallest amount "target" for DDX0 and DDX1 that is monotone.
-        # DDX0 = (1-upp_bound) * original_DDX0 + upp_bound * target_DDX0
-        # DDX1 = (1-upp_bound) * original_DDX1 + upp_bound * target_DDX1
-
+        low_bound,     upp_bound     = 0,    1
+        # Continue dividing the interval in 2 to find the smallest
+        # "upper bound" (amount target) that satisfies monotonicity.
+        while ((upp_bound - low_bound) > accuracy):
+            to_target = upp_bound / 2  +  low_bound / 2
+            # If we found the limit of floating point numbers, break.
+            if ((to_target == upp_bound) or (to_target == low_bound)): break
+            # Recompute DDX0 and DDX1 based on the to_target.
+            DDX0 = (1-to_target) * original_DDX0 + to_target * target_DDX0
+            DDX1 = (1-to_target) * original_DDX1 + to_target * target_DDX1
+            # Otherwise, proceed with a binary seaarch.
+            if is_monotone(): upp_bound = to_target
+            else:             low_bound = to_target
+        # Store the smallest amount "target" for DDX0 and DDX1 that is monotone.
+        DDX0 = (1-upp_bound) * original_DDX0 + upp_bound * target_DDX0
+        DDX1 = (1-upp_bound) * original_DDX1 + upp_bound * target_DDX1
         changed = True
+
         # Verify that the function is monotone (according to check function).
         try: assert(is_monotone())
         except:
@@ -308,15 +236,19 @@ def monotone_quintic(x, y):
             a = alpha_constant + alpha_multiplier * DDX1
             g = gamma_constant + gamma_multiplier * DDX0
             b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
-            print("a: ",a)
-            print("g: ",g)
-            print("b: ",b)
+            if b <= 6: bound = - (b + 2) / 2
+            else:      bound = -2 * (b - 2)**(1/2)
+            print("a:     ",a)
+            print("g:     ",g)
+            print("b:     ",b)
+            print("bound: ",bound)
             print()
             raise(Exception("Monotonicity was violated for unknown reasons."))
 
     # Update "y" and return the updated version.
     y[0][:] = X0, DX0, DDX0
     y[1][:] = X1, DX1, DDX1
+    print("quintic function..")
     return changed
 
 
@@ -325,16 +257,16 @@ if __name__ == "__main__":
     #               TEST CASES
     # 
     # 0, 4, (None)     -> Good
-    # 1, 4, (None)     -> Bad (not monotone) (now good)
-    # 0, 13, (None)    -> Bad (not monotone after first pass) (now good)
-    # 0, 30, (-3,None) -> Bad (far right still not monotone after passes) (now good)
-    # 0, 100, (-12,-7) -> Bad (fixing previous breaks second previous)
+    # 1, 4, (None)     -> Bad (not monotone) (now good) [bad first derivative conditions]
+    # 0, 13, (None)    -> Bad (not monotone after first pass) (now good) [no previous-interval fix]
+    # 0, 30, (-3,None) -> Bad (far right still not monotone after passes) (now good) [bad cubic usage]
+    # 0, 100, (-12,-7) -> Bad (fixing previous breaks second previous) (now good) [bad while loop condition]
     # 
     # --------------------------------------------------------------------
 
     SEED = 0
     NODES = 100
-    SUBSET = slice(-12,-7) # slice(None) 
+    SUBSET = slice(None) 
 
     # Generate random data to test the monotonic fit function.
     import numpy as np
@@ -350,44 +282,50 @@ if __name__ == "__main__":
     # Convert these arrays to lists.
     x, y = list(x)[SUBSET], list(y)[SUBSET]
 
+    # Convert these arrays to exact arithmetic.
+    from fraction import Fraction
+    x = list(map(Fraction, x))
+    y = list(map(Fraction, y))
+    interval = [float(min(x)), float(max(x))]
+
     # Generate a plot to see what it all looks like.
     from util.plot import Plot
     p = Plot()
-    p.add("Points", x, y)
+    p.add("Points", list(map(float, x)), list(map(float, y)))
 
     kwargs = dict(plot_points=1000)
-
+    # Continuity 0
     p.add_func("continuity 0", fit(x,y,continuity=0, non_decreasing=True),
-               [min(x), max(x)], group='0', **kwargs)
+               interval, group='0', **kwargs)
     p.add_func("c0 d1", fit(x,y,continuity=0, non_decreasing=True).derivative(),
-               [min(x), max(x)], dash="dash", color=p.color(p.color_num,alpha=.5), 
+               interval, dash="dash", color=p.color(p.color_num,alpha=.5), 
                group='0', **kwargs)
-
+    # Continuity 1
     p.add_func("continuity 1", fit(x,y,continuity=1,
                                    non_decreasing=False, ends=1, mids=0), 
-               [min(x), max(x)], group='1', **kwargs)
+               interval, group='1', **kwargs)
     p.add_func("c1 d1", fit(x,y,continuity=1, non_decreasing=True).derivative(), 
-               [min(x), max(x)], dash="dash", color=p.color(p.color_num,alpha=.5), 
+               interval, dash="dash", color=p.color(p.color_num,alpha=.5), 
                group='1', **kwargs)
-
+    # Continuity 2
     f = monotone_cubic_spline(x,y)
-    p.add_func("monotone c1", f, [min(x), max(x)], group='1m', **kwargs)
-    p.add_func("monotone c1 d1", f.derivative(), [min(x), max(x)], 
+    p.add_func("monotone c1", f, interval, group='1m', **kwargs)
+    p.add_func("monotone c1 d1", f.derivative(), interval, 
                dash="dash", color=p.color(p.color_num,alpha=.5), group='1m', **kwargs)
 
     p.add_func("continuity 2", fit(x,y,continuity=2, non_decreasing=True), 
-               [min(x), max(x)], group='2', **kwargs)
+               interval, group='2', **kwargs)
     p.add_func("c2 d1", fit(x,y,continuity=2, non_decreasing=True).derivative(), 
-               [min(x), max(x)], dash="dash", color=p.color(p.color_num,alpha=.5), group='2', **kwargs)
-
-    f = monotone_quintic_spline(x,y, fix_previous=False)
-    p.add_func("monotone c2 (no fix)", f, [min(x), max(x)], group='2m', color=p.color(6), **kwargs)
-    p.add_func("monotone c2d1 (no fix)", f.derivative(), [min(x), max(x)], 
+               interval, dash="dash", color=p.color(p.color_num,alpha=.5), group='2', **kwargs)
+    # Continuity with one-pass monotone fix.
+    f = monotone_quintic_spline(x, y, fix_previous=False)
+    p.add_func("monotone c2 (no fix)", f, interval, group='2m', color=p.color(6), **kwargs)
+    p.add_func("monotone c2d1 (no fix)", f.derivative(), interval, 
                dash="dash", color=p.color(6,alpha=.5), group='2m', **kwargs)
-
+    # Continuity with iterative monotone fix.
     f = monotone_quintic_spline(x,y)
-    p.add_func("monotone c2", f, [min(x), max(x)], group='2mf', color=p.color(7), **kwargs)
-    p.add_func("monotone c2d1", f.derivative(), [min(x), max(x)], 
+    p.add_func("monotone c2", f, interval, group='2mf', color=p.color(7), **kwargs)
+    p.add_func("monotone c2d1", f.derivative(), interval, 
                dash="dash", color=p.color(7,alpha=.5), group='2mf', **kwargs)
 
     p.show(file_name="monotone_quintic_interpolating_spline.html")
