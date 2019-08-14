@@ -1,10 +1,11 @@
-# - Rearrange the cubic polynomial conditions to see how they look in
-#   terms of the assigned first and second derivatives.
-# - Rewrite cubic code to modify conditions appropriately.
+# - Setting first and second derivatives to zero causes all subsequent
+#   intervals to be difficult to fix. Look into why this is happening,
+#   involves the simplified conditions.
+
+
 # - Identify situation in which fixing one interval breaks previous.
 # - Identify if, post-fix, an interval can be the left side of ^^
 # - Guarantee that fixing an interval cannot break interval to right.
-
 
 # - identify a scaling vector that can be applied to the derivative
 #   and second derivative at one end of an interval that is guaranteed
@@ -25,6 +26,7 @@ from polynomial import fit
 
 # Given x and y values, construct a monotonic quintic spline fit.
 def monotone_quintic_spline(x, y, ends=2, mids=2, fix_previous=True, exact=True):
+    print()
     from polynomial import Spline
     if exact:
         from fraction import Fraction
@@ -51,38 +53,55 @@ def monotone_quintic_spline(x, y, ends=2, mids=2, fix_previous=True, exact=True)
             while changed:
                 step += 1
                 # Shrink the derivative value at the point between intervals.
-                values[i][1] *= 99
-                values[i][1] /= 100
-
+                values[i][1] *= 9
+                values[i][1] /= 10
+                # Shrink the derivative value on the right side of this interval.
+                values[i+1][1] *= 9
+                values[i+1][1] /= 10
                 # Fix the previous interval.
                 changed = monotone_quintic(
                     [x[i-1], x[i]], [values[i-1], values[i]])
                 if exact:
-                    values[i][:] = map(Fraction, values[i-1])
-                    values[i+1][:] = map(Fraction, values[i])
+                    values[i-1][:] = map(Fraction, values[i-1])
+                    values[i][:] = map(Fraction, values[i])
                 # Fix this interval again.
                 changed = monotone_quintic(
                     [x[i], x[i+1]], [values[i], values[i+1]]) or changed
                 if exact:
                     values[i][:] = map(Fraction, values[i])
                     values[i+1][:] = map(Fraction, values[i+1])
-                if step >= 100:
+                if step >= 500:
+                    # Convert fractions into floats for formatted printing.
+                    xl = float(x[i-1])
+                    xm = float(x[i])
+                    xr = float(x[i+1])
+                    vl = list(map(float,values[i-1]))
+                    vm = list(map(float,values[i]))
+                    vr = list(map(float,values[i+1]))
                     print()
                     print('-'*70)
                     print()
-                    print(f"Bad interval {i}: ({x[i]:.3f}, {x[i+1]:.3f})")
-                    print(f"  {x[i-1]}: {values[i-1]}")
-                    print(f"  {x[i]}: {values[i]}")
-                    print(f"  {x[i+1]}: {values[i+1]}")
+                    print(f"Bad interval {i+1}, points {i+1} to {i+2}: ({xm:.3f}, {xr:.3f})")
+                    print(f"  {xl}: {vl}")
+                    print(f"  {xm}: {vm}")
+                    print(f"  {xr}: {vr}")
                     print()
                     print('-'*70)
                     print()
-                    raise(Exception("Error for this interval.."))
-            print(f"Point {i+1} ({step-1} corrections)")
-            print()
+                    values[i][1] *= 0
+                    values[i][2] *= 0
+                    values[i+1][1] *= 0
+                    values[i+1][2] *= 0
+                    break
+                    # raise(Exception("Error for this interval.."))
+            print(f"Interval {i+1} changed ({step} corrections)")
+        elif (not changed):
+            print(f"Interval {i+1} ...")
+        else:
+            print(f"Interval {i+1} changed")
         # Increment to work on the next interval.
         i += 1
-
+    print()
     # Construct a new spline over the (updated) values for derivatives.
     return Spline(f.knots, f.values)
 
@@ -97,9 +116,9 @@ def monotone_cubic_spline(x, y):
     # Construct a new spline over the (updated) values for derivatives.
     return Spline(f.knots, f.values)
 
-# Given a (x1, x2) and ([y1, d1y1], [y2, d1y2]), compute the rescaled
-# y values for a monotone cubic piece.
-def monotone_cubic(x,y):
+# Given a (x1, x2) and ([y1, d1y1], [y2, d1y2]), compute
+# the rescaled y values to make this piece monotone. 
+def monotone_cubic(x, y):
     # Compute the secant slope, the left slope ratio and the
     # right slope ratio for this interval of the function.
     secant_slope = (y[1][0] - y[0][0]) / (x[1] - x[0])
@@ -118,6 +137,38 @@ def monotone_cubic(x,y):
     # ----------------------------------------------------------------
     return False
 
+
+# Given a (x1, x2) and ([y1, d1y1, d2y1], [y2, d1y2, d2y2]), compute
+# the rescaled y values to make this piece monotone. 
+def monotone_quintic_simplified(x, y):
+    # Use simplified conditions from 1988 positivity conditions for
+    # quartic polynomials to enforce monotonicity on this interval.
+    U0, U1 = x
+    X0, DX0, DDX0 = y[0]
+    X1, DX1, DDX1 = y[1]
+    w = U1 - U0
+    changed = False
+    # Enforce \gamma >= \delta
+    min_DDX0 = -6 * DX0 / w
+    if (min_DDX0 > DDX0):
+        DDX0 = min_DDX0
+        y[0][2] = DDX0
+        changed = True
+    # Enforce \alpha >= 0
+    min_DDX1 = (14*DX0 + 16*DX1) / w  +  DDX0  +  60 * (X1 - X0) / (w*w)
+    if (min_DDX1 > DDX1):
+        DDX1 = min_DDX1
+        y[1][2] = DDX1
+        changed = True
+    # Enforce \beta >= \alpha
+    min_DDX1 = 6 * DX0 - 4 * DX1 - DDX0
+    if (min_DDX1 > DDX1):
+        y[1][2] = min_DDX1
+        changed = True
+    # Return whether or not the values were changed.
+    return changed
+
+
 # Given a (x1, x2) and ([y1, d1y1, d2y1], [y2, d1y2, d2y2]), compute
 # the rescaled derivative values for a monotone quintic piece.
 def monotone_quintic(x, y):
@@ -135,7 +186,6 @@ def monotone_quintic(x, y):
         changed = any(v != 0 for v in (DX0, DX1, DDX0, DDX1))
         y[0][:] = X0, 0, 0
         y[1][:] = X1, 0, 0
-        print("flat function..")
         return changed
     sign = (-1) ** int(function_change < 0)
     # Set DX0 and DX1 to be the median of these three choices.
@@ -153,7 +203,7 @@ def monotone_quintic(x, y):
     assert(A >= 0)
     assert(B >= 0)
     # Use a monotone cubic over this region if AB = 0.
-    if (A*B <= 0): return monotone_cubic(x, y) or True
+    if (A*B <= 0): return monotone_quintic_simplified(x, y) or True
 
     # Clip derivative values that are too large (to ensure that
     # shrinking the derivative vectors on either end will not break
@@ -248,7 +298,6 @@ def monotone_quintic(x, y):
     # Update "y" and return the updated version.
     y[0][:] = X0, DX0, DDX0
     y[1][:] = X1, DX1, DDX1
-    print("quintic function..")
     return changed
 
 
@@ -256,17 +305,23 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------
     #               TEST CASES
     # 
-    # 0, 4, (None)     -> Good
-    # 1, 4, (None)     -> Bad (not monotone) (now good) [bad first derivative conditions]
-    # 0, 13, (None)    -> Bad (not monotone after first pass) (now good) [no previous-interval fix]
-    # 0, 30, (-3,None) -> Bad (far right still not monotone after passes) (now good) [bad cubic usage]
-    # 0, 100, (-12,-7) -> Bad (fixing previous breaks second previous) (now good) [bad while loop condition]
+    # 0, 4, (None)      -> Good
+    # 1, 4, (None)      -> Bad (not monotone) (now good) [bad first derivative conditions]
+    # 0, 13, (None)     -> Bad (not monotone after first pass) (now good) [no previous-interval fix]
+    # 0, 30, (-3,None)  -> Bad (far right still not monotone after passes) (now good) [bad cubic usage]
+    # 0, 100, (-12,-7)  -> Bad (fixing previous breaks second previous) (now good) [bad while loop condition]
+    # 0, 100, (-4,None) -> Bad (last interval is not monotone) (now good) [forced first and second derivative to 0 when failing]
+    # 0, 1000, (None)   -> Ehh (once one interval zeros, rest zero)
     # 
     # --------------------------------------------------------------------
 
+    # SEED = 0
+    # NODES = 100
+    # SUBSET = slice(None) 
+
     SEED = 0
-    NODES = 100
-    SUBSET = slice(None) 
+    NODES = 4
+    SUBSET = slice(None)
 
     # Generate random data to test the monotonic fit function.
     import numpy as np
