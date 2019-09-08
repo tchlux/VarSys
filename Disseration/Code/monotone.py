@@ -226,8 +226,8 @@ def monotone_quintic(x, y):
     # down until montonicity is achieved (using binary search).
     alpha_constant   = 4 * (B**(1/4) / A**(1/4))
     alpha_multiplier = ((U0-U1) / DX1) * B**(1/4) / A**(1/4)
-    gamma_constant   = 4 * ((DX0 * B**(3/4)) / (DX1 * A**(3/4)))
-    gamma_multiplier = ((U1-U0) / DX1) * B**(3/4) / A**(3/4)
+    gamma_constant   = 4 * (DX0 / DX1) * (B**(3/4) / A**(3/4))
+    gamma_multiplier = ((U1-U0) / DX1) * (B**(3/4) / A**(3/4))
     beta_constant    = (12 * (DX0+DX1) * (U1-U0) + 30 * (X0-X1)) / ((X0-X1) * A**(1/2) * B**(1/2))
     beta_multiplier  = (3 * (U0-U1)**2) / (2 * (X0-X1) * A**(1/2) * B**(1/2))
     def is_monotone():
