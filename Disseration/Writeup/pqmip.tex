@@ -48,7 +48,7 @@ Let $f$ be a quintic polynomial over a closed interval $[x_0, x_1]$ $\subset \ma
 \item[0:] \texttt{if $\big(f'(x_0) = 0$ or $f'(x_1) = 0\big)$ return is\_monotone\_simplified}
 \item[1:] \texttt{if $\big(f'(x_0) < 0$ or $f'(x_1) < 0\big)$ return FALSE}
   \begin{itemize}
-    \item[] \textit{This can be seen clearly from the fact that $f$ is analytic; there will exist some nonempty ball about $x_0$ or $x_1$ on which $f$ is decreasing.}
+    \item[] \textit{This can be seen clearly from the fact that $f$ is analytic; there will exist some nonempty interval about $x_0$ or $x_1$ for which $f'$ is negative.}
   \end{itemize}
 
 \item[2:] $A = f'(x_0)\frac{x_1 - x_0}{f(x_1) - f(x_0)}$
@@ -78,7 +78,7 @@ Let $f$ be a quintic polynomial over a closed interval $[x_0, x_1]$ $\subset \ma
 
 
 %% ----------------------------------------------------------------------
-Given the same initial conditions there are special circumstances which allow for the usage of simpler monotonicity conditions. In this case, consider when the quintic function has either $f'(x_0) = 0$ or $f'(x_1) = 0$, which can be tested for monotonicity via the cubic positivity conditions established by \cite{schmidt1988positivity}.
+Given the same initial conditions there are special circumstances which allow for the usage of simpler monotonicity conditions. In this case, consider when the quintic function has either $f'(x_0) = 0$ or $f'(x_1) = 0.$ This reduces the problem of verifying monotonicity to one of cubics established by \cite{schmidt1988positivity}.
 
 \vspace{10pt}
 \hrule
@@ -130,7 +130,7 @@ Next the modification of a quintic spline to enforce monotonicity will be discus
 \item[1:] $f'(x_0) = \ $\texttt{median}$\big(0, f'(x_0), 14 \frac{f(x_1) - f(x_0)}{x_1 - x_0} \big)$
 \item[2:] $f'(x_1) = \ $\texttt{median}$\big(0, f'(x_1), 14 \frac{f(x_1) - f(x_0)}{x_1 - x_0}\big)$
   \begin{itemize}
-  \item[] \textit{This selection of value for $f'(x_0)$ and $f'(x_1)$ is suggested by \cite{ulrich1994positivity} (originally from \cite{huynh1993accurate}), and quickly enforces upper and lower bounds on derivative values to allow for quintic monotonicity.}
+  \item[] \textit{This selection of values for $f'(x_0)$ and $f'(x_1)$ is suggested by \cite{ulrich1994positivity} (originally from \cite{huynh1993accurate}), and quickly enforces upper and lower bounds on derivative values to ensure quintic monotonicity is obtainable.}
   \end{itemize}
 \item[3:] $A = f'(x_0)\frac{x_1 - x_0}{f(x_1) - f(x_0)}$
 \item[4:] $B = f'(x_1) \frac{x_1 - x_0}{f(x_1) - f(x_0)}$
@@ -138,7 +138,7 @@ Next the modification of a quintic spline to enforce monotonicity will be discus
 \item[6:] \texttt{if $\big($max}$(A,B) > 6\big)$\\$f'(x_0) = 6 f'(x_0)\  /$\texttt{ max}$(A,B)$\\$f'(x_1) = 6 f'(x_1)\  /$\texttt{ max}$(A,B)$
 
   \begin{itemize}
-  \item[] \textit{This simple box bound ensures that $(A,B)$ remains within a viable region of monotonicity (satisfying Theorem 4, seen in Fig. 6 of \cite{ulrich1994positivity}).}
+  \item[] \textit{This box bound ensures that $(A,B)$ remains within a viable region of monotonicity (satisfying Theorem 4, seen in Fig. 6 of \cite{ulrich1994positivity}).}
   \end{itemize}
 
 \item[7:] $\hat f''(x_0) = - \sqrt{A} \big( 7 \sqrt{A} + 3 \sqrt{B} \big) \frac{f(x_1) - f(x_0)}{(x_1 - x_0)^2}$\\$\hat f''(x_1) = \sqrt{B} \big( 3 \sqrt{A} + 7 \sqrt{B} \big) \frac{f(x_1) - f(x_0)}{(x_1 - x_0)^2}$
@@ -168,19 +168,19 @@ Similar to the simplified check for monotonicity, when the derivative value at o
   \itemsep0pt
   \parskip0pt
 
-\item[0:] $f''(x_0) = $\texttt{max}$\bigg(f''(x_0), \frac{-6 f'(x_0)}{x_1 - x_0}\bigg)$
+\item[0:] $f''(x_0) = $\texttt{ max}$\bigg(f''(x_0), \frac{-6 f'(x_0)}{x_1 - x_0}\bigg)$
 
   \begin{itemize}
     \item[] \textit{Considering the $\alpha,$ $\gamma,$ $\beta,$ and $\delta$ defined in \cite{schmidt1988positivity}, this first step enforces $\gamma > \delta.$ It is already guaranteed that $\delta = \frac{f'(x_0)(x_1 - x_0)}{f(x_1) - f(x_0)} > 0.$ Only two conditions remain to guarantee monotonicity.}
   \end{itemize}
 
-\item[1:] $f''(x_1) = $max$\bigg( f''(x_1), f''(x_0) + \frac{14 f'(x_0) + 16 f'(x_1) + 60(f(x_1) - f(x_0)) / (x_1 - x_0)}{x_1 - x_0} \bigg)$
+\item[1:] $f''(x_1) = $\texttt{ max}$\bigg( f''(x_1), f''(x_0) + \frac{14 f'(x_0) + 16 f'(x_1) + 60(f(x_1) - f(x_0)) / (x_1 - x_0)}{x_1 - x_0} \bigg)$
 
   \begin{itemize}
     \item[] \textit{Now it is guaranteed that $\alpha \geq 0.$}
   \end{itemize}
 
-\item[2:] $f''(x_1) = $max$\bigg( f''(x_1), 6 f'(x_0) - 4 f'(x_1) - f''(x_0) \bigg)$
+\item[2:] $f''(x_1) = $\texttt{ max}$\bigg( f''(x_1), 6 f'(x_0) - 4 f'(x_1) - f''(x_0) \bigg)$
 
   \begin{itemize}
     \item[] \textit{Lastly, this guarantees that $\beta \geq \alpha.$ All conditions are met to satisfy proposition 2 of \cite{schmidt1988positivity} and ensure monotonicity.}
@@ -189,16 +189,14 @@ Similar to the simplified check for monotonicity, when the derivative value at o
 \hrule
 \vspace{10pt}
 %% ----------------------------------------------------------------------
-
+Notice that all above algorithms (assuming a fixed level of precision is desired) have $\mathcal{O}(1)$ runtime. Only a finite number of operations are needed for monotonicity verification. A line search is performed for enforcement, however that search requires a fixed number of steps to achieve any predetermined relative precision on the line.
 
 
 %% ----------------------------------------------------------------------
 \section{Constructing a Piecewise Quintic Monotone Spline}
 \label{monotone_spline}
 
-Finally, the construction of a full piecewise quintic spline is outlined using the above algorithms.
-
-Let $f: \mathbb{R} \rightarrow \mathbb{R}$ be a function in $\mathcal{C}^2.$ Proceed given evaluation tuples $\big(x_i,$ $f(x_i),$ $f'(x_i),$ $f''(x_i)\big)$ for $i = 0,\ldots,N$ such that $x_i < x_{i+1}$ and (without loss of generality) $f(x_i) \leq f(x_{i+1})$ for $i = 1,$ $\ldots,$ $N-1$. 
+Finally, the construction of a full piecewise quintic spline is outlined using the above algorithms. Let $f: \mathbb{R} \rightarrow \mathbb{R}$ be a function in $\mathcal{C}^2.$ Proceed given evaluation tuples $\big(x_i,$ $f(x_i),$ $f'(x_i),$ $f''(x_i)\big)$ for $i = 0,\ldots,N$ such that $x_i < x_{i+1}$ and (without loss of generality) $f(x_i) \leq f(x_{i+1})$ for $i = 1,$ $\ldots,$ $N-1$. 
 
 \vspace{10pt}
 \hrule
@@ -211,9 +209,46 @@ Let $f: \mathbb{R} \rightarrow \mathbb{R}$ be a function in $\mathcal{C}^2.$ Pro
   \itemsep0pt
   \parskip0pt
 
-\item Compute
+\item[0:] \texttt{for }$i=0,\ldots,N-1$
+\item[1:] $\quad$\texttt{if $\big($not is\_monotone$(i,i+1)\big)$  make\_monotone$(i,i+1)$}
+
+  \begin{itemize}
+    \item[] \textit{In the shorthand notation above, $i$ and $i+1$ refer to the associated tuples of the form $(x_i,$ $f(x_i),$ $f'(x_i),$ $f''(x_i)).$ This notation will be used through the remainder of this algorithm.}
+  \end{itemize}
+
+\item[2:] $\quad$\texttt{for $j=i-1,\ldots,0$}
+\item[3:] $\quad\quad$\texttt{if $\big($not is\_monotone$(j,j+1)\big)$  make\_monotone$(j,j+1)$}
+\item[4:] $\quad\quad$\texttt{else break}
+
+  \begin{itemize}
+    \item[] \textit{The above `for' loop will be referred to as the cascade fix. If the adjustment of second derivative values causes the previous interval to become nonmonotone, then the left-hand second derivative value must be updated. This may (abnormally) require adjustments across all previously visited intervals.}
+  \end{itemize}
+
+\item[5:] $\quad$\texttt{while $\big($not is\_monotone$(i,i+1)\big)$}
+\item[6:] $\quad\quad f'(x_i) = f'(x_i) / k$
+\item[7:] $\quad\quad f'(x_{i+1}) = f'(x_{i+1}) / k$
+\item[8:] $\quad\quad$\texttt{make\_monotone$(i,i+1)$}
+
+  \begin{itemize}
+    \item[] \textit{In the case that the two corrections to neighboring intervals contradict, the first derivative values of the active interval are decreased to enlarge the overlap of regions I and II (from \cite{ulrich1994positivity}) of the two intervals.}
+  \end{itemize}
+
+\item[9:] $\quad\quad$\texttt{for $j=i-1,\ldots,0$}
+\item[10:] $\quad\quad\quad$\texttt{if $\big($not is\_monotone$(j,j+1)\big)$  make\_monotone$(j,j+1)$}
+\item[11:] $\quad\quad\quad$\texttt{else break}
+
+  \begin{itemize}
+    \item[] \textit{Finally an additional `cascade fix' is performed to ensure that all previous intervals are still monotone after shrinking the derivative values of the current interval.}
+  \end{itemize}
+
 \end{itemize}
+\hrule
+\vspace{10pt}
 %% ----------------------------------------------------------------------
+
+It is mentioned in \cite{ulrich1994positivity} that for sufficiently small $f'(x_i)$ and $f'(x_{i+1})$ the admissible solution interval of second derivative values becomes arbitrarily large. It can also be seen that decreasing the assigned derivative on right-hand side of an interval always allows the achievement of monotonicity because shrinking $f'(x_1)$ results in $\gamma$ growing faster than $\sqrt{\beta}$ for \textit{algorithm 1a}, for \textit{algorithm 1b} $\beta$ and $\gamma$ will grow faster $\alpha$ and $\delta$ respectively. In application, one needs only to pick some $k > 1$ to ensure successful termination.
+
+Given the potential for successive cascade fixes, the runtime of \textit{algorithm 3} is $\mathcal{O}(N^2)$. In practice this has been observed to be incredibly unlikely and difficult to produce. While single cascade fixes can occur from hand crafted examples, the generously rounded values selected to ensure monotonicity frequently prevent successive cascade fixes.
 
 
 
