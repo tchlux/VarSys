@@ -567,8 +567,34 @@ observations. Notice that the approximation error is largely
 determined by the spacing of observed data. Predictions made by
 simplices whose vertices are not well-spaced (i.e., have large
 diameter, or are nearly contained in a hyperplane) have higher
-error. In light of this error bound, an empirical evaluation of
-presented algorithms follows.
+error.
+
+The error bound provided is tight and that is easily observed by
+considering the test function $q(x) = \|x\|_2^2,$ $x \in \mathbb{R}^d$
+for $d \in \mathcal{N},$ using the simplex $X = \{\mathbf{0}, I\},$
+where $I$ is the $d \times d$ identity matrix, and an approximation is
+made at $z = \mathbf{1/2}.$ Now this setup yields
+
+\vspace{-4mm}
+$$ \gamma = 1, \qquad \sigma_d = 1, \qquad k = 1, \qquad x_0 =
+\mathbf{0}, \qquad \hat q(x) = \langle\mathbf{1}, x - \mathbf{0}\rangle +
+q(\mathbf{0}). $$
+\vspace{-2mm}
+\noindent Plugging these values into the Theorem, we get
+\vspace{-2mm}
+
+\begin{align*}
+  \big|q(z) - \hat q(z)\big| \quad
+  =& \quad \big|\|z\|_2^2 - \langle\mathbf{1},z\rangle\big| \\
+  =& \quad \bigg| \frac{d}{4} - \frac{d}{2} \bigg| \quad = \quad \frac{d}{4} \\
+  \leq& \quad \frac{\gamma \|z - x_0\|_2^2}{2} + \sqrt{d} \frac{\gamma k^2}
+      {2 \sigma_d} \|z - x_0\|_2 \\
+  =& \quad \frac{\|z\|_2^2 + \sqrt{d} \|z\|_2}{2} \\
+  =& \quad \bigg(\frac{d}{4} + \frac{d}{4}\bigg)\ /\ 2 \quad = \quad \frac{d}{4}.
+\end{align*}
+
+In light of this error bound and analytic test, an empirical
+evaluation of presented algorithms follows.
 
 %% ===================================================================
 \vspace{-2mm}
