@@ -13,7 +13,7 @@ model_order = [
     # "BFGS1000",
     # "SGD10K",
     "MARS",
-    "SVR",
+    "SVR_RBF",
     "NeuralNetwork",
     "Delaunay",
     "ShepMod",
@@ -55,10 +55,10 @@ for f in data_order:
 
     print("extracting fit data..", end="\r")
     # Get the "fit" data from the records.
-    sub_fit_data = fit_time[fit_time["Data name"] == data_name]
+    sub_fit_data = fit_time[fit_time["Data name"] == data_name].copy()
     sub_fit_data.reorder([sub_fit_data.names[0],"Model name"])
     # Replace the fit times with average fit time per training point.
-    timing_data = sub_fit_data[:,:2].unique().collect(sub_fit_data)
+    timing_data = sub_fit_data[:,:2].unique().copy().collect(sub_fit_data)
     timing_data['Fit time'] = map(float,map(np.median, timing_data['Fit time']))
     for n in timing_data.names[2:-1]:
         timing_data.pop(n)
@@ -82,7 +82,7 @@ for f in data_order:
     for m in model_order:
         if m not in models: continue
         indices.append( list(timing_data["Model name"]).index(m) )
-    timing_data = timing_data[indices]
+    timing_data = timing_data[indices].copy()
 
     print("collecting error data..", end="\r")
     # Collect the error and timing data.
@@ -92,7 +92,9 @@ for f in data_order:
         errors = []
         prediction_times = []
         for row in range(len(d)):
-            if "nan" in set(map(str,d[row,[f"{m} {target}" for m in models]][0])): continue
+            if 'iozone' not in data_name:
+                to_clean = [f"{m} {target}" for m in models]
+                if "nan" in set(map(str,d[row,to_clean])): continue
             truth, guess = d[row, target], d[row, f"{m_name} {target}"]
             errors.append( truth - guess )
             prediction_times.append(d[row, f"{m_name} prediction time"])
@@ -108,7 +110,8 @@ for f in data_order:
             continue
         abs_errors = list(map(float,map(abs,errors)))
         error_data.append( [m_name.replace("NeuralNetwork","MLP")
-                            .replace("BoxMesh","BoxSplines")] + abs_errors )
+                            .replace("BoxMesh","BoxSplines")
+                            .replace("SVR_RBF","SVR")] + abs_errors )
         max_error = max(max_error, max(abs_errors))
 
         # p.add_box(m_name, abs_errors)
@@ -122,17 +125,20 @@ for f in data_order:
     for i in range(len(timing_data)):
         timing_data[i,"Model name"] = timing_data[i,"Model name"] \
                                       .replace("NeuralNetwork", "MLP") \
-                                      .replace("BoxMesh", "BoxSplines")
+                                      .replace("BoxMesh", "BoxSplines") \
+                                      .replace("SVR_RBF", "SVR")
     timing_data.save(os.path.join("Results","timing_data_" + f[:-4] + "csv"))
 
     # Generate the table for the errors.
     t = latex_table(table[1:], table[0],
-                    side_bars=False, fmt=".2e", simplify_sig=6,
+                    side_bars=False, fmt=".2e", decimal_align=True, #simplify_sig=6,
                     **dict([(f"wrap_{i}_0", ("\\mathbf{","}"))
                             for i in range(len(table[0]))] +
                            [(f"wrap_{i}_1", ("\\mathit{","}"))
-                            for i in range(len(table[0]))])
-    ).replace("NeuralNetwork", "MLP").replace("BoxMesh", "BoxSpline")
+                            for i in range(len(table[0]))])) \
+                                .replace("NeuralNetwork", "MLP") \
+                                .replace("BoxMesh", "BoxSpline") \
+                                .replace("SVR_RBF", "SVR")
     print(' '*70)
     print(t)
     print()
@@ -167,6 +173,7 @@ for f in data_order:
 
         if 'iozone' not in data_name:
             all_comparisons[m] = all_comparisons.get(m,[]) + [tuple(table[-1])]
+
     # Compute the sizes for the caption.
     fit_size = d.shape[0] - d.shape[0] // 10
     predict_size = d.shape[0] // 10
@@ -174,9 +181,10 @@ for f in data_order:
     formats = ['', ".1f", ''] + [".2e"]*3
     wrappers = ['', ("$","$"), ''] + [("$","$")]*3
 
-    # Make the table.
+    # Make the table for %best
     t = latex_table(table, ['Algorithm', '\% Best', "", "Fit / Prep. Time", "App. Time (s)", "Total App. Time"],
-                    side_bars=False, fmt=formats, wrap_nums=wrappers, simplify_sig=6,
+                    side_bars=False, fmt=formats, wrap_nums=wrappers, #simplify_sig=6,
+                    decimal_align=True,
                     **{"wrap_1_-1" : ("\\mathbf{","}"),
                        "wrap_1_-2" : ("\\mathit{","}"),
                        "wrap_3_0" : ("\\mathbf{", "}"),
@@ -187,14 +195,13 @@ for f in data_order:
                        "wrap_5_1" : ("\\mathit{", "}"),}
     ).replace('caption{}', f'caption{{{data_name} fit size {fit_size}, predict size {predict_size}.}}')\
     .replace("\\hline", "\\cline{1-2}\\cline{4-6}") \
-    .replace("NeuralNetwork", "MLP").replace("BoxMesh", "BoxSpline")
+    .replace("NeuralNetwork", "MLP").replace("BoxMesh", "BoxSpline").replace("SVR_RBF","SVR")
     print(' '*70)
     print(t)
     print()
 
-
     # If this is I/O zone, generate table for different KS stats.
-    if 'iozone' in data_name:
+    if "iozone" in data_name:
         header = '\\textbf{Algorithm}', '\\textbf{$P$-Value}', '\\textbf{N.H. Rejections}'
         table = []
         ks_values = [0.1568, 0.1879, 0.2251, 0.3110]
@@ -234,16 +241,16 @@ for m in all_comparisons:
 
 table = []
 for m in model_order:
-    m = m.replace("NeuralNetwork","MLP").replace("BoxMesh","BoxSplines")
+    m = m.replace("NeuralNetwork","MLP").replace("BoxMesh","BoxSplines").replace("SVR_RBF","SVR")
     table.append([m] + list(all_comparisons[m]))
     # print(f"{m:13s}", all_comparisons[m])
 
-formats = ['', ".1f"] + [".2e"]*2
-wrappers = ['', ("$","\\%$")] + [("$","$s")]*2
+formats = ['', ".1f"] + [".0e"]*2
+wrappers = ['', ("$","$")] + [("$","$s")]*2
 
 # Make the table.
 t = latex_table(table, ['Algorithm', 'Avg. \% Best', "Avg. Fit Time", "Avg. App. Time (1)"],
-                side_bars=False, fmt=formats, wrap_nums=wrappers,
+                side_bars=False, fmt=formats, wrap_nums=wrappers, decimal_align=True,
                 **{"wrap_1_-1" : ("\\mathbf{","}"),
                    "wrap_1_-2" : ("\\mathit{","}"),
                    "wrap_2_0" : ("\\mathbf{", "}"),
@@ -254,6 +261,8 @@ t = latex_table(table, ['Algorithm', 'Avg. \% Best', "Avg. Fit Time", "Avg. App.
 print(' '*70)
 print(t)
 print()
+
+    
 
 
 exit()

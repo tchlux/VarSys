@@ -4,9 +4,9 @@ import numpy as np
 from util.stats import cdf_fit
 from util.data import Data
 from util.system import Timer
-from util.pairs import pairwise_distance
+from util.math import pairwise_distance
 from util.approximate import Delaunay, Voronoi, BoxMesh, ShepMod, \
-    LSHEP, NeuralNetwork, MARS, SVR, class_name
+    LSHEP, NeuralNetwork, MARS, SVR_RBF, class_name
 
 # Make sure all of the prepared and pre-processed data files exist.
 from preprocess_data import cwd, raw_dir, data_dir
@@ -23,7 +23,9 @@ folds = 10
 data_name = lambda p: os.path.basename(p).replace(".dill","").replace(".csv","")
 
 models = [ShepMod, BoxMesh, Voronoi, Delaunay, 
-          NeuralNetwork, LSHEP, SVR, MARS,]
+          NeuralNetwork, LSHEP, SVR_RBF, MARS,]
+
+# models = [BoxMesh, SVR_RBF]
 
 # Recording data for each set and for each algorithm that looks like:
 # | Data name | Dimension | Fold Size | Fold Number | Model Name | Model fit time |
@@ -38,10 +40,8 @@ else:
     fit_data = Data(names=["Data name", "Model name", "Train Shape", "Test Shape", "Fold number", "Fit time"],
                     types=[ str,         str,          tuple,         tuple,        int,           float,   ])
 
-
 # from util.approximate.delaunay import DelaunayP1, DelaunayP2, DelaunayP3
 # models = [Delaunay, DelaunayP1, DelaunayP2, DelaunayP3]
-
 
 for raw_file in sorted(os.listdir(raw_dir)):
     raw_file = raw_file.replace(".gz","")
@@ -155,6 +155,12 @@ for raw_file in sorted(os.listdir(raw_dir)):
                     ids, wts = ids[0], wts[0]
                     guess = sum(train_y[i]*w for (i,w) in zip(ids,wts))
                     t.stop()
+                    try: min(wts)
+                    except:
+                        from util.system import save
+                        save((train_x, train_y, test_pt), "bad_box_case.pkl")
+                        print("BAD TEST POINT, EXITING")
+                        exit()
                     # If some '0' weights were included, remove those.
                     if (min(wts) <= 0):
                         print("     found '0' weights, removing..", end="\r")
@@ -197,4 +203,6 @@ for raw_file in sorted(os.listdir(raw_dir)):
     print()
     d.save(final_results_file)
 # ^^ END (for data ...)
+print(f"Saving final fit data file in '{final_fit_results}'..")
+print()
 fit_data.save(final_fit_results)

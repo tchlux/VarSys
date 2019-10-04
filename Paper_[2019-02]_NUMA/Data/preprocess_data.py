@@ -1,6 +1,6 @@
 import os
 from util.data import Data
-from util.pairs import pairwise_distance
+from util.math import pairwise_distance
 from util.math import SMALL, flatten, transpose
 
 
@@ -59,12 +59,12 @@ for raw_file in sorted(os.listdir(raw_dir)):
     if not os.path.exists(data_path):
         print('-'*70)
         print(raw_path)
-        d = Data.load(raw_path, sep=",", verbose=True)    
+        d = Data.load(raw_path, sep=",", verbose=True, sample=None)
         if   ("creditcard" in raw_file):
             # Remove all fraudulent transactions, only keep authentic ones.
             # Only need to remove the "time" 1st column and "fraud" last column.
             print("Removing fraudulent transations..")
-            d = d[d[d.names[-1]] == "0"]
+            d = d[d[d.names[-1]] == 0]
             print("Reducing data..")
             d = d[ :len(d)//50, d.names[1:-1] ]
             print("Finding unique points..")
@@ -75,7 +75,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
             # Store the indices of the first occurrence of each unique point.
             unique_indices = sorted(unique_points[pt][0] for pt in unique_points)
             print(f"Removing {len(d) - len(unique_indices)} duplicate points..")
-            d = d[unique_indices]
+            d = d[unique_indices].copy()
             print("Converting data to numeric form..")
             nums = d[:,:-1].to_matrix()
             print(f"Using a more robust technique to identify remaining duplicates..")
@@ -108,7 +108,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
         elif ("iozone_150" in raw_file):
             # Reduce to the "readers" test type.
             d = d[d["Test"] == "readers"]
-            d = d[[n for n in d.names if n != "Test"]]
+            d = d[[n for n in d.names if n != "Test"]].copy()
             # Convert the distributions to an object that supports
             # addition, multiplication by floats, and difference.
             trial_cols = [n for n in d.names if "Trial" in n]
@@ -132,7 +132,7 @@ for raw_file in sorted(os.listdir(raw_dir)):
             for l in locs: print("",l)
             print()
             # Reduce to only the chosen location with most data.
-            d = d[d["Location"] == locs[-2][1]]
+            d = d[d["Location"] == locs[-2][1]].copy()
             to_remove = {"Date", "Location", "WindGustDir", "WindGustSpeed", 
                          "WindDir9am", "WindDir3pm", "RainToday", "RainTomorrow"}
             # Replace all "NA" values with "None" values, convert to floats.
@@ -166,7 +166,7 @@ for f in os.listdir(data_dir):
     # Skip the outputs that have already been produced.
     if any(f"data_{name}_" in f for f  in os.listdir(processed_results_folder)): continue
     # Load the data.
-    d = Data.load(os.path.join(data_dir, f))
+    d = Data.load(os.path.join(data_dir, f), sample=None)
     target = d.names[-1]
     output_name = os.path.join(
         processed_results_folder,
@@ -178,7 +178,7 @@ for f in os.listdir(data_dir):
         # matrix, store in a dict to trick "np.savetxt" line of code.
         f = os.path.join("Raw",f[:-len(".dill")])
         print("Loading..",f)
-        d = Data.load(f, verbose=True, sep=',')
+        d = Data.load(f, verbose=True, sep=',', sample=None)
         print("Reducing to 'readers' test..")
         d = d[d["Test"] == "readers"]
         print("Converting to matrix and flattening..")
