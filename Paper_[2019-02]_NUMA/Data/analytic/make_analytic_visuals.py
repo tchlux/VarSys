@@ -1,6 +1,7 @@
+from run_analytic_test import output_data_name
 from util.data import Data
 
-d = Data.load("2-analytic-results.pkl")
+d = Data.load(output_data_name)
 
 # # Strip out the invalid tests (bad number of train points).
 # to_keep = [i for i in range(len(d)) if ((d[i,"Train"]-1)%10)]
@@ -15,7 +16,8 @@ d["Min Abs Error"] = (min(l) for l in d["Abs Errors"])
 d["Max Abs Error"] = (max(l) for l in d["Abs Errors"])
 # d.summarize()
 
-config_cols = ["SNR", "Train"]
+algorithms = {} # {"DelaunayP1", "NeuralNetwork"}
+config_cols = ["Function", "SNR", "Train"]
 
 configs = d[:,config_cols].unique()
 configs.sort()
@@ -27,10 +29,12 @@ from util.stats import cdf_fit
 
 for conf in configs:
     interest = d[d[:,config_cols] == conf]
+    if (len(algorithms) > 0): interest = interest[interest["Algorithm"] == algorithms]
     interest.sort()
     print(interest)
-    S, N = conf
-    p = Plot(f"{N} train with SNR {S}")
+    # exit()
+    F, S, N = conf
+    p = Plot(f"{N} train with SNR {S} on '{F}' function")
     seen = {"NearestNeighbor"}
     for row in interest:
         name = row["Algorithm"]
