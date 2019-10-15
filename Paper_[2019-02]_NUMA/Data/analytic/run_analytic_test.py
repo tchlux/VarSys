@@ -57,8 +57,8 @@ test_function = oscillatory
 test_func_name = str(test_function).split()[1]
 
 # Load in the partially collected results if appropriate.
-temporary_data_file = f"intermediate-{dimension}D-{test_func_name}-analytic.pkl"
-output_data_name = f"final-{dimension}D-{test_func_name}-analytic.pkl"
+temporary_data_file = f"intermediate-{dimension}D-{test_size}-{test_func_name}-analytic.pkl"
+output_data_name = f"final-{dimension}D-{test_size}-{test_func_name}-analytic.pkl"
 
 print()
 print("temporary_data_file: ",temporary_data_file)
