@@ -462,10 +462,9 @@ bound.
 
 \begin{plainlemma}
   \label{lemma:1}
-  Let $S \subset \mathbb{R}^d$ be open and convex, $f: \mathbb{R}^d
-  \rightarrow \mathbb{R}$, and $\nabla f \in
-  Lip_{(\gamma,\|\cdot\|_2)}(S)$, the set of $\gamma$-Lipschitz
-  continuous functions in the $2$-norm. Then for all $x,y \in S$
+  Let $S \subset \mathbb{R}^d$ be open and convex, $f: S \rightarrow
+  \mathbb{R}$, and let $\nabla f(x)$ be $\gamma$-Lipschitz continuous
+  in the $2$-norm. Then for all $x,y \in S$
   $$\big|f(y) - f(x) - \langle \nabla f(x), y - x \rangle \big| \leq \frac{\gamma \|y - x\|_2^2}{2}.$$
 \end{plainlemma}
 
@@ -475,17 +474,17 @@ bound.
   + t y \big), y - x \big\rangle$ is the directional derivative of $f$
   in the direction $(y - x).$
   \begin{align*}
-    \big|f(y) - f(x) - \langle \nabla f(x), y - x \rangle \big|
-       &= \big|g(1) - g(0) - g'(0) \big| & \\
-       &= \bigg| \int_0^1 g'(t) - g'(0)\ dt \bigg| \\
-       &\leq \int_0^1 \big|g'(t) - g'(0)\big|\ dt \\
+    \big|f(y) - f(x) - \langle &\nabla f(x), y - x \rangle \big|
+        = \big|g(1) - g(0) - g'(0) \big| \\
+       &= \bigg| \int_0^1 g'(t) - g'(0)\ dt \bigg| \leq \int_0^1 \big|g'(t) - g'(0)\big|\ dt \\
        &= \int_0^1 \bigg| \big \langle \nabla f\big((1-t)x + ty\big) - \nabla f(x), y - x \big \rangle \bigg|\ dt \\
        &\leq \int_0^1 \big \| \nabla f\big((1-t)x + ty\big) - \nabla f(x) \big \|_2\ \| y - x \|_2\ dt \\
-       &\leq \int_0^1 \big ( \gamma\ \|y-x\|_2 \big) \ \big( \|y-x\|_2 \big) t\ dt \\
-       &= \frac{\gamma \|y - x\|_2^2}{2}.
+       &\leq \int_0^1 \big ( \gamma\ \|y-x\|_2 \big) \ \big( \|y-x\|_2 \big) t\ dt = \frac{\gamma \|y - x\|_2^2}{2}.
   \end{align*}
   \qed
 \end{proofdot}
+
+\hfill
 
 \begin{plainlemma}
   \label{lemma:2}
@@ -507,6 +506,8 @@ bound.
   \qed
 \end{proofdot}
 
+\newpage
+
 \begin{plainlemma}
   \label{lemma:3}
   Given $f$, $\gamma$, $S$ as in {\it Lemma \ref{lemma:1}}, let $X =
@@ -516,7 +517,7 @@ bound.
   $f$ on $X.$ Let $\sigma_d$ be the smallest singular value of the
   matrix $M = (x_1 - x_0$, $\ldots$, $x_d - x_0)$, and $k =
   \max\limits_{1\ \leq\ j\ \leq\ d} \|x_j - x_0\|_2.$ Then
-  $$\big\|\nabla f(x_0) - c\big\|_2 \leq \sqrt{d} \frac{\gamma k^2}{2 \sigma_d}.$$
+  $$\big\|\nabla f(x_0) - c\big\|_2 \leq \frac{\sqrt{d} \, \gamma k^2}{2 \sigma_d}.$$
 \end{plainlemma}
 
 \begin{proofdot}
@@ -546,18 +547,18 @@ bound.
   \gamma \|x_j-x_0\|_2^2/2 \le \gamma k^2 / 2,$$ which holds for all
   $1\le j\le d$.  Finally, using {\it Lemma \ref{lemma:2}},
   $$\|\nabla f(x_0)-c\|_2^2 \le \frac{d}{\sigma_d^2}(\gamma k^2/2)^2
-  \implies \|\nabla f(x_0)-c\|_2 \le \sqrt{d}\frac{\gamma
+  \implies \|\nabla f(x_0)-c\|_2 \le \frac{\sqrt{d} \, \gamma
     k^2}{2\sigma_d}.$$ \qed
 \end{proofdot}
 
 \begin{onetheorem}
   Under the assumptions of {\it Lemma \ref{lemma:1}} and {\it Lemma
     \ref{lemma:3}}, for $z \in S$,
-  $$ \big|f(z) - \hat f(z)\big| \leq \frac{\gamma \|z - x_0\|_2^2}{2} + \sqrt{d} \frac{\gamma k^2}{2 \sigma_d} \|z - x_0\|_2.$$
+  $$ \big|f(z) - \hat f(z)\big| \leq \frac{\gamma \|z - x_0\|_2^2}{2} + \frac{\sqrt{d} \, \gamma k^2}{2 \sigma_d} \|z - x_0\|_2.$$
 \end{onetheorem}
 
 \begin{proofdot}
-  Let $v = \nabla f(x_0) - c$, where $\|v\|_2 \leq \sqrt{d} \gamma k / (2 \sigma_d)$ by {\it Lemma \ref{lemma:3}}. Now
+  Let $v = \nabla f(x_0) - c$, where $\|v\|_2 \leq \sqrt{d}\, \gamma k^2 / (2 \sigma_d)$ by {\it Lemma \ref{lemma:3}}. Now
   \begin{align*}
     \big|f(z) - \hat f(z)\big|
        &= \big|f(z) - f(x_0) - \langle c, z - x_0 \rangle \big| \\ 
@@ -565,8 +566,8 @@ bound.
        &= \big|f(z) - f(x_0) - \langle \nabla f(x_0) , z - x_0 \rangle + \langle v , z - x_0 \rangle \big| \\
        &\leq \big|f(z) - f(x_0) - \langle \nabla f(x_0) , z - x_0 \rangle \big| + \big| \langle v , z - x_0 \rangle \big| \\
        &\leq \big|f(z) - f(x_0) - \langle \nabla f(x_0) , z - x_0 \rangle \big| + \|v\|_2 \|z - x_0\|_2 \\
-       &\leq \big|f(z) - f(x_0) - \langle \nabla f(x_0), z - x_0 \rangle \big| + \textstyle{\sqrt{d}\frac{\gamma k^2}{2 \sigma_d}} \|z - x_0\|_2 \\
-       &\leq \frac{\gamma \|z - x_0\|_2^2}{2} + \sqrt{d}\frac{\gamma k^2}{2 \sigma_d} \|z - x_0\|_2,
+       &\leq \big|f(z) - f(x_0) - \langle \nabla f(x_0), z - x_0 \rangle \big| + \big(\sqrt{d}\,\gamma k^2 / (2 \sigma_d)\big) \|z - x_0\|_2 \\
+       &\leq \frac{\gamma \|z - x_0\|_2^2}{2} + \frac{\sqrt{d}\,\gamma k^2}{2 \sigma_d} \|z - x_0\|_2,
   \end{align*}
   where the last inequality follows from {\it Lemma \ref{lemma:1}}.
   %
@@ -585,38 +586,27 @@ simplices whose vertices are not well-spaced (i.e., have large
 diameter, or are nearly contained in a hyperplane) have higher
 error.
 
-The theoretical error bound is sharp and that can be observed with the
+That the theoretical error bound is sharp can be observed with the
 test function $q(x) = \|x\|_2^2,$ $x \in \mathbb{R}^d,$ and the
 simplex defined by vertices $X = \{0, e_1, \ldots, e_d\},$ where $e_i$
-is $i$-th standard basis vector in $\mathbb{R}^d,$ $e = (1,\ldots,1)
-\in \mathbb{R}^d,$ and $0$ denotes the zero vector in any dimension.
-The constants relevant to the error bound are
-
-\vspace{-2mm}
+is the $i$-th standard basis vector in $\mathbb{R}^d,$ $e = (1$,
+$\ldots$, $1) \in \mathbb{R}^d,$ and $0$ denotes the zero vector in
+any dimension.  The constants relevant to the error bound are
 $$ \gamma = 2, \qquad \sigma_d = 1, \qquad k = 1, \qquad x_0 = 0,
 \qquad \hat q(x) = \langle e, x - 0\rangle + q(0). $$
-\vspace{-2mm}
-
 \noindent Noting that $q(0) = 0,$ the approximation error at $z =
 -(1/2)e$ is
-
-\vspace{-2mm}
-\begin{align*}
-  \big|q(z) - \hat q(z)\big| \quad
-  =& \quad \big|\|z\|_2^2 - \langle e,z \rangle\big| \\
-  =& \quad \big| d/4 + d/2 \big| \quad = \quad 3d/4,
-\end{align*}
-\vspace{-2mm}
-
+$$ \big|q(z) - \hat q(z)\big| = \big|\|z\|_2^2 - \langle e,z
+\rangle\big| = \big| d/4 + d/2 \big| = 3d/4, $$
 \noindent while the error bound from the theorem gives
 
 \vspace{-2mm}
 \begin{align*}
-  \big|q(z) - \hat q(z)\big| \quad
-  \leq& \quad \frac{\gamma \|z - x_0\|_2^2}{2} + \sqrt{d} \frac{\gamma k}
+  \big|q(z) - \hat q(z)\big|
+  &\leq \frac{\gamma \|z - x_0\|_2^2}{2} + \frac{\sqrt{d}\,\gamma k}
       {2 \sigma_d} \|z - x_0\|_2 \\
-  =& \quad \|z\|_2^2 + \sqrt{d} \|z\|_2 \\
-  =& \quad d/4 + d/2 \quad = \quad 3d/4.
+  &{}=  \|z\|_2^2 + \sqrt{d} \|z\|_2 \\
+  &{}=  d/4 + d/2 = 3d/4.
 \end{align*}
 \vspace{-2mm}
 
@@ -722,18 +712,17 @@ approximation with more data points on average.  The convergence
 result for a very low-dimensional problem like this is expected.
 However, intuition fails for higher dimensional problems.
 
-In Figure \ref{fig:convergence-20d} shows the test function with $d =
-20$ presents a significantly more challenging approximation problem
-than its counterpart in low dimension. The same increase in number of
-data points from 32 to 8192 causes no apparent improvement in
-approximation for either the noise-free or the noisy
-problems. Perhaps unexpectedly, the interpolation technique performs
-better than the regression technique on the noisy data (right) in
-Figure \ref{fig:convergence-20d}, and worse than the regression
-technique on the noise-free data (left). This result emphasizes the
-relevance of interpolation for problems in high dimension. It also
-reveals that the outcome of MLP regressions can get worse when adding
-more data points.
+Figure \ref{fig:convergence-20d} shows the test function with $d = 20$
+presents a significantly more challenging approximation problem than
+its counterpart in low dimension. The same increase in number of data
+points from 32 to 8192 causes no apparent improvement in approximation
+for either the noise-free or the noisy problems. Perhaps unexpectedly,
+the interpolation technique performs better than the regression
+technique on the noisy data (right) in Figure
+\ref{fig:convergence-20d}, and worse than the regression technique on
+the noise-free data (left). This result emphasizes the relevance of
+interpolation for problems in high dimension. It also reveals that the
+outcome of MLP regressions can get worse when adding more data points.
 
 In summary, the regime of interpolation is much greater for moderate
 to high dimensional problems, even for functions with random noise
