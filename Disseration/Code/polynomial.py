@@ -27,7 +27,7 @@
 #                       all 3 values. Returns coefficient 3-tuple. 
 # 
 
-from fraction import Fraction
+from util.math import Fraction
 
 # This class-method wrapper function ensures that the class method
 # recieves a fraction and returns a "float" if a fraction was not

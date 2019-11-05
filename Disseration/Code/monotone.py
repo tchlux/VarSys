@@ -338,7 +338,7 @@ if __name__ == "__main__":
     x, y = list(x)[SUBSET], list(y)[SUBSET]
 
     # Convert these arrays to exact arithmetic.
-    from fraction import Fraction
+    from util.math import Fraction
     x = list(map(Fraction, x))
     y = list(map(Fraction, y))
     interval = [float(min(x)), float(max(x))]
