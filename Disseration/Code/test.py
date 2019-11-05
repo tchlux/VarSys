@@ -2,7 +2,7 @@ import numpy as np
 import fmodpy
 from util.plot import Plot
 
-splines = fmodpy.fimport("f_monotone.f08", verbose=True,
+splines = fmodpy.fimport("splines.f08", verbose=True,
                          autocompile_extra_files=True,
                          module_link_args=["-lblas", "-llapack"])
 
@@ -82,13 +82,13 @@ if TEST_B_SPLINE:
 # ==================================
 
 if TEST_SPLINE:
-    VISUALIZE_TEST = True
+    VISUALIZE_TEST = False
 
     # knots = np.array([0.,1,2])
     # values = np.array([[1.,0,2,1], [.5,0,1,2], [0,0,0,3]])
 
-    num_knots = 10
-    continuity = 5
+    num_knots = 100
+    continuity = 4
     # Generate some random knots and values.
     knots = np.random.random(size=(num_knots))
     knots.sort()

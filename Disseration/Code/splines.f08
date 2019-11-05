@@ -4,17 +4,113 @@ MODULE SPLINES
 
 CONTAINS
   
+  FUNCTION IS_MONOTONE(KNOTS, COEFFICIENTS)
+    ! Use a computational method to check for the monotonicity of a
+    ! spline over its sequence of knots.
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
+    LOGICAL :: IS_MONOTONE
+    ! Local variables.
+    REAL(KIND=REAL64), DIMENSION(1000) :: EVAL_POINTS, DERIV_VALS
+    ! Evaluate the first derivative of the spline at all points.
+    CALL EVAL_SPLINE(KNOTS, COEFFICIENTS, EVAL_POINTS, DERIV_VALS, 1)
+    ! See if the function is monotone.
+    IS_MONOTONE = (MAXVAL(DERIV_VALS) .GT. 0_REAL64) .AND. (MINVAL(DERIV_VALS) .LT. 0_REAL64)
+  END FUNCTION IS_MONOTONE
+
+  SUBROUTINE FIT_MONOTONE_SPLINE(KNOTS, VALUES, SPLINE_KNOTS, &
+       SPLINE_COEFFICIENTS, ACCURACY)
+    ! Given a sequence of KNOTS and VALUES, find the monotone spline
+    ! that fits some values as close as possible to VALUES along the
+    ! line between provided VALUES(:,2:) and VALUES(:,2:) = 0.
+    ! 
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
+    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: VALUES
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(VALUES) + & 
+         2*SIZE(VALUES,2)) :: SPLINE_KNOTS
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(VALUES)) :: SPLINE_COEFFICIENTS
+    REAL(KIND=REAL64), INTENT(IN),  OPTIONAl :: ACCURACY
+    ! Local variables.
+    REAL(KIND=REAL64), DIMENSION(SIZE(VALUES,1), SIZE(VALUES,2)) :: TEST_VALUES
+    REAL(KIND=REAL64) :: LOW, UPP, MID, ACC
+    ! Check for improper usage. Compute the difference between neighbors.
+    TEST_VALUES(2:,1) = VALUES(2:,1) - VALUES(:SIZE(VALUES,1)-1,1)
+    IF ((MAXVAL(TEST_VALUES(2:,1)) .GT. 0) .AND. &
+         (MINVAL(TEST_VALUES(2:,1)) .LT. 0)) THEN
+       PRINT '("ERROR: The given VALUES were not monotone.")'
+       RETURN
+    END IF
+    ! First test the end point.
+    CALL FIT_SPLINE(KNOTS, VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
+    ! Check to see if this is monotone.
+    IF (IS_MONOTONE(SPLINE_KNOTS, SPLINE_COEFFICIENTS)) RETURN
+    ! Initialize the "ACCURACY" local variable.
+    IF (PRESENT(ACCURACY)) THEN ; ACC = ACCURACY
+    ELSE ; ACC = SQRT(EPSILON(ACC))
+    END IF
+    ! Initialize the endpoints for a binary search.
+    LOW = 0_REAL64
+    UPP = 1_REAL64
+    ! Perform the binary search.
+    DO WHILE ((UPP - LOW) .GT. ACC)
+       ! Assign all the of the derivative values to be the midpoint.
+       MID = (LOW + UPP) / 2_REAL64
+       TEST_VALUES(:,2:) = VALUES(:,2:) * MID
+       ! Fit a spline to the data.
+       CALL FIT_SPLINE(KNOTS, TEST_VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
+       ! Set the new bound based on the monotonicity of the spline.
+       IF (IS_MONOTONE(SPLINE_KNOTS, SPLINE_COEFFICIENTS)) THEN ; LOW = MID
+       ELSE ; UPP = MID
+       END IF
+    END DO
+    ! If the final values tested were not monotone, then redo
+    ! the fit for the "LOW" value.
+    IF (.NOT. IS_MONOTONE(SPLINE_KNOTS, SPLINE_COEFFICIENTS)) THEN
+       TEST_VALUES(:,2:) = VALUES(:,2:) * LOW
+       CALL FIT_SPLINE(KNOTS, TEST_VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
+    END IF
+  END SUBROUTINE FIT_MONOTONE_SPLINE
+
+
   SUBROUTINE FIT_SPLINE(KNOTS, VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
     ! Subroutine for fitting a spline composed of B-splines that
-    ! interpolate the given function value (and derivatives) at knots.
+    ! interpolates the given function value (and function derivatives)
+    ! at provided knots.
     ! 
-    !   -> KNOTS( knot values )
-    !   -> VALUES( knot index, func val )
+    ! INPUT:
+    !   KNOTS(N)    -- The non-decreasing real-valued locations of the
+    !                  break-points bfor the interpolating spline.
+    !   VALUES(N,C) -- The real-valued function values (column 1), and
+    !                  derivative values (columns 2 onwards) that the
+    !                  interpolating spline should produce.
     ! 
-    !      this function
+    ! OUTPUT:
+    !   SPLINE_KNOTS(K) -- The non-decreasing real-valued locations
+    !                      of the breakpoints for the B-splines that
+    !                      compose the resulting spline.
+    !   SPLINE_COEFFICIENTS(NC) -- The coefficients for each of the 
+    !                      B-splines that compose the interpolating
+    !                      spline.
     ! 
-    !   <-  SPLINE_KNOTS
-    !   <-  SPLINE_COEFFICIENTS
+    !   
+    ! DESCRIPTION:
+    ! 
+    !   This function uses the EVAL_BSPLINE method to evaluate the
+    !   B-splines at all locations and the LAPACK routine
+    ! 
+    !     DGBSV
+    ! 
+    !   to compute the coefficients of all component B-splines. The
+    !   resulting fit over general knots in the range [0,1] with
+    !   values in [0,1] has roughly EPSILON(1.0_REAL64) error when
+    !   evaluating the function values, and SQRT(EPSILON(1.0_REAL64))
+    !   error when evaluating the 3rd derivative of a spline.
+    ! 
+    !   This code becomes numerically unstable when evaluating a
+    !   derivative past the 3rd for a C^{>=10} spline. Use of an exact
+    !   arithmetic implementation is recommended for any functions
+    !   beyond C5.
+    ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: VALUES
     REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(VALUES) + & 
@@ -33,19 +129,12 @@ CONTAINS
     DEGREE = 2*CONT - 1
 
     ! Copy over the knots that will define the B-spline representation.
-    PRINT '()'
-    PRINT '("K(1:",I2,") = ",f6.2)', DEGREE+1, KNOTS(1)
     SPLINE_KNOTS(:DEGREE+1) = KNOTS(1)
     DO STEP = 2, SIZE(KNOTS)-1
-       PRINT '("K(",I2,":",I2,") = ",F6.2)', &
-            DEGREE+(STEP-2)*CONT + 2, DEGREE+(STEP-1)*CONT + 1, KNOTS(STEP)
        SPLINE_KNOTS(DEGREE+(STEP-2)*CONT + 2 : &
                     DEGREE+(STEP-1)*CONT + 1) = KNOTS(STEP)
     END DO
     SPLINE_KNOTS(SIZE(SPLINE_KNOTS)-DEGREE:) = KNOTS(SIZE(KNOTS))
-    PRINT '("K(",I2,":",I2,") = ",F6.2)', &
-         SIZE(SPLINE_KNOTS)-DEGREE, SIZE(SPLINE_KNOTS), KNOTS(SIZE(KNOTS))
-    PRINT '()'
 
     ! Copy the VALUES into the SPLINE_COEFFICIENTS (output) variable.
     DO STEP = 1, SIZE(VALUES,1)
@@ -56,9 +145,6 @@ CONTAINS
     ! knots. Each B-spline will have nonzero values at knots for at
     ! most (2*SIZE(VALUES,2) - 1) knots. That suggests a column of at
     ! most (2*SIZE(VALUES,2) - 1) * SIZE(VALUES,2) total values.
-    ! 
-    ! (K x 3 x N) (N x 1) = (K x 3 x 1) ! Evaluation at all points.
-    ! (3K x N) (N x 1)    = (3K x 1)    ! N = num splines, K = num knots
     ! 
     ! For a C1 interpolating spline with 4 knots (each providing
     ! value and first derivative), matrix A will look like:
@@ -72,6 +158,11 @@ CONTAINS
     !                   e40 f40 g40 h40
     !                   e41 f41 g41 h41
     !               
+    ! This comes from:
+    ! 
+    ! (2 x K x N) (N x 1) = (2 x K x 1) ! Evaluation at all points.
+    ! (2K x N) (N x 1)    = (2K x 1)    ! N = num splines, K = num knots
+    ! 
     ! Notice this matrix is banded with equal lower / upper bandwidths
     ! being the maximum number of knots for which a spline takes on a
     ! nonzero value. In general KL = KU = 2*SIZE(VALUES,2) - 1.
@@ -113,37 +204,33 @@ CONTAINS
     ! Check for errors.
     IF (INFO .NE. 0) &
          PRINT '("WARNING: DGBSV INFO flag",I3," on output.")', INFO
-
   END SUBROUTINE FIT_SPLINE
 
 
   SUBROUTINE EVAL_SPLINE(KNOTS, COEFFICIENTS, X, Y, D)
-    ! Evaluate a spline construced with FIT_SPLINE.
+    ! Evaluate a spline construced with FIT_SPLINE. Similar interface
+    ! to EVAL_BSPLINE. Evaluate D derivative at all X, store in Y.
+    ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: X
     REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(X)) :: Y
-    REAL(KIND=REAL64), INTENT(IN), OPTIONAL :: D
+    INTEGER, INTENT(IN), OPTIONAL :: D
     ! Local variables.
     INTEGER :: DERIV, STEP, NUM_KNOTS
     REAL(KIND=REAL64), DIMENSION(SIZE(Y), SIZE(COEFFICIENTS)) :: VALUES
-
     ! Compute the NUM_KNOTS (number of knots) for each B-spline.
     NUM_KNOTS = SIZE(KNOTS) - SIZE(COEFFICIENTS)
-
     ! Assign the local value of the optional derivative "D" argument.
     set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
     ELSE ; DERIV = 0
     END IF set_derivative
-
     ! Evaluate all splines at all the X positions.
     DO STEP = 1, SIZE(COEFFICIENTS)
        CALL EVAL_BSPLINE(KNOTS(STEP:STEP+NUM_KNOTS), X, VALUES(:,STEP), DERIV)
     END DO
-
     ! Store the values into Y as the weighted sums of B-spline evaluations.
     Y(:) = MATMUL(VALUES, COEFFICIENTS)
-
   END SUBROUTINE EVAL_SPLINE
 
 
@@ -194,15 +281,13 @@ CONTAINS
     !                     -  -------------------------.
     !                         KNOTS(K+I) - KNOTS(K+1) 
     ! 
-    !     It should be noted that in the case of repeated knots, a minimum
-    !     allowed denominator value is substituted to prevent a NaN result.
+    !     The B-spline is left continuous everywhere except at the
+    !     last knot, at which it is both left and right continuous.
     ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: X
     REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(X)) :: Y
     INTEGER, INTENT(IN), OPTIONAL :: D
-    ! Set the minimum distance between knots before they're considered repeated.
-    REAL(KIND=REAL64), PARAMETER :: MIN_DIV = SQRT(EPSILON(1.0_REAL64))
     ! Local variables.
     REAL(KIND=REAL64), DIMENSION(SIZE(X), SIZE(KNOTS)) :: VALUES
     INTEGER :: K, STEP, DERIV
@@ -264,15 +349,15 @@ CONTAINS
           DIV_LEFT = (KNOTS(K+STEP-1) - KNOTS(K))
           DIV_RIGHT = (KNOTS(K+STEP) - KNOTS(K+1))
           ! Compute the derivative recurrence relation.
-          IF (DIV_LEFT .GE. MIN_DIV) THEN
-             IF (DIV_RIGHT .GE. MIN_DIV) THEN
+          IF (DIV_LEFT .GT. 0) THEN
+             IF (DIV_RIGHT .GT. 0) THEN
                 VALUES(:,K) =  (STEP-1) * (&
                      VALUES(:,K) / DIV_LEFT - VALUES(:,K+1) / DIV_RIGHT )
              ELSE
                 VALUES(:,K) =  (STEP-1) * (VALUES(:,K) / DIV_LEFT)
              END IF
           ELSE
-             IF (DIV_RIGHT .GE. MIN_DIV) THEN
+             IF (DIV_RIGHT .GT. 0) THEN
                 VALUES(:,K) =  (STEP-1) * ( - VALUES(:,K+1) / DIV_RIGHT )
              END IF
           END IF
