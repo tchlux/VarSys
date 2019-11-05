@@ -25,50 +25,32 @@ CONTAINS
     INTEGER, DIMENSION(SIZE(SPLINE_COEFFICIENTS)) :: IPIV
     REAL(KIND=REAL64), DIMENSION(1 + 3*(2*SIZE(VALUES,2)-1), SIZE(SPLINE_COEFFICIENTS)) :: AB
     ! Local variables.
-    INTEGER :: STEP, DERIV, ORDER, DEGREE, CONT, INFO
+    INTEGER :: STEP, DERIV, DEGREE, CONT, INFO
     INTEGER :: START, END, FIRST, LAST
 
+    ! Define some local variables for notional convenience.
     CONT = SIZE(VALUES,2)
-    ORDER = 2*CONT
-    DEGREE = ORDER - 1
+    DEGREE = 2*CONT - 1
 
     ! Copy over the knots that will define the B-spline representation.
-    SPLINE_KNOTS(:DEGREE) = KNOTS(1)
+    PRINT '()'
+    PRINT '("K(1:",I2,") = ",f6.2)', DEGREE+1, KNOTS(1)
+    SPLINE_KNOTS(:DEGREE+1) = KNOTS(1)
     DO STEP = 2, SIZE(KNOTS)-1
-       SPLINE_KNOTS(DEGREE+STEP:DEGREE+STEP+CONT) = KNOTS(STEP)
+       PRINT '("K(",I2,":",I2,") = ",F6.2)', &
+            DEGREE+(STEP-2)*CONT + 2, DEGREE+(STEP-1)*CONT + 1, KNOTS(STEP)
+       SPLINE_KNOTS(DEGREE+(STEP-2)*CONT + 2 : &
+                    DEGREE+(STEP-1)*CONT + 1) = KNOTS(STEP)
     END DO
     SPLINE_KNOTS(SIZE(SPLINE_KNOTS)-DEGREE:) = KNOTS(SIZE(KNOTS))
-
-    PRINT '("----------------------------------------------------------------------")'
-    PRINT '()'
-
-    PRINT '("KNOTS: ",2(I2,:,","))', SHAPE(KNOTS)
-    PRINT '(100F5.1)', KNOTS
-    PRINT '()'
-
-    PRINT '("VALUES: ",2(I2,:,","))', SHAPE(VALUES)
-    DO STEP = 1, SIZE(VALUES,1)
-       PRINT '(100F5.1)', VALUES(STEP,:)
-    END DO
-    PRINT '()'
-
-    PRINT '("SPLINE_KNOTS: ",2(I2,:,","))', SHAPE(SPLINE_KNOTS)
-    PRINT '(100F5.1)', SPLINE_KNOTS
+    PRINT '("K(",I2,":",I2,") = ",F6.2)', &
+         SIZE(SPLINE_KNOTS)-DEGREE, SIZE(SPLINE_KNOTS), KNOTS(SIZE(KNOTS))
     PRINT '()'
 
     ! Copy the VALUES into the SPLINE_COEFFICIENTS (output) variable.
     DO STEP = 1, SIZE(VALUES,1)
        SPLINE_COEFFICIENTS(1+(STEP-1)*CONT : STEP*CONT) = VALUES(STEP,:)
     END DO
-
-    PRINT '("SPLINE_COEFFICIENTS: ",2(I2,:,","))', SHAPE(SPLINE_COEFFICIENTS)
-    PRINT '(100F5.1)', SPLINE_COEFFICIENTS
-    PRINT '()'
-
-    PRINT '("AB: ",2(I2,:,","))', SHAPE(AB)
-    PRINT '()'
-
-    PRINT '("----------------------------------------------------------------------")'
 
     ! Evaluate each B-spline and it's appropriate derivatives at all
     ! knots. Each B-spline will have nonzero values at knots for at
@@ -93,9 +75,8 @@ CONTAINS
     ! Notice this matrix is banded with equal lower / upper bandwidths
     ! being the maximum number of knots for which a spline takes on a
     ! nonzero value. In general KL = KU = 2*SIZE(VALUES,2) - 1.
-    ! 
 
-    ! Initialize all unused cells in AB to zero.
+    ! Initialize all untouched values in AB to zero.
     AB(:,:) = 0_REAL64
 
     FIRST = 1
@@ -116,50 +97,22 @@ CONTAINS
        ! The mapping is looks like   AB[LK+KU+1+i-j,j] = A[i,j]
        START = 2*DEGREE+1 + (1 + (FIRST-1)*CONT - STEP)
        END = MIN(SIZE(AB,1), START + (LAST-FIRST+1)*CONT - 1)
-       PRINT '()'
-       PRINT '("STEP: ",I2)', STEP
-       PRINT '(" FIRST: ",I2)', FIRST
-       PRINT '(" LAST:  ",I2)', LAST
-       PRINT '(" START: ",I2)', START
-       PRINT '(" END:   ",I2)', END
-       PRINT '(" KNOTS(",I1,":",I1,")  =",100F6.1)', STEP, STEP+ORDER, SPLINE_KNOTS(STEP:STEP+ORDER)
-       PRINT '(" POINTS(",I1,":",I1,") =",100F6.1)', FIRST, LAST, KNOTS(FIRST:LAST)
        ! Evaluate each derivative of this B-spline at relevant knots.
        DO DERIV = 0, CONT-1
-          PRINT '("  DERIV:",I3)', DERIV
-          ! Place the evaluations into a block out of a column in AB.
-          CALL EVAL_BSPLINE(SPLINE_KNOTS(STEP:STEP+ORDER), &
+          ! Place the evaluations into a block out of a column in AB,
+          ! shift according to which derivative is being evaluated
+          ! and use a stride appropriate for the continuity.
+          CALL EVAL_BSPLINE(SPLINE_KNOTS(STEP:STEP+DEGREE+1), &
                KNOTS(FIRST:LAST), AB(START+DERIV:END:CONT,STEP), DERIV)
-          ! ^ In some of the above cases, the size of the slice out of
-          !   AB provided will be bigger than the number of evaluation
-          !   points (from "KNOTS). This is okay, the unused tail of
-          !   each slice will be ignored and left filled with zeros.
-          PRINT '("                ",100F6.1)', AB(START+DERIV:END:CONT,STEP)
        END DO
-       ! Revert the 'START' to show the evaluation at all knots.
-       PRINT '(" AB(",I2,":",I2,",",I2,"):",100F6.1)', START, END, STEP, AB(START:END, STEP)
-       PRINT '()'
     END DO
-
-    PRINT '()'
-    PRINT '("AB: ",2(I2,:,","))', SHAPE(AB)
-    DO STEP = 1, SIZE(AB,1)
-       PRINT '(100F5.1)', AB(STEP,:)
-    END DO
-    PRINT '()'
 
     ! Call the function to solve the system.
     CALL DGBSV(SIZE(SPLINE_COEFFICIENTS), DEGREE, DEGREE, 1, AB, &
          SIZE(AB,1), IPIV, SPLINE_COEFFICIENTS, SIZE(VALUES), INFO)
-
-    PRINT '("AB: ",2(I2,:,","))', SHAPE(AB)
-    DO STEP = 1, SIZE(AB,1)
-       PRINT '(100F5.1)', AB(STEP,:)
-    END DO
-    PRINT '()'
-    PRINT '("SPLINE_COEFFICIENTS: ",100(F6.2,:,","))', SPLINE_COEFFICIENTS
-    PRINT '()'    
-    PRINT '("INFO: ",I3)', INFO
+    ! Check for errors.
+    IF (INFO .NE. 0) &
+         PRINT '("WARNING: DGBSV INFO flag",I3," on output.")', INFO
 
   END SUBROUTINE FIT_SPLINE
 
