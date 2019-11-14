@@ -4,6 +4,73 @@ MODULE SPLINES
 
 CONTAINS
   
+  FUNCTION L2(KNOTS, VALUES1, VALUES2, DIVISIONS)
+    ! Given a set of knots and two sets of coefficients, where each
+    ! set defines a spline, compute the L2 difference between the two
+    ! splines using Simpson's rule.
+    ! 
+    !   KNOTS(K) -- The non-decreasing sequence of unique real-valued
+    !               break points, with at least 2 unique values.
+    !   VALUES1(K,C1) -- The function (and derivative) values of a polynomial at knots.
+    !   VALUES2(K,C2) -- The function (and derivative) values of a polynomial at knots.
+    !   DIVISIONS -- The number of divisions used to estimate the 
+    !                integral over EACH interval of the splines.
+    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:)   :: KNOTS
+    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:,:) :: VALUES1, VALUES2
+    INTEGER, INTENT(IN),  OPTIONAL :: DIVISIONS
+    ! Local variables.
+    ! First define variables for the local spline fits of the values.
+    REAL(KIND=REAL64) :: &
+         KNOTS1(SIZE(VALUES1) + 2*SIZE(VALUES1,2)), &
+         KNOTS2(SIZE(VALUES2) + 2*SIZE(VALUES2,2)), &
+         COEFS1(SIZE(VALUES1)), COEFS2(SIZE(VALUES2))
+    ! Now declare extra auxillary variables needed for computing L2.
+    INTEGER :: D, STEP
+    REAL(KIND=REAL64) :: SQ_SUM, L2
+    REAL(KIND=REAL64), ALLOCATABLE, DIMENSION(:) :: REL_X, X, EVALS1, EVALS2
+    ! Declare the (even) number of divisions.
+    IF (PRESENT(DIVISIONS)) THEN ; D = DIVISIONS
+    ELSE ; D = (MAX(SIZE(VALUES1,2), SIZE(VALUES2,2))*2) * 2
+    END IF
+    D = D + MOD(D,2)
+    ! Allocate space for storing the spline evaluations on each interval.
+    ALLOCATE( REL_X(D+1), X(D+1), EVALS1(D+1), EVALS2(D+1) )
+    ! Initialize a relative set of X to be evenly spaced on [0,1].
+    DO STEP = 0, D
+       REL_X(STEP+1) = REAL(STEP,REAL64) / D
+    END DO
+    PRINT '("Relative x:", 100f6.2)', REL_X(:)
+    ! Fit the splines to the two sets of knots and values.
+    CALL FIT_SPLINE(KNOTS, VALUES1, KNOTS1, COEFS1)
+    CALL FIT_SPLINE(KNOTS, VALUES2, KNOTS2, COEFS2)
+    ! Cycle over all the intervals tracking the squared sum.
+    SQ_SUM = 0_REAL64
+    DO STEP = 1, SIZE(KNOTS)-1
+       PRINT '()'
+       PRINT '("KNOTS:",f6.2,f6.2)', KNOTS(STEP), KNOTS(STEP+1)
+       ! Evaluate the (squared) difference between the splines at points.
+       X(:) = KNOTS(STEP) + REL_X(:) * (KNOTS(STEP+1) - KNOTS(STEP))
+       PRINT '("  X:", 100f6.2)', X(:)
+       EVALS1(:) = X(:)
+       EVALS2(:) = X(:)
+       CALL EVAL_SPLINE(KNOTS1, COEFS1, EVALS1)
+       CALL EVAL_SPLINE(KNOTS2, COEFS2, EVALS2)
+       PRINT '(" Y1:", 100f6.2)', EVALS1
+       PRINT '(" Y2:", 100f6.2)', EVALS2
+       EVALS1(:) = (EVALS1(:) - EVALS2(:))**2
+       PRINT '(" ^2:", 100f6.2)', EVALS1
+       ! Compute the squared L2 over this interval with Simpson's rule.
+       SQ_SUM = SQ_SUM + ((KNOTS(STEP+1)-KNOTS(STEP)) / (3 * D) * &
+            (EVALS1(1) + EVALS1(D+1) + &
+            2*(SUM(EVALS1(3:D-1:2)) + 2*SUM(EVALS1(2:D:2)))))**2
+    END DO
+    ! Compute the final L2 as the square root of the sum of the squares.
+    L2 = SQRT(SQ_SUM)
+
+    DEALLOCATE( REl_X, X, EVALS1, EVALS2 )
+
+  END FUNCTION L2
+
   FUNCTION IS_MONOTONE(KNOTS, COEFFICIENTS)
     ! Use a computational method to check for the monotonicity of a
     ! spline over its sequence of knots.
@@ -11,9 +78,15 @@ CONTAINS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
     LOGICAL :: IS_MONOTONE
     ! Local variables.
-    REAL(KIND=REAL64), DIMENSION(1000) :: EVAL_POINTS, DERIV_VALS
+    REAL(KIND=REAL64), DIMENSION(1000) :: DERIV_VALS
+    INTEGER :: I
+    ! Assign the locations to evaluate the spline.
+    DO I = 1, SIZE(DERIV_VALS)
+       DERIV_VALS(I) = I
+    END DO
+    DERIV_VALS(:) = (DERIV_VALS(:) / SIZE(DERIV_VALS)) * (KNOTS(SIZE(KNOTS))-KNOTS(1))
     ! Evaluate the first derivative of the spline at all points.
-    CALL EVAL_SPLINE(KNOTS, COEFFICIENTS, EVAL_POINTS, DERIV_VALS, 1)
+    CALL EVAL_SPLINE(KNOTS, COEFFICIENTS, DERIV_VALS, 1)
     ! See if the function is monotone.
     IS_MONOTONE = (MAXVAL(DERIV_VALS) .GT. 0_REAL64) .AND. (MINVAL(DERIV_VALS) .LT. 0_REAL64)
   END FUNCTION IS_MONOTONE
@@ -193,8 +266,9 @@ CONTAINS
           ! Place the evaluations into a block out of a column in AB,
           ! shift according to which derivative is being evaluated
           ! and use a stride appropriate for the continuity.
+          AB(START+DERIV:END:CONT,STEP) = KNOTS(FIRST:LAST)
           CALL EVAL_BSPLINE(SPLINE_KNOTS(STEP:STEP+DEGREE+1), &
-               KNOTS(FIRST:LAST), AB(START+DERIV:END:CONT,STEP), DERIV)
+               AB(START+DERIV:END:CONT,STEP), DERIV)
        END DO
     END DO
 
@@ -207,18 +281,17 @@ CONTAINS
   END SUBROUTINE FIT_SPLINE
 
 
-  SUBROUTINE EVAL_SPLINE(KNOTS, COEFFICIENTS, X, Y, D)
+  SUBROUTINE EVAL_SPLINE(KNOTS, COEFFICIENTS, XY, D)
     ! Evaluate a spline construced with FIT_SPLINE. Similar interface
     ! to EVAL_BSPLINE. Evaluate D derivative at all X, store in Y.
     ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
-    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: X
-    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(X)) :: Y
+    REAL(KIND=REAL64), INTENT(INOUT),  DIMENSION(:) :: XY
     INTEGER, INTENT(IN), OPTIONAL :: D
     ! Local variables.
     INTEGER :: DERIV, STEP, NUM_KNOTS
-    REAL(KIND=REAL64), DIMENSION(SIZE(Y), SIZE(COEFFICIENTS)) :: VALUES
+    REAL(KIND=REAL64), DIMENSION(SIZE(XY), SIZE(COEFFICIENTS)) :: VALUES
     ! Compute the NUM_KNOTS (number of knots) for each B-spline.
     NUM_KNOTS = SIZE(KNOTS) - SIZE(COEFFICIENTS)
     ! Assign the local value of the optional derivative "D" argument.
@@ -227,26 +300,28 @@ CONTAINS
     END IF set_derivative
     ! Evaluate all splines at all the X positions.
     DO STEP = 1, SIZE(COEFFICIENTS)
-       CALL EVAL_BSPLINE(KNOTS(STEP:STEP+NUM_KNOTS), X, VALUES(:,STEP), DERIV)
+       VALUES(:,STEP) = XY(:)
+       CALL EVAL_BSPLINE(KNOTS(STEP:STEP+NUM_KNOTS), VALUES(:,STEP), DERIV)
     END DO
     ! Store the values into Y as the weighted sums of B-spline evaluations.
-    Y(:) = MATMUL(VALUES, COEFFICIENTS)
+    XY(:) = MATMUL(VALUES, COEFFICIENTS)
   END SUBROUTINE EVAL_SPLINE
 
 
-  SUBROUTINE EVAL_BSPLINE(KNOTS, X, Y, D)
+  SUBROUTINE EVAL_BSPLINE(KNOTS, XY, D)
     ! Subroutine for evaluating a B-spline with provided knot sequence.
     ! 
     ! INPUT:
     !   KNOTS -- The nondecreasing sequence of break points for the B-spline.
-    !   X     -- The locations at which the B-spline is evaluated.
     ! 
-    ! OUTPUT:
-    !   Y  --  The value of the B-spline with prescribed knots evaluated
-    !          at the given X locations.
+    ! INPUT / OUTPUT:
+    !   XY    -- The locations at which the B-spline is evaluated on
+    !            input, on output holds the value of the B-spline with
+    !            prescribed knots evaluated at the given X locations.
     ! 
     ! OPTIONAL INPUT:
-    !   D [= 0]  --  The derivative to take of the evaluated B-spline. 
+    !   D [= 0]  --  The derivative to take of the evaluated B-spline.
+    !                When negative, this subroutine integrates the B-spline.
     ! 
     ! 
     ! DESCRIPTION:
@@ -256,7 +331,7 @@ CONTAINS
     !      B_{K,1}(X)   =   1     if KNOTS(K) <= X < KNOTS(K+1),
     !                       0     otherwise,
     ! 
-    !    where K is the knot index, I = 2, ..., SIZE(KNOTS)-D-1, and
+    !    where K is the knot index, I = 2, ..., SIZE(KNOTS)-MAX(D,0)-1, and
     ! 
     !                               X - KNOTS(K)                      
     !      B_{K,I}(X) =      ------------------------- B_{K,I-1}(X)   
@@ -264,13 +339,19 @@ CONTAINS
     !                                                                   
     !                             KNOTS(K+I) - X                    
     !                     +  ------------------------- B_{K+1,I-1}(X).
-    !                         KNOTS(K+I) - KNOTS(K+1)               
+    !                         KNOTS(K+I) - KNOTS(K+1)                 
     ! 
     !    However, all of the intermediate steps (I) are stored in a
     !    single block of memory that is overwritten at each step.
     ! 
+    !    For the computation of the integral of the B-spline, the 
+    !    continuation of the above formula proceeds one step at a
+    !    time by adding a duplicate of the last knot, raising the
+    !    order of all intermediate B-splines, summing their values,
+    !    and dividing the sums by the width of the supported interval.
+    ! 
     !    For the computation of the derivative of the B-spline, the
-    !    continuation of the above recurrence relation is used that
+    !    continuation of the standard recurrence relation is used that
     !    builds from I = SIZE(KNOTS)-D, ..., SIZE(KNOTS)-1 as
     ! 
     !                           (I-1) B_{K,I-1}(X)     
@@ -281,22 +362,23 @@ CONTAINS
     !                     -  -------------------------.
     !                         KNOTS(K+I) - KNOTS(K+1) 
     ! 
-    !     The B-spline is left continuous everywhere except at the
+    !     The B-spline is right continuous everywhere except at the
     !     last knot, at which it is both left and right continuous.
     ! 
-    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
-    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: X
-    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(X)) :: Y
+    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: KNOTS
+    REAL(KIND=REAL64), INTENT(INOUT), DIMENSION(:) :: XY
     INTEGER, INTENT(IN), OPTIONAL :: D
     ! Local variables.
-    REAL(KIND=REAL64), DIMENSION(SIZE(X), SIZE(KNOTS)) :: VALUES
+    REAL(KIND=REAL64), DIMENSION(SIZE(XY), SIZE(KNOTS)) :: VALUES
     INTEGER :: K, STEP, DERIV
     REAL(KIND=REAL64) :: DIV_LEFT, DIV_RIGHT
-
     ! Assign the local value of the optional derivative "D" argument.
     set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
     ELSE ; DERIV = 0
     END IF set_derivative
+
+    ! For integration, cap all X values to be the last knot.
+    IF (DERIV .LT. 0) XY(:) = MIN(XY(:), KNOTS(SIZE(KNOTS)))
 
     ! Initialize all values to 0.
     VALUES(:,:) = 0.0_REAL64
@@ -305,18 +387,20 @@ CONTAINS
     ! Make the last knot inclusive on the right.
     DO K = 1, SIZE(KNOTS)-1
        IF (KNOTS(K+1) .NE. KNOTS(SIZE(KNOTS))) THEN
-          WHERE ( (KNOTS(K) .LE. X(:)) .AND. (X(:) .LT. KNOTS(K+1)) )
+          ! Make all knots before the last right continuous.
+          WHERE ( (KNOTS(K) .LE. XY(:)) .AND. (XY(:) .LT. KNOTS(K+1)) )
              VALUES(:,K) = 1.0_REAL64
           END WHERE
        ELSE
-          WHERE ( (KNOTS(K) .LE. X(:)) .AND. (X(:) .LE. KNOTS(K+1)) )
+          ! Make the last interval left AND right continuous.
+          WHERE ( (KNOTS(K) .LE. XY(:)) .AND. (XY(:) .LE. KNOTS(K+1)) )
              VALUES(:,K) = 1.0_REAL64
           END WHERE
        END IF
     END DO
 
     ! Compute the value of the B-spline from the knot sequence.
-    compute_spline : DO STEP=2, SIZE(KNOTS)-DERIV-1
+    compute_spline : DO STEP = 2, SIZE(KNOTS)-MAX(DERIV,0)-1
        ! Cycle over each knot accumulating the values for the recurrence
        ! computation of the B-spline (skip last steps for derivatives).
        DO K = 1, SIZE(KNOTS)-STEP
@@ -327,14 +411,14 @@ CONTAINS
           IF (DIV_LEFT .GT. 0) THEN
              IF (DIV_RIGHT .GT. 0) THEN
                 VALUES(:,K) = &
-                     ((X(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K) + &
-                     ((KNOTS(K+STEP) - X(:)) / DIV_RIGHT) * VALUES(:,K+1)
+                     ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K) + &
+                     ((KNOTS(K+STEP) - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
              ELSE
-                VALUES(:,K) = ((X(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K)
+                VALUES(:,K) = ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K)
              END IF
           ELSE
              IF (DIV_RIGHT .GT. 0) THEN
-                VALUES(:,K) = ((KNOTS(K+STEP) - X(:)) / DIV_RIGHT) * VALUES(:,K+1)
+                VALUES(:,K) = ((KNOTS(K+STEP) - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
              END IF
           END IF
        END DO
@@ -364,9 +448,68 @@ CONTAINS
        END DO
     END DO compute_derivative
 
-    ! Assign the values into the "Y" output.
-    Y(:) = VALUES(:,1)
+    ! If integration is being performed, then we need to raise the
+    ! order of all (sub) B-splines to be the same order as the first.
+    IF (DERIV .LT. 0) THEN
+       raise_order : DO STEP = 2, SIZE(KNOTS)-1
+          DO K = SIZE(KNOTS)-(STEP-1), SIZE(KNOTS)-1
+             DIV_LEFT = (KNOTS(SIZE(KNOTS)) - KNOTS(K))
+             DIV_RIGHT = (KNOTS(SIZE(KNOTS)) - KNOTS(K+1))
+             IF (DIV_LEFT .GT. 0) THEN
+                IF (DIV_RIGHT .GT. 0) THEN
+                   VALUES(:,K) = &
+                        ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K) + &
+                        ((KNOTS(MIN(K+STEP,SIZE(KNOTS))) - XY(:)) &
+                        / DIV_RIGHT) * VALUES(:,K+1)
+                ELSE
+                   VALUES(:,K) = ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K)
+                END IF
+             ELSE
+                IF (DIV_RIGHT .GT. 0) THEN
+                   VALUES(:,K) = ((KNOTS(MIN(K+STEP,SIZE(KNOTS))) - XY(:)) &
+                        / DIV_RIGHT) * VALUES(:,K+1)
+                END IF
+             END IF
+          END DO
+       END DO raise_order
+    END IF
 
+    ! Compute the integral of the B-spline (if D < 0).
+    compute_integral : DO STEP = 1, -DERIV
+       DO K = 1, SIZE(KNOTS)-1
+          DIV_LEFT = (KNOTS(SIZE(KNOTS)) - KNOTS(K))
+          DIV_RIGHT = (KNOTS(SIZE(KNOTS)) - KNOTS(K+1))
+          IF (DIV_LEFT .GT. 0) THEN
+             IF (DIV_RIGHT .GT. 0) THEN
+                VALUES(:,K) = &
+                     ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K) + &
+                     ((KNOTS(SIZE(KNOTS)) - XY(:)) &
+                     / DIV_RIGHT) * VALUES(:,K+1)
+             ELSE
+                VALUES(:,K) = ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K)
+             END IF
+          ELSE
+             IF (DIV_RIGHT .GT. 0) THEN
+                VALUES(:,K) = ((KNOTS(SIZE(KNOTS)) - XY(:)) &
+                     / DIV_RIGHT) * VALUES(:,K+1)
+             END IF
+          END IF
+       END DO
+       ! Finish the integral by summing the constituent basis
+       ! functions, then rescaling them according to their domain.
+       DO K = SIZE(KNOTS)-1, 1, -1
+          VALUES(:,K) = VALUES(:,K) + VALUES(:,K+1)
+       END DO
+       VALUES(:,1) = VALUES(:,1) * (KNOTS(SIZE(KNOTS)) - KNOTS(1)) / (SIZE(KNOTS)-2+STEP)
+       IF (STEP+DERIV .LT. 0) THEN
+          DO K = 2, SIZE(KNOTS)-1
+             VALUES(:,K) = VALUES(:,K) * (KNOTS(SIZE(KNOTS)) - KNOTS(K)) / (SIZE(KNOTS)-2+STEP)
+          END DO
+       END IF
+    END DO compute_integral
+
+    ! Assign the values into the "Y" output.
+    XY(:) = VALUES(:,1)
   END SUBROUTINE EVAL_BSPLINE
 
 END MODULE SPLINES

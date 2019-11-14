@@ -260,3 +260,18 @@
 
 
 
+# y2 = np.array([[0.,-1], [0,0]])
+# g = spline_fit(x, y2)
+# plot_spline("g", g, p)
+
+# y3 = y1 - y2
+# h = spline_fit(x, y3)
+# plot_spline("spline f-g", h, p)
+            
+# def diff(x, d=0):
+#     x = np.array([x], dtype=float)
+#     return (splines.eval_spline(f.knots, f.coefs, x, d=d) -
+#             splines.eval_spline(g.knots, g.coefs, x, d=d))[0]
+# p.add_func("f-g", diff, [min(x), max(x)])
+
+
