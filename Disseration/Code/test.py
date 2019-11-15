@@ -8,9 +8,9 @@ splines = fmodpy.fimport("splines.f08", verbose=True,
 
 
 TEST_BANDED_MATRIX = False
-TEST_B_SPLINE = False
+TEST_B_SPLINE = True
 TEST_SPLINE = False
-TEST_SPLINE_L2 = True
+TEST_SPLINE_L2 = False
 
 
 # =============================================
@@ -50,7 +50,9 @@ if TEST_BANDED_MATRIX:
 # ===========================================
 
 if TEST_B_SPLINE:
-    knots = np.array([0.,1,3,3,6])+1
+    # knots = np.array([0.,1,3,3,6])+1
+    # knots = np.array([0.,1,1,1])
+    knots = np.array([0.,1,2,3,4])
     x = np.linspace(min(knots)-.1,max(knots)+.1,101)
     y = splines.eval_bspline(knots, x.copy(), d=0)
 
@@ -123,20 +125,25 @@ if TEST_B_SPLINE:
 # ==================================
 
 if TEST_SPLINE:
-    VISUALIZE_TEST = False
+    VISUALIZE_TEST = True
 
-    # knots = np.array([0.,1,2])
-    # values = np.array([[1.,0,2,1], [.5,0,1,2], [0,0,0,3]])
+    if VISUALIZE_TEST:
+        knots = np.array([0.,1,2])
+        # values = np.array([[1.,0,2,1], [.5,0,1,2], [0,0,0,3]])
+        values = np.array([[1.,0], [0.,0], [0.,0]])
+        continuity = values.shape[1]-1
+    else:
+        num_knots = 100
+        continuity = 4
+        # Generate some random knots and values.
+        knots = np.random.random(size=(num_knots))
+        knots.sort()
+        values = np.random.random(size=(num_knots,continuity))
 
-    num_knots = 100
-    continuity = 4
-    # Generate some random knots and values.
-    knots = np.random.random(size=(num_knots))
-    knots.sort()
-    values = np.random.random(size=(num_knots,continuity))
     # Get the spline knots and spline coefficients.
     values = np.asfortranarray(values)
     sk, sc = splines.fit_spline(knots, values)
+    sc *= -1
     for d in range(continuity):
         y = splines.eval_spline(sk, sc, knots.copy(), d=d)
         error = abs(y - values[:,d])
@@ -163,6 +170,9 @@ if TEST_SPLINE:
             dy = splines.eval_spline(sk, sc, x.copy(), d=d)
             p.add(f"D{d}", x, dy, mode="lines", color=color, dash=dash,group=d)
             p.add(f"k{d}", knots, values[:,d], color=color, group=d)
+        y = splines.eval_spline(sk, sc, x.copy(), d=-1)
+        p.add("Integral", x, y, mode="lines", color=p.color(0), group="i")
+
         p.show(file_name=f"spline_test-N{len(values)}-C{len(values[0])}.html")
  
 

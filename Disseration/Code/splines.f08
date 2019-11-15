@@ -66,83 +66,38 @@ CONTAINS
     END DO
     ! Compute the final L2 as the square root of the sum of the squares.
     L2 = SQRT(SQ_SUM)
-
     DEALLOCATE( REl_X, X, EVALS1, EVALS2 )
-
   END FUNCTION L2
 
-  FUNCTION IS_MONOTONE(KNOTS, COEFFICIENTS)
-    ! Use a computational method to check for the monotonicity of a
-    ! spline over its sequence of knots.
-    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
-    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
-    LOGICAL :: IS_MONOTONE
-    ! Local variables.
-    REAL(KIND=REAL64), DIMENSION(1000) :: DERIV_VALS
-    INTEGER :: I
-    ! Assign the locations to evaluate the spline.
-    DO I = 1, SIZE(DERIV_VALS)
-       DERIV_VALS(I) = I
-    END DO
-    DERIV_VALS(:) = (DERIV_VALS(:) / SIZE(DERIV_VALS)) * (KNOTS(SIZE(KNOTS))-KNOTS(1))
-    ! Evaluate the first derivative of the spline at all points.
-    CALL EVAL_SPLINE(KNOTS, COEFFICIENTS, DERIV_VALS, 1)
-    ! See if the function is monotone.
-    IS_MONOTONE = (MAXVAL(DERIV_VALS) .GT. 0_REAL64) .AND. (MINVAL(DERIV_VALS) .LT. 0_REAL64)
-  END FUNCTION IS_MONOTONE
 
-  SUBROUTINE FIT_MONOTONE_SPLINE(KNOTS, VALUES, SPLINE_KNOTS, &
-       SPLINE_COEFFICIENTS, ACCURACY)
-    ! Given a sequence of KNOTS and VALUES, find the monotone spline
-    ! that fits some values as close as possible to VALUES along the
-    ! line between provided VALUES(:,2:) and VALUES(:,2:) = 0.
-    ! 
-    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
-    REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:,:) :: VALUES
-    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(VALUES) + & 
-         2*SIZE(VALUES,2)) :: SPLINE_KNOTS
-    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(VALUES)) :: SPLINE_COEFFICIENTS
-    REAL(KIND=REAL64), INTENT(IN),  OPTIONAl :: ACCURACY
-    ! Local variables.
-    REAL(KIND=REAL64), DIMENSION(SIZE(VALUES,1), SIZE(VALUES,2)) :: TEST_VALUES
-    REAL(KIND=REAL64) :: LOW, UPP, MID, ACC
-    ! Check for improper usage. Compute the difference between neighbors.
-    TEST_VALUES(2:,1) = VALUES(2:,1) - VALUES(:SIZE(VALUES,1)-1,1)
-    IF ((MAXVAL(TEST_VALUES(2:,1)) .GT. 0) .AND. &
-         (MINVAL(TEST_VALUES(2:,1)) .LT. 0)) THEN
-       PRINT '("ERROR: The given VALUES were not monotone.")'
-       RETURN
-    END IF
-    ! First test the end point.
-    CALL FIT_SPLINE(KNOTS, VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
-    ! Check to see if this is monotone.
-    IF (IS_MONOTONE(SPLINE_KNOTS, SPLINE_COEFFICIENTS)) RETURN
-    ! Initialize the "ACCURACY" local variable.
-    IF (PRESENT(ACCURACY)) THEN ; ACC = ACCURACY
-    ELSE ; ACC = SQRT(EPSILON(ACC))
-    END IF
-    ! Initialize the endpoints for a binary search.
-    LOW = 0_REAL64
-    UPP = 1_REAL64
-    ! Perform the binary search.
-    DO WHILE ((UPP - LOW) .GT. ACC)
-       ! Assign all the of the derivative values to be the midpoint.
-       MID = (LOW + UPP) / 2_REAL64
-       TEST_VALUES(:,2:) = VALUES(:,2:) * MID
-       ! Fit a spline to the data.
-       CALL FIT_SPLINE(KNOTS, TEST_VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
-       ! Set the new bound based on the monotonicity of the spline.
-       IF (IS_MONOTONE(SPLINE_KNOTS, SPLINE_COEFFICIENTS)) THEN ; LOW = MID
-       ELSE ; UPP = MID
-       END IF
-    END DO
-    ! If the final values tested were not monotone, then redo
-    ! the fit for the "LOW" value.
-    IF (.NOT. IS_MONOTONE(SPLINE_KNOTS, SPLINE_COEFFICIENTS)) THEN
-       TEST_VALUES(:,2:) = VALUES(:,2:) * LOW
-       CALL FIT_SPLINE(KNOTS, TEST_VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
-    END IF
-  END SUBROUTINE FIT_MONOTONE_SPLINE
+
+  SUBROUTINE MULTIPLY_SPLINES(KNOTS1, COEFS1, KNOTS2, COEFS2, &
+       SPLINE_KNOTS, SPLINE_COEFFICIENTS)
+    ! Given two splines defined by their knot and coefficient
+    ! sequences, compute the spline that is the pointwise
+    ! multiplication of the two splines.
+    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: KNOTS1, KNOTS2, COEFS1, COEFS2
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(KNOTS1)+SIZE(KNOTS2)) :: SPLINE_KNOTS
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION( (SIZE(KNOTS1) + SIZE(KNOTS2)) * 2 * &
+         MAX(SIZE(KNOTS1)-SIZE(COEFS1), SIZE(KNOTS2)-SIZE(COEFS2))) :: SPLINE_COEFFICIENTS
+    ! Determine the knots that will be kept.
+    ! Evaluate at appropriate points.
+    ! Solve the linear system determining the spline coefficients.
+  END SUBROUTINE MULTIPLY_SPLINES
+
+  SUBROUTINE ADD_SPLINES(KNOTS1, COEFS1, KNOTS2, COEFS2, &
+       SPLINE_KNOTS, SPLINE_COEFFICIENTS)
+    ! Given two splines defined by their knot and coefficient
+    ! sequences, compute the spline that is the pointwise
+    ! addition of the two splines.
+    REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: KNOTS1, KNOTS2, COEFS1, COEFS2
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(KNOTS1)+SIZE(KNOTS2)) :: SPLINE_KNOTS
+    REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(COEFS1)+SIZE(COEFS2)) :: SPLINE_COEFFICIENTS
+    ! Determine the knots that will be kept.
+    ! Evaluate at appropriate points.
+    ! Solve the linear system determining the spline coefficients.
+  END SUBROUTINE ADD_SPLINES
+
 
 
   SUBROUTINE FIT_SPLINE(KNOTS, VALUES, SPLINE_KNOTS, SPLINE_COEFFICIENTS)
@@ -283,7 +238,7 @@ CONTAINS
 
   SUBROUTINE EVAL_SPLINE(KNOTS, COEFFICIENTS, XY, D)
     ! Evaluate a spline construced with FIT_SPLINE. Similar interface
-    ! to EVAL_BSPLINE. Evaluate D derivative at all X, store in Y.
+    ! to EVAL_BSPLINE. Evaluate D derivative at all XY, result in XY.
     ! 
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
@@ -451,6 +406,17 @@ CONTAINS
     ! If integration is being performed, then we need to raise the
     ! order of all (sub) B-splines to be the same order as the first.
     IF (DERIV .LT. 0) THEN
+       ! Zero out repetitions of the last knot to prevent an integral
+       ! that is too large at exactly the right endpoint.
+       remove_repeats : DO STEP = SIZE(KNOTS)-1, 1, -1
+          IF (KNOTS(STEP) .NE. KNOTS(SIZE(KNOTS))) THEN
+             IF (STEP .LT. SIZE(KNOTS)-1) VALUES(:,STEP+1:) = 0
+             EXIT remove_repeats
+          END IF
+       END DO remove_repeats
+
+       ! Loop through starting at the back, raising the order by
+       ! normal evaluation of a B-spline.
        raise_order : DO STEP = 2, SIZE(KNOTS)-1
           DO K = SIZE(KNOTS)-(STEP-1), SIZE(KNOTS)-1
              DIV_LEFT = (KNOTS(SIZE(KNOTS)) - KNOTS(K))
