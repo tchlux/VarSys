@@ -59,23 +59,37 @@ CONTAINS
   END SUBROUTINE FIT_MONOTONE_SPLINE
 
   FUNCTION IS_MONOTONE(KNOTS, COEFFICIENTS)
-    ! Use a computational method to check for the monotonicity of a
-    ! spline over its sequence of knots.
+    ! Use the monotonicity of the coefficients to determine spline monotonicity.
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
     LOGICAL :: IS_MONOTONE
     ! Local variables.
-    REAL(KIND=REAL64), DIMENSION(1000) :: DERIV_VALS
-    INTEGER :: I
-    ! Assign the locations to evaluate the spline.
-    DO I = 1, SIZE(DERIV_VALS)
-       DERIV_VALS(I) = I
+    INTEGER :: I, SIGN
+    ! Check for monotonicity.
+    SIGN = 0
+    IS_MONOTONE = .TRUE.
+    monotone_check : DO I = 1, SIZE(COEFFICIENTS)-1
+       ! Assign a "SIGN" if it has not yet been assigned.
+       IF (SIGN .EQ. 0) THEN
+          IF (COEFFICIENTS(I+1) .LT. COEFFICIENTS(I)) THEN
+             SIGN = -1
+          ELSE IF (COEFFICIENTS(I+1) .GT. COEFFICIENTS(I)) THEN
+             SIGN = 1
+          END IF
+       ! Check that the function is monotone increasing.
+       ELSE IF (SIGN .EQ. 1) THEN
+          IF (COEFFICIENTS(I+1) .LT. COEFFICIENTS(I)) THEN
+             IS_MONOTONE = .FALSE.
+             EXIT monotone_check
+          END IF
+       ! Check that the function is monotone decreasing.
+       ELSE IF (SIGN .EQ. -1) THEN
+          IF (COEFFICIENTS(I+1) .GT. COEFFICIENTS(I)) THEN
+             IS_MONOTONE = .FALSE.
+             EXIT monotone_check
+          END IF
+       END IF
     END DO
-    DERIV_VALS(:) = (DERIV_VALS(:) / SIZE(DERIV_VALS)) * (KNOTS(SIZE(KNOTS))-KNOTS(1))
-    ! Evaluate the first derivative of the spline at all points.
-    CALL EVAL_SPLINE(KNOTS, COEFFICIENTS, DERIV_VALS, 1)
-    ! See if the function is monotone.
-    IS_MONOTONE = (MAXVAL(DERIV_VALS) .GT. 0_REAL64) .AND. (MINVAL(DERIV_VALS) .LT. 0_REAL64)
   END FUNCTION IS_MONOTONE
 
 END MODULE MONOTONE_SPLINES
