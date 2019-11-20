@@ -10,7 +10,174 @@ splines = fmodpy.fimport("splines.f08", verbose=True,
 TEST_BANDED_MATRIX = False
 TEST_B_SPLINE = True
 TEST_SPLINE = False
+TEST_SPLINE_ADD = False
 TEST_SPLINE_L2 = False
+TEST_MONOTONE = False
+
+if TEST_MONOTONE:
+    # Return a function that interpolates the given values at the given knots.
+    def fit_spline(x, y):
+        # Make sure "y" is two dimensional.
+        try: len(y[0])
+        except: y = [[v] for v in y]
+        # Fit the spline and get the knots / coefficients for the
+        # B-spline representation of the data.
+        sk, sc = splines.fit_spline(np.array(x, order='F', dtype=float), 
+                                    np.array(y, order='F', dtype=float))
+        # Define an interpolating function with some stored attributes.
+        def f(x, d=0):
+            try:    len(x)
+            except: x = np.array([x], order="f", dtype=float)
+            return splines.eval_spline(sk, sc, x.copy(), d=d)
+        f.x = x.copy()
+        f.y = y.copy()
+        f.knots = sk
+        f.coefs = sc
+        return f
+
+
+    SEED = 0
+    NODES = 30
+    SUBSET = slice(None)
+
+    # Generate random data to test the monotonic fit function.
+    import numpy as np
+    np.random.seed(SEED)
+    nodes = NODES + 2
+    x = np.linspace(0, 1, nodes)
+    y = sorted(np.random.normal(size=(nodes,)))
+    x -= min(x); x /= max(x)
+    y -= min(y); y /= max(y); y -= max(y)
+    # Convert these arrays to lists.
+    x, y = list(x)[SUBSET], list(y)[SUBSET]
+    # Convert these arrays to exact arithmetic.
+    from util.math import Fraction
+    x = list(map(Fraction, x))
+    y = list(map(Fraction, y))
+    interval = [float(min(x)), float(max(x))]
+    from polynomial import fit
+    f = fit(x, y, continuity=1)
+    x = np.array([float(v) for v in f.knots])
+    y = np.array([[float(v) for v in l] for l in f.values])
+    b = fit_spline(x, y)
+    # Make a plot.
+    p = Plot()
+    p.add("points", x, y[:,0])
+    p.add_func("f", f, [min(x), max(x)])
+    p.add_func("b", b, [min(x), max(x)])
+
+    # max_val = -float('inf')
+    # for i in range(0, len(b.coefs)):
+    #     max_val = max(b.coefs[i], max_val)
+    #     b.coefs[i] = max_val
+
+    min_val = float('inf')
+    for i in range(len(b.coefs)-1,-1,-1):
+        min_val = min(min_val, b.coefs[i])
+        b.coefs[i] = min_val
+
+    p.add_func("b monotone", b, [min(x), max(x)])
+
+    # e_coefs = b.coefs.copy() * 0
+    # for _ in range(1):
+    #     # Get the errors, but clip all derivatives to be positive.
+    #     error = y.copy()
+    #     for i in range(y.shape[1]):
+    #         error[:,i] = y[:,i] - b(x, d=i)
+    #     np.clip(error[:,1], 0, None, out=error[:,1])
+    #     # Fit a B-spline fit to the error terms.
+    #     e = fit_spline(x, error)
+    #     # Make the B-spline fit monotone.
+    #     min_val = float('inf')
+    #     for i in range(len(e.coefs)-1,-1,-1):
+    #         min_val = min(min_val, e.coefs[i])
+    #         e.coefs[i] = min_val
+    #     # Add the B-spline correction to the monotone version.
+    #     b.coefs += e.coefs
+    #     # Sum the total of the corrections that have been made.
+    #     e_coefs += e.coefs
+
+    # # Make the "e" function the sum of all corrections.
+    # e.coefs[:] = e_coefs[:]
+    # p.add_func("correction", e, [min(x), max(x)])
+
+    # # Show off the correct "b" function.
+    # p.add_func("b+corrections", b, [min(x), max(x)])
+
+    evals = y.copy()
+    for i in range(y.shape[1]):
+        evals[:,i] = b(x, d=i)
+    print()
+    print("y:")
+    print(y)
+    print()
+    print("b:")
+    print(evals)
+    print()
+    print('errors:')
+    print(y - evals)
+    print()
+
+    p.show(file_name="monotone-b-spline.html")
+
+
+
+
+if TEST_SPLINE_ADD:
+    # Return a function that interpolates the given values at the given knots.
+    def fit_spline(x, y):
+        # Make sure "y" is two dimensional.
+        try: len(y[0])
+        except: y = [[v] for v in y]
+        # Fit the spline and get the knots / coefficients for the
+        # B-spline representation of the data.
+        sk, sc = splines.fit_spline(np.array(x, order='F', dtype=float), 
+                                    np.array(y, order='F', dtype=float))
+        # Define an interpolating function with some stored attributes.
+        def f(x, d=0):
+            try:    len(x)
+            except: x = np.array([x], order="f", dtype=float)
+            return splines.eval_spline(sk, sc, x.copy(), d=d)
+        f.x = x.copy()
+        f.y = y.copy()
+        f.knots = sk
+        f.coefs = sc
+        return f
+
+
+
+    # K1 size:  7  K2 size: 16
+    # K1:   1.00  1.00  1.00  1.50  2.00  3.00  3.00
+    # K2:   1.25  1.25  1.25  1.25  1.50  1.50  1.75  1.75  2.00  2.00  2.50  2.50  5.00  5.00  5.00  5.00
+    #
+    # 1 I1:   1   I2:   1  1.00  1.25  0.00
+    # 2 I1:   4   I2:   1  1.50  1.25  0.00
+    # 1 I1:   4   I2:   7  1.50  1.75  0.00
+    # 2 I1:   5   I2:   7  2.00  1.75  0.00
+    # 1 I1:   5   I2:  11  2.00  2.50  0.00
+    # 2 I1:   6   I2:  11  3.00  2.50  0.00
+    # 1 I1:   6   I2:  13  3.00  5.00  0.00
+
+
+    knots1 = [1, 1, 1.5, 2, 3]
+    values1 = [(i,) for i in range(len(knots1))]
+    f1 = fit_spline(knots1, values1)
+
+    knots2 = [1.25, 1.5, 1.75, 2, 2.5, 5]
+    values2 = [(i,0) for i in range(len(knots2))]
+    f2 = fit_spline(knots2, values2)
+
+    p = Plot()
+    p.add_func("F1", f1, [0, 5])
+    p.add_func("F2", f2, [0, 5])
+    p.add_func("F1d", lambda x: f1(x,d=1), [0, 5])
+    p.show()
+    exit()
+    print("knots1: ",len(knots1), knots1)
+    print("knots2: ",len(knots2), knots2)
+    ans = sorted(set(knots1).union(knots2))
+    print("answer: ", len(ans), ans)
+    sk, sc, nk, nc = splines.add_splines(f1.knots, f1.coefs, f2.knots, f2.coefs)
 
 
 # =============================================
@@ -52,7 +219,7 @@ if TEST_BANDED_MATRIX:
 if TEST_B_SPLINE:
     # knots = np.array([0.,1,3,3,6])+1
     # knots = np.array([0.,1,1,1])
-    knots = np.array([0.,1,2,3,4])
+    knots = np.array([0.,1,2,3])
     x = np.linspace(min(knots)-.1,max(knots)+.1,101)
     y = splines.eval_bspline(knots, x.copy(), d=0)
 

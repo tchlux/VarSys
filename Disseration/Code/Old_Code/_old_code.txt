@@ -275,3 +275,81 @@
 # p.add_func("f-g", diff, [min(x), max(x)])
 
 
+        # Verify that the function is monotone (according to check function).
+        try: assert(is_monotone())
+        except:
+            print("-"*70)
+            print("function_change: ",function_change)
+            print("interval_width:  ",interval_width)
+            print("interval_slope:  ",interval_slope)
+            print("x: ",x)
+            print("y: ",y)
+            print("DX0: ",DX0)
+            print("DX1: ",DX1)
+            print("DDX0: ",DDX0)
+            print("DDX1: ",DDX1)
+            print("target_DDX0: ",target_DDX0)
+            print("target_DDX1: ",target_DDX1)
+            print("low_bound: ",low_bound)
+            print("upp_bound: ",upp_bound)
+            print()
+            a = alpha_constant + alpha_multiplier * DDX1
+            g = gamma_constant + gamma_multiplier * DDX0
+            b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
+            if b <= 6: bound = - (b + 2) / 2
+            else:      bound = -2 * (b - 2)**(1/2)
+            print("a:     ",a)
+            print("g:     ",g)
+            print("b:     ",b)
+            print("bound: ",bound)
+            print()
+            raise(Exception("Monotonicity was violated for unknown reasons."))
+
+
+
+    x = [0.97, 1.00]
+    y0 = [-0.01,  1.29, -23.75]
+    y1 = [0.00,  0.00,  109.08]
+    # Convert all values to fractions.
+    x = list(map(Fraction, x))
+    y0 = list(map(Fraction, y0))
+    y1 = list(map(Fraction, y1))
+    print("y0: ",[float(v) for v in y0])
+    print("y1: ",[float(v) for v in y1])
+    print(monotone_quintic(x, [y0, y1]))
+    print("y0: ",[float(v) for v in y0])
+    print("y1: ",[float(v) for v in y1])
+    from polynomial import polynomial_piece
+    f = polynomial_piece(y0, y1, interval=x)
+    p = Plot()
+    p.add_func("last", f, x)
+    p.show()
+    exit()
+
+
+    x = [0.97, 1.00]
+    y0 = [-0.01,  1.29, -23.75]
+    y1 = [0.00,  0.00,  192.19]
+    # Convert all values to fractions.
+    x = list(map(Fraction, x))
+    y0 = list(map(Fraction, y0))
+    y1 = list(map(Fraction, y1))
+    print(monotone_quintic(x, [y0, y1]))
+    print("y0: ",[float(v) for v in y0])
+    print("y1: ",[float(v) for v in y1])
+    from polynomial import polynomial_piece
+    f = polynomial_piece(y0, y1, interval=x)
+    p = Plot()
+    p.add_func("last", f, x)
+    p.show()
+    exit()
+
+
+
+    # Continuity with one-pass monotone fix.
+    f = monotone_quintic_spline(x, y, fix_previous=False)
+    p.add_func("monotone c2 (no fix)", f, interval, group='2m', color=p.color(6), **kwargs)
+    p.add_func("monotone c2d1 (no fix)", f.derivative(), interval, 
+               dash="dash", color=p.color(6,alpha=.5), group='2m', **kwargs)
+
+

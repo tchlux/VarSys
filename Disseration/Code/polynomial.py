@@ -40,7 +40,6 @@ def float_fallback(class_method):
         else: return float(class_method(obj, Fraction(x)))
     return wrapped_method
 
-
 # A piecewise polynomial function that supports evaluation,
 # differentiation, and stitches together an arbitrary sequence of
 # function values (and any number of derivatives) at data points
@@ -134,7 +133,7 @@ class Spline:
 #    Given coefficients (or optionally a "NewtonPolynomial")
 #    initialize this Monomial representation of a polynomial function.
 class Polynomial:
-    # Initialize internal storage for this Newton Polynomial.
+    # Initialize internal storage for this Polynomial.
     _coefficients = None
     # Protect the "coefficients" of this class with a getter and
     # setter to ensure a user does not break them on accident.
@@ -186,7 +185,8 @@ class Polynomial:
         return s
 
 # Extend the standard Polymomial class to hold Newton polynomials with
-# points in addition to the coefficients.
+# points in addition to the coefficients. This is more numerically
+# stable when the points and coefficients are stored as "float" type.
 # 
 # NewtonPolynomial(coefficients, points):
 #    Given a set of coefficients and a set of points (offsets), of
@@ -200,15 +200,15 @@ class NewtonPolynomial(Polynomial):
 
     # Store the coefficients and points for this Newton Polynomial.
     def __init__(self, coefficients, points):
-        if (len(points) != len(coefficients)):
-            raise(IndexError)
+        if (len(points) != len(coefficients)): raise(IndexError)
         self.coefficients = coefficients
         self.points = points
 
-    # Construct the polynomial that is the derivative of this polynomial.
+    # Construct the polynomial that is the derivative of this
+    # polynomial by converting to monomial form and differntiating.
     def derivative(self, d=1): return Polynomial(self).derivative(d)
 
-    # Evaluate this Newton Polynomial in a numerically stable way.
+    # Evaluate this Newton Polynomial (in a numerically stable way).
     def __call__(self, x):
         total = self.coefficients[0]
         for d in range(1,len(self.coefficients)):
@@ -262,8 +262,6 @@ def polynomial(x, y):
 # pair of tuples, return the lowest order polynomial necessary to
 # exactly match those values and derivatives at interval[0] on the left
 # and interval[1] on the right ("interval" is optional, default [0,1]).
-# This function uses a rational number system to ensure no precision
-# is lost in the process of creating an approximation.
 def polynomial_piece(left, right, interval=(0,1)):
     # Store the unscaled version for stability checks afterwards.
     v0, v1 = left, right
@@ -305,11 +303,11 @@ def polynomial_piece(left, right, interval=(0,1)):
         row = [ (row[i+1]-row[i])/interval_width for i in range(len(row)-1) ]
         coefs.append(row[0])
     # Reverse the coefficients to go from highest order (most nested) to
-    # lowest order, then convert into monomial form for easy differentiation.
+    # lowest order, set the points to be the left and right ends.
     points = [interval[1]]*len(left) + [interval[0]]*len(left)
-    coefs = to_monomial(list(reversed(coefs)), points)
-    # Finally, construct a polynomial from these coefficients.
-    f = Polynomial(coefs)
+    coefs = list(reversed(coefs))
+    # Finally, construct a Newton polynomial.
+    f = NewtonPolynomial(coefs, points)
 
     # Check for errors in this polynomial, see if it its values are correct.
     error_tolerance = 2**(-26)
@@ -359,19 +357,25 @@ def polynomial_piece(left, right, interval=(0,1)):
 # continuity:
 #   The level of continuity desired in the interpolating function.
 # 
-# fill_kwargs:
-#   Any keyword arguments for the `fill` function.
-def fit(x, y, continuity=0, non_decreasing=False,
-        non_increasing=False, **fill_kwargs):
+# kwargs:
+#   "max_d{i}" -- A maximum value for a specific derivative.
+#   "min_d{i}" -- A minimum value for a specific derivative.
+# 
+#   Otherwise, may include any keyword arguments for the `fill` function.
+def fit(x, y, continuity=0, **kwargs):
     knots = [v for v in x]
     values = [[v] for v in y]
+    fill_kwargs = {k:kwargs[k] for k in kwargs
+                   if k[:5] not in {"max_d","min_d"}}
     # Construct further derivatives and refine the approximation
     # ensuring monotonicity in the process.
     for i in range(1,continuity+1):
         deriv = fill_derivative(knots, [v[-1] for v in values], **fill_kwargs)
         # Adjust for monotonicity conditions if appropriate.
-        if (i == 1) and non_increasing: deriv = [min(0,d) for d in deriv]
-        if (i == 1) and non_decreasing: deriv = [max(0,d) for d in deriv]
+        max_name = f"max_d{i}"
+        if (max_name in kwargs): deriv = [min(kwargs[max_name], d) for d in deriv]
+        min_name = f"min_d{i}"
+        if (min_name in kwargs): deriv = [max(kwargs[min_name], d) for d in deriv]
         # Append all derivative values.
         for v,d in zip(values,deriv): v.append(d)
     # Return the interpolating spline.
@@ -571,7 +575,7 @@ def _test_fit(plot=False):
     # y_vals = [1,2,-1,3,1,4,3]
     y_vals = list(map(Fraction, [1,2,2.2,3,3.5,4,4]))
     # Execute with different operational modes, (tests happen internally).
-    kwargs = dict(non_decreasing=True)
+    kwargs = dict(min_d1=0)
     f = fit(x_vals, y_vals, continuity=2, mids=0, ends=0, **kwargs)
     f = fit(x_vals, y_vals, continuity=2, mids=1, ends=1, **kwargs)
     f = fit(x_vals, y_vals, continuity=2, mids=2, ends=2, **kwargs)

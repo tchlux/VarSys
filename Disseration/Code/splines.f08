@@ -70,7 +70,6 @@ CONTAINS
   END FUNCTION L2
 
 
-
   SUBROUTINE MULTIPLY_SPLINES(KNOTS1, COEFS1, KNOTS2, COEFS2, &
        SPLINE_KNOTS, SPLINE_COEFFICIENTS)
     ! Given two splines defined by their knot and coefficient
@@ -86,16 +85,141 @@ CONTAINS
   END SUBROUTINE MULTIPLY_SPLINES
 
   SUBROUTINE ADD_SPLINES(KNOTS1, COEFS1, KNOTS2, COEFS2, &
-       SPLINE_KNOTS, SPLINE_COEFFICIENTS)
+       SPLINE_KNOTS, SPLINE_COEFFICIENTS, NUM_KNOTS, NUM_COEFS)
     ! Given two splines defined by their knot and coefficient
     ! sequences, compute the spline that is the pointwise
     ! addition of the two splines.
     REAL(KIND=REAL64), INTENT(IN), DIMENSION(:) :: KNOTS1, KNOTS2, COEFS1, COEFS2
     REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(KNOTS1)+SIZE(KNOTS2)) :: SPLINE_KNOTS
     REAL(KIND=REAL64), INTENT(OUT), DIMENSION(SIZE(COEFS1)+SIZE(COEFS2)) :: SPLINE_COEFFICIENTS
+    INTEGER, INTENT(OUT) :: NUM_KNOTS, NUM_COEFS
+    ! Local variables.
+    INTEGER :: I, I1, I2, K, ORDER
     ! Determine the knots that will be kept.
-    ! Evaluate at appropriate points.
-    ! Solve the linear system determining the spline coefficients.
+    I = 1
+    I1 = 1
+    I2 = 1
+    K = 0
+    ! 
+    ! knots1:  5 [0, 1, 1.5, 2, 3]
+    ! knots2:  6 [1.25, 1.5, 1.75, 2, 2.5, 5]
+    ! answer:  9 [0, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 5]
+    ! 
+    ! K1 size:  7  K2 size: 16
+    ! 
+    ! knots1:  5 [0, 1, 1.5, 2, 3]
+    ! knots2:  6 [1.25, 1.5, 1.75, 2, 2.5, 5]
+    ! answer:  9 [0, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 5]
+    ! 
+    ! K1 size:  7  K2 size: 16
+    ! K1:   0.00  0.00  1.00  1.50  2.00  3.00  3.00
+    ! K2:   1.25  1.25  1.25  1.25  1.50  1.50  1.75  1.75  2.00  2.00  2.50  2.50  5.00  5.00  5.00  5.00
+    ! 
+    ! 1 I1:   1   I2:   1  0.00  1.25 -1.00
+    ! 2 I1:   4   I2:   1  1.50  1.25 -1.00
+    ! 1 I1:   4   I2:   7  1.50  1.75 -1.00
+    ! 2 I1:   5   I2:   7  2.00  1.75 -1.00
+    ! 1 I1:   5   I2:  11  2.00  2.50 -1.00
+    ! 2 I1:   6   I2:  11  3.00  2.50 -1.00
+    ! 1 I1:   6   I2:  13  3.00  5.00 -1.00
+    ! 2 I1:   7   I2:  13  3.00  5.00 -1.00
+    ! 1 I1:   7   I2:  13  3.00  5.00 -1.00
+    ! 2 I1:   7   I2:  13  3.00  5.00 -1.00
+    ! 
+    SPLINE_KNOTS(:) = MIN(MINVAL(KNOTS1(:)), MINVAL(KNOTS2(:))) - 1
+    PRINT '()'
+    PRINT '("K1 size: ", I2, "  K2 size: ", I2)', SIZE(KNOTS1), SIZE(KNOTS2)
+    PRINT '("K1: ", 100F6.2)', KNOTS1(:)
+    PRINT '("K2: ", 100F6.2)', KNOTS2(:)
+    PRINT '()'
+    set_knots : DO WHILE (.TRUE.)
+       PRINT '("1 I1: ", I3, "   I2: ", I3, 100F6.2)', I1, I2,&
+            & KNOTS1(I1), KNOTS2(I2), SPLINE_KNOTS(I)
+       ! Cycle I1 until it is greater or done
+       DO WHILE ((I1 .LT. SIZE(KNOTS1)) .AND. (KNOTS1(I1) .LE. KNOTS2(I2)))
+          ! Count the number of equal valued knots.
+          IF (KNOTS1(I1) .EQ. KNOTS2(I2)) K = K + 1
+          SPLINE_KNOTS(I) = KNOTS1(I1)
+          I = I + 1
+          I1 = I1 + 1
+       END DO
+       ! Skip over shared knots.
+       DO WHILE ((K .GT. 0) .AND. (KNOTS2(I2) .EQ. SPLINE_KNOTS(I)))
+          K = K - 1
+          I2 = I2 + 1
+       END DO
+       K = 0
+       PRINT '("2 I1: ", I3, "   I2: ", I3, 100F6.2)', I1, I2,&
+            & KNOTS1(I1), KNOTS2(I2), SPLINE_KNOTS(I)
+       ! Cycle I2 until it is greater or done
+       DO WHILE ((I2 .LT. SIZE(KNOTS2)) .AND. (KNOTS2(I2) .LE. KNOTS1(I1)))
+          ! Count the number of equal valued knots.
+          IF (KNOTS1(I1) .EQ. KNOTS2(I2)) K = K + 1
+          SPLINE_KNOTS(I) = KNOTS2(I2)
+          I = I + 1
+          I2 = I2 + 1
+       END DO
+       ! If the copying is done, then exit the loop.
+       IF ((I1 .EQ. SIZE(KNOTS1)) .AND. (I2 .EQ. SIZE(KNOTS2))) EXIT set_knots
+       ! Skip over shared knots.
+       DO WHILE ((K .GT. 0) .AND. (KNOTS1(I1) .EQ. SPLINE_KNOTS(I)))
+          K = K - 1
+          I1 = I1 + 1
+       END DO
+       K = 0
+    END DO set_knots
+    ! Get the size of the knots, set the last knot to be repeated filling the spline.
+    NUM_COEFS = I - 1
+    SPLINE_KNOTS(I:) = SPLINE_KNOTS(NUM_COEFS)
+    PRINT '()'
+    PRINT '("KNOTS:     ", 100F6.2)', SPLINE_KNOTS(:NUM_COEFS)
+    PRINT '("remaining: ", 100F6.2)', SPLINE_KNOTS(I:)
+    PRINT '()'
+    ! Identify the maximum order of the two different splines.
+    ORDER = MAX(SIZE(KNOTS1) - SIZE(COEFS1), SIZE(KNOTS2) - SIZE(COEFS2))
+    NUM_KNOTS = NUM_COEFS + ORDER-1
+    ! Allocate space for all of the function evaluations that will
+    ! determine this spline fit over the data.
+    ! 
+    !   Number of evaluations = (ORDER - 2) * (NUM_KNOTS - 1)
+    ! 
+
+    ! ! Solve the linear system determining the spline coefficients.
+    ! ! 
+    ! ! ----------------------------------------------------------------
+    ! ! Initialize all untouched values in AB to zero.
+    ! AB(:,:) = 0_REAL64
+
+    ! FIRST = 1
+    ! LAST  = 1
+    ! ! Evaluate the B-splines at all of the knots.
+    ! DO STEP = 1, SIZE(SPLINE_COEFFICIENTS)
+    !    ! Increment the "FIRST" knot index until it is contained.
+    !    DO WHILE ((FIRST .LT. SIZE(KNOTS)) .AND. &
+    !         (SPLINE_KNOTS(MIN(SIZE(SPLINE_KNOTS),STEP+1)) .GT. KNOTS(FIRST)))
+    !       FIRST = FIRST + 1
+    !    END DO
+    !    ! Increment the "LAST" knot index until it is contained.
+    !    DO WHILE ((LAST .LT. SIZE(KNOTS)) .AND. (SPLINE_KNOTS( &
+    !         MIN(SIZE(SPLINE_KNOTS),STEP+DEGREE)) .GT. KNOTS(LAST)))
+    !       LAST = LAST + 1
+    !    END DO
+    !    ! Find the range of indices that will be written to in AB.
+    !    ! The mapping is looks like   AB[LK+KU+1+i-j,j] = A[i,j]
+    !    START = 2*DEGREE+1 + (1 + (FIRST-1)*CONT - STEP)
+    !    END = MIN(SIZE(AB,1), START + (LAST-FIRST+1)*CONT - 1)
+    !    ! Evaluate each derivative of this B-spline at relevant knots.
+    !    DO DERIV = 0, CONT-1
+    !       ! Place the evaluations into a block out of a column in AB,
+    !       ! shift according to which derivative is being evaluated
+    !       ! and use a stride appropriate for the continuity.
+    !       AB(START+DERIV:END:CONT,STEP) = KNOTS(FIRST:LAST)
+    !       CALL EVAL_BSPLINE(SPLINE_KNOTS(STEP:STEP+DEGREE+1), &
+    !            AB(START+DERIV:END:CONT,STEP), DERIV)
+    !    END DO
+    ! ! ----------------------------------------------------------------
+
+
   END SUBROUTINE ADD_SPLINES
 
 
@@ -236,28 +360,57 @@ CONTAINS
   END SUBROUTINE FIT_SPLINE
 
 
-  SUBROUTINE EVAL_SPLINE(KNOTS, COEFFICIENTS, XY, D)
+  SUBROUTINE EVAL_SPLINE(KNOTS, COEFFICIENTS, XY, D, EXTRAP)
     ! Evaluate a spline construced with FIT_SPLINE. Similar interface
     ! to EVAL_BSPLINE. Evaluate D derivative at all XY, result in XY.
     ! 
+    ! TODO: Change extrapolation to keep fit values and derivatives
+    !       a constant, use Newton form extrapolation from value
+    !       and derivatives (0's for integration). Give extrapolation
+    !       parameter that makes extrapolation extend E derivatives.
+    !       
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: KNOTS
     REAL(KIND=REAL64), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
     REAL(KIND=REAL64), INTENT(INOUT),  DIMENSION(:) :: XY
-    INTEGER, INTENT(IN), OPTIONAL :: D
+    INTEGER, INTENT(IN), OPTIONAL :: D, EXTRAP
     ! Local variables.
-    INTEGER :: DERIV, STEP, NUM_KNOTS
+    INTEGER :: DERIV, STEP, NUM_KNOTS, E, E_STEP
     REAL(KIND=REAL64), DIMENSION(SIZE(XY), SIZE(COEFFICIENTS)) :: VALUES
+    ! Variables for extrapolation-related computations.
+    REAL(KIND=REAL64), DIMENSION(SIZE(XY)) :: CONTAINED_XY
+    REAL(KIND=REAL64), DIMENSION(SIZE(KNOTS)-SIZE(COEFFICIENTS)-2, &
+         2, SIZE(COEFFICIENTS)) :: EDGE_VALUES
     ! Compute the NUM_KNOTS (number of knots) for each B-spline.
     NUM_KNOTS = SIZE(KNOTS) - SIZE(COEFFICIENTS)
     ! Assign the local value of the optional derivative "D" argument.
     set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
     ELSE ; DERIV = 0
     END IF set_derivative
+    ! Assign the local value of the optional extrapolation argument.
+    ! This value is the number of derivatives maintained constant.
+    set_extrapolation : IF (PRESENT(EXTRAP)) THEN ; E = EXTRAP
+    ELSE ; E = NUM_KNOTS  - 1
+    END IF set_extrapolation
+    ! Cap the values to either end of the spline at the first and last knots.
+    CONTAINED_XY(:) = MIN(XY(:), MAX(XY(:), KNOTS(1)), KNOTS(SIZE(KNOTS)))
     ! Evaluate all splines at all the X positions.
     DO STEP = 1, SIZE(COEFFICIENTS)
-       VALUES(:,STEP) = XY(:)
+       VALUES(:,STEP) = CONTAINED_XY(:)
        CALL EVAL_BSPLINE(KNOTS(STEP:STEP+NUM_KNOTS), VALUES(:,STEP), DERIV)
     END DO
+    ! ! Compute the value of the spline at the ends (for extrapolation).
+    ! IF (E .GT. 0) THEN
+    !    EDGE_VALUES(:,1,:) = KNOTS(1)
+    !    EDGE_VALUES(:,2,:) = KNOTS(SIZE(KNOTS))
+    !    DO E_STEP = 1, MIN(E, SIZE(KNOTS) - SIZE(COEFFICIENTS) - 2)
+    !       DO STEP = 1, SIZE(COEFFICIENTS)
+    !          CALL EVAL_BSPLINE(KNOTS(STEP:STEP+NUM_KNOTS), &
+    !               EDGE_VALUES(:,:,STEP), E_STEP)
+    !       END DO
+    !    END DO
+    !    EDGE_VALUES(:,:,1) = MATMUL(EDGE_VALUES, COEFFICIENTS)
+    !    ! For each extrapolation point, convert it's position 
+    ! END IF
     ! Store the values into Y as the weighted sums of B-spline evaluations.
     XY(:) = MATMUL(VALUES, COEFFICIENTS)
   END SUBROUTINE EVAL_SPLINE

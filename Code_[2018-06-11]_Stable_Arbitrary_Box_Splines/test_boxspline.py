@@ -1,11 +1,11 @@
 import numpy as np
 import fmodpy
-boxspline = fmodpy.fimport("boxspline.f90", verbose=True, 
+boxspline = fmodpy.fimport("boxspline.f90", verbose=True,
     module_link_args=["-lblas", "-llapack", "-lgfortran"])
 
 # Control flot logic
 TEST = False
-TIME = True
+TIME = False
 PLOT = not TIME
 
 # Turn off plotting and timing if testing is being done
@@ -20,14 +20,14 @@ if TEST: PLOT = False
 # mults = np.array([1 ,1 ], order="F", dtype=np.int32) * 2
 
 # Not sure if this is named, but it's another test.
-# dvecs = np.array([[1.,0.,1.],
-#                   [0.,1.,1.]], order="F")
-# mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * 2
+dvecs = np.array([[1.,0.,1.],
+                  [0.,1.,1.]], order="F")
+mults = np.array([1 ,1 ,1 ], order="F", dtype=np.int32) * 2
 
-# Zwart-Powell element
-dvecs = np.array([[1.,0., 1., 1.],
-                  [0.,1.,-1., 1.]], order="F")
-mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
+# # Zwart-Powell element
+# dvecs = np.array([[1.,0., 1., 1.],
+#                   [0.,1.,-1., 1.]], order="F")
+# mults = np.array([1 ,1 ,1 ,1 ], order="F", dtype=np.int32) * 2
 
 # ====================================================================
 
@@ -56,8 +56,8 @@ if (TIME or TEST):
 
 if PLOT:
     def f(x):
-        eval_pts = np.asarray(x, order='F')
-        box_evals = np.zeros(eval_pts.shape[0], order='F', dtype=np.float64)
+        eval_pts = np.asarray(x.T, order='F')
+        box_evals = np.zeros(eval_pts.shape[1], order='F', dtype=np.float64)
         box_evals, error = boxspline.boxsplev(dvecs, mults, eval_pts, box_evals)
         if (error != 0):
             print('-'*70 + '\n')
