@@ -208,13 +208,13 @@ cubic solution.
 %% The ability to interpolate or regress a function with continuous value and derivatives has proven fundamentally useful. In many applications, there are known shapes or characteristics that are expected of approximations. For example, a cumulative distribution function in statistics cannot decrease, the entropy of a closed thermodynamic system can never increase, an electric motor should not suddenly change direction when slowing down or speeding up. In each of these cases it is important that any constructed spline approximation is monotone.
 
 
-Many domains of science rely on smooth approximations to real-valued functions over a closed interval. Piecewise polynomial functions (splines) provide the smooth approximations for animation in graphics \cite{herman2015techniques,quint2003scalable}, aesthetic structural support in architecture, efficient aerodynamic surfaces in automotive and aerospace engineering \cite{brennan2019measure}, prolonged effective operation of electric motors \cite{berglund2009planning}, and accurate non parametric approximations in statistics \cite{knott2012interpolating}. While polynomial interpolants or regressors apply broadly, splines are often a good choice because they can approximate globally complex functions while minimizing the local complexity of an approximation.
+Many domains of science rely on smooth approximations to real-valued functions over a closed interval. Piecewise polynomial functions (splines) provide the smooth approximations for animation in graphics \cite{herman2015techniques,quint2003scalable}, aesthetic structural support in architecture \cite{brennan2019measure}, efficient aerodynamic surfaces in automotive and aerospace engineering \cite{brennan2019measure}, prolonged effective operation of electric motors \shortcite{berglund2009planning}, and accurate non parametric approximations in statistics \cite{knott2012interpolating}. While polynomial interpolants or regressors apply broadly, splines are often a good choice because they can approximate globally complex functions while minimizing the local complexity of an approximation.
 
-It is often the case that the true underlying function or phenomenon being modeled has known properties e.g., convexity, positivity, various levels of continuity, or monotonicity. Given a reasonably large amount of data, it can be impossible to maintain these properties with a single polynomial function. In general, the maintenance of function properties through interpolation / regression is usually referred to as \textit{shape preserving} \cite{fritsch1980monotone,gregory1985shape}. The specific shapes this work will focus on are monotonicity and multiple levels of continuity for a function. These properties are chiefly important to the approximation of cumulative distribution functions and subsequently the effective generation of random numbers from a specified distribution. 
+It is often the case that the true underlying function or phenomenon being modeled has known properties e.g., convexity, positivity, various levels of continuity, or monotonicity. Given a reasonable amount of data, it quickly becomes difficult to achieve desirable properties in a single polynomial function. In general, the maintenance of function properties through interpolation / regression is referred to as \textit{shape preserving} \cite{fritsch1980monotone,gregory1985shape}. The specific shapes this work will achieve in approximations are monotonicity and two levels of continuity. These properties are chiefly important to the approximation of cumulative distribution functions and subsequently the effective generation of random numbers from a specified distribution.
 
 In statistics especially, the construction of a monotone interpolating spline that is continuous in second derivative is meaningfully useful \cite{ramsay1988monotone}. A function with these properties could approximate random variables to a high level of accuracy with relatively few intervals. A continuously twice differentiable approximation to a cumulative distribution function (CDF) would also produce a corresponding probability density function (PDF) that is continuously differentiable, which is a property many standard parametric distributions maintain.
 
-The currently available software for monotone piecewise polynomial interpolation includes quadratic \cite{he1998monotone}, cubic \cite{fritsch1980monotone}, and quartic (with limited application) \cite{wang2004rational,piah2011improved,yao2018unconditionally} cases. Even though theory has been provided for the quintic case \cite{ulrich1994positivity,hess1994positive}, this theory has not yet been used to construct a piecewise quintic monotone spline interpolation routine. Recent work suggests that the lack of quintic software may be due to a general unawareness of the theory \cite{xie2018semiparametric}.
+The currently available software for monotone piecewise polynomial interpolation includes quadratic \cite{he1998monotone}, cubic \cite{fritsch1980monotone}, and (with limited application) quartic \cite{wang2004rational,piah2011improved,yao2018unconditionally} cases. In addition, a statistical method for bootstrapping the construction of an arbitrarily smooth monotone fit exists \cite{leitenstorfer2006generalized}, but the method does not take advantage of known analytic properties related to quintic polynomials. Theory has been provided for the quintic case \cite{ulrich1994positivity,hess1994positive}, however this theory has not yet been used to construct a piecewise quintic monotone spline interpolation routine. Recent work suggests that the lack of quintic software may be due to a general unawareness of the theory \shortcite{xie2018semiparametric}.
 
 \begin{figure}
   \centering
@@ -250,24 +250,24 @@ Notice that a trivially monotone spline results when $\hat f^{\ \prime}(k_i) = 0
   \caption{These are the feasible regions of monotonicity for cubic splines and the projections that make a cubic polynomial piece monotone.}\label{fig:projection}
 \end{figure}
 
-The actual region of monotonicity for a cubic polynomial is larger, but projection of $(\alpha, \beta)$ into one of these regions ensures that monotonicity will be achieved and not violated for neighboring regions. The user must decide which region is most for the projections based on the application, Fritsch and Carlson recommend using region 2.
+The actual region of monotonicity for a cubic polynomial is larger, but projection of $(\alpha, \beta)$ into one of these regions ensures that monotonicity will be achieved and not violated for neighboring regions. The user must decide which region is most appropriate for the projections based on the application, Fritsch and Carlson recommend using region 2.
 
-While the cubic monotonicity case presents a straight-forward solution, the region of monotonicity is not so simple in the quintic case. In the next section, an algorithm for performing a projection similar to those for cubic polynomials is proposed.
+While the cubic monotonicity case affords such a concise solution, the region of monotonicity is not so simple in the quintic case. In the next section, an algorithm for performing a projection similar to those for cubic polynomials is proposed.
 
 %% - show picture of how the cubic is computed
-
 %% - show the algorithm for computing a cubic (and that it is trivial)
-
 %% - quintic interpolation is more accurate when data is available, or higher order information can be inferred
 
 
 \section{Monotone Quintic Interpolation}
 
-When provided data that has no assigned first and second derivative values, the derivative data is filled by a linear fit of neighboring data points. End points are set to be the slope between the end and its nearest neighbor.
+The following section is composed of three algorithms that together are used to construct a piecewise quintic monotone interpolating spline. Section \ref{is_monotone} regards checking monotonicity, Section \ref{make_monotone} presents a procedure for enforcing monotonicity on a polynomial piece, and Section \ref{monotone_spline} combines the previous two algorithms into a routine for enforcing monotonicity over a quintic spline.
 
-The method for finding the transition point of a boolean function on a line is the Golden Section search. This will be referred to in pseudo code as \texttt{line\_search($g,$ $a,$ $b$)} where $a,$ $b$ $\in S$ for $S$ closed under convex combination, $g: S \rightarrow \{0,1\}$ is a boolean function, and $g(b) = 1$. If $g(a) = 1$ then $a$ is returned, otherwise the smallest $c \in [0,1]$ such that $g\big(a(1-c) + c b\big) = 1$ is returned.
+Similar to the cubic case, let $\pi: x_0 = k_1 < k_2 < \cdots < k_n = x_1$ be a partition of the interval $[x_0,x_1]$. Let $f: \mathbb{R} \rightarrow \mathbb{R}$ and $\{f(k_i) : i = 1,2,\ldots,n\}$ be a given set of values at the partition points for a monotone function $f$, meaning $f(k_i) \leq f(k_{i+1})$ or $f(k_i) \geq f(k_{i+1})$ for $i = 1, \ldots, n-1$.
 
-After assigning function values and derivative values, an interpolating function is constructed from a quintic B-spline basis.
+In pseudo code, a function is used that is referred to as \texttt{line\_search($g,$ $a,$ $b$)}, where $a,$ $b$ $\in S$ for $S$ closed under convex combination, $g: S \rightarrow \{0,1\}$ is a binary function, and $g(b) = 1$. The \texttt{line\_search} is performed by Binary search in the presented framework, when $g(a) = 1$, $a$ is returned, otherwise the smallest $c \in [0,1]$ such that $g\big(a(1-c) + c b\big) = 1$ is returned.
+
+In the case that first or second derivative information is not available at time of approximation, it is estimated with the central divided difference of the function values. The final quintic spline is represented with an exact rational arithmetic Newton Polynomial. % and evaluated with a B-spline basis.
 
 \vspace{10pt}
 
@@ -280,7 +280,7 @@ Let $f$ be a quintic polynomial over a closed interval $[x_0, x_1]$ $\subset \ma
 \vspace{10pt}%
 \hrule%
 \vspace{3pt}%
-\noindent\textbf{\textit{Algorithm 1:}} \texttt{is\_monotone}%
+\noindent\textbf{\textit{Algorithm 1:}} \texttt{is\_monotone$\big (x_0$,$x_1$,$f \big)$}%
 \vspace{3pt}%
 \hrule%
 
@@ -288,29 +288,34 @@ Let $f$ be a quintic polynomial over a closed interval $[x_0, x_1]$ $\subset \ma
   \itemsep0pt
   \parskip0pt
 
-\item[0:] \texttt{if $\big(f'(x_0) = 0$ or $f'(x_1) = 0\big)$ return is\_monotone\_simplified}
-\item[1:] \texttt{if $\big(f'(x_0) < 0$ or $f'(x_1) < 0\big)$ return FALSE}
+\item[1:] \texttt{if $\big(f(x_0) = f(x_1)\big)$ return $\big( Df(x_0) = Df(x_1) = D^2f(x_0) = D^2f(x_1) = 0 \big)$}
+\item[2:] \texttt{if $\big(Df(x_0) < 0$ or $Df(x_1) < 0\big)$ return FALSE}
   \begin{itemize}
-    \item[] \textit{This can be seen clearly from the fact that $f$ is analytic; there will exist some nonempty interval about $x_0$ or $x_1$ for which $f'$ is negative.}
+    \item[] \textit{This can be seen clearly from the fact that $f$ is analytic; there will exist some nonempty interval about $x_0$ or $x_1$ for which $Df$ is negative.}
   \end{itemize}
 
-\item[2:] $A = f'(x_0)\frac{x_1 - x_0}{f(x_1) - f(x_0)}$
-\item[3:] $B = f'(x_1) \frac{x_1 - x_0}{f(x_1) - f(x_0)}$
+
+\item[2:] \texttt{if $\big(Df(x_0) = 0$ or $Df(x_1) = 0\big)$}
+\item[3:] $\quad w = x_0 - x_1$
+\item[4:] $\quad g(y) = \big({-4} Df(x_1) / w \big) < \big( ({-f}(x_1)/w - 24 y - 32 Df(x_1)) / 5w \big)$
+\item[5:] $\quad$ \texttt{line\_search}$(g, 0, Df(x_0))$
+\item[6:] $A = Df(x_0)\frac{x_1 - x_0}{f(x_1) - f(x_0)}$
+\item[7:] $B = Df(x_1) \frac{x_1 - x_0}{f(x_1) - f(x_0)}$
   \begin{itemize}
     \item[] \textit{The variables $A$ and $B$ correspond directly to the theoretical foundation for positive quartic polynomials established in \cite{ulrich1994positivity}, first defined after equation 18.}
   \end{itemize}
-\item[8:] $\gamma_0 = 4 \frac{f'(x_0)}{f'(x_1)} (B/A)^{3/4}$
-\item[9:] $\gamma_1 = \frac{x_1 - x_0}{f'(x_1)} (B/A)^{3/4}$
+\item[8:] $\gamma_0 = 4 \frac{Df(x_0)}{Df(x_1)} (B/A)^{3/4}$
+\item[9:] $\gamma_1 = \frac{x_1 - x_0}{Df(x_1)} (B/A)^{3/4}$
 \item[4:] $\alpha_0 = 4 (B/A)^{1/4}$
-\item[5:] $\alpha_1 = -\frac{x_1 - x_0}{f'(x_1)} (B/A)^{1/4}$
-\item[6:] $\beta_0 = 30 - \frac{12 \big(f'(x_0) + f'(x_1)\big) (x_1 - x_0)}{\big(f(x_1) - f(x_0)\big) \sqrt{A}\sqrt{B}}$
+\item[5:] $\alpha_1 = -\frac{x_1 - x_0}{Df(x_1)} (B/A)^{1/4}$
+\item[6:] $\beta_0 = 30 - \frac{12 \big(Df(x_0) + Df(x_1)\big) (x_1 - x_0)}{\big(f(x_1) - f(x_0)\big) \sqrt{A}\sqrt{B}}$
 \item[7:] $\beta_1 = \frac{-3 (x_1 - x_0)^2}{2 \big(f(x_1) - f(x_0)\big) \sqrt{A} \sqrt{B}} $
   \begin{itemize}
     \item[] \textit{The $\gamma,$ $\alpha,$ and $\beta$ terms with subscripts $0$ and $1$ are algebraic reductions of the simplified conditions for satisfying Theorem 2 in \cite{ulrich1994positivity} (equation 16). These terms with subscripts $0$ and $1$ give the computation of $\alpha,$ $\beta,$ and $\gamma$ the form seen in lines $10$-$12$ below.}
   \end{itemize}
-\item[10:] $\gamma = \gamma_0 + \gamma_1 f''(x_0)$
-\item[11:] $\alpha = \alpha_0 + \alpha_1 f''(x_1)$
-\item[12:] $\beta = \beta_0 + \beta_1 \big(f''(x_0) - f''(x_1)\big)$
+\item[10:] $\gamma = \gamma_0 + \gamma_1 D^2f(x_0)$
+\item[11:] $\alpha = \alpha_0 + \alpha_1 D^2f(x_1)$
+\item[12:] $\beta = \beta_0 + \beta_1 \big(D^2f(x_0) - D^2f(x_1)\big)$
 \item[13:] \texttt{if $(\beta \leq 6)$ then return $\alpha > - (\beta + 2) / 2$}
 \item[14:] \texttt{else return $\gamma > -2 \sqrt{\beta - 2}$ }
 
@@ -356,7 +361,7 @@ Next the modification of a quintic spline to enforce monotonicity will be discus
 
 %% ----------------------------------------------------------------------
 \subsection{Enforcing Monotonicity of a Quintic Polynomial}
-
+\label{make_monotone}
 
 \vspace{10pt}%
 \hrule%
@@ -384,13 +389,13 @@ Next the modification of a quintic spline to enforce monotonicity will be discus
   \item[] \textit{This box bound ensures that $(A,B)$ remains within a viable region of monotonicity (satisfying Theorem 4, seen in Fig. 6 of \cite{ulrich1994positivity}).}
   \end{itemize}
 
-\item[7:] $\hat f''(x_0) = - \sqrt{A} \big( 7 \sqrt{A} + 3 \sqrt{B} \big) \frac{f(x_1) - f(x_0)}{(x_1 - x_0)^2}$\\$\hat f''(x_1) = \sqrt{B} \big( 3 \sqrt{A} + 7 \sqrt{B} \big) \frac{f(x_1) - f(x_0)}{(x_1 - x_0)^2}$
+\item[7:] $f''(x_0) = - \sqrt{A} \big( 7 \sqrt{A} + 3 \sqrt{B} \big) \frac{f(x_1) - f(x_0)}{(x_1 - x_0)^2}$\\$f''(x_1) = \sqrt{B} \big( 3 \sqrt{A} + 7 \sqrt{B} \big) \frac{f(x_1) - f(x_0)}{(x_1 - x_0)^2}$
 
   \begin{itemize}
     \item[] \textit{This selection of values of $f''$ is guaranteed to satisfy Theorem 4 from \cite{ulrich1994positivity} and is chosen because it is (reasonably) the average of the two endpoints of the interval of monotonicity for second derivative values.}
   \end{itemize}
 
-\item[8:] $\eta = \big(f''(x_0), f''(x_1)\big)$\\$\eta_0 = \big(\hat f''(x_0), f''(x_1)\big)$\\$f''(x_0), f''(x_1) = $\texttt{ line\_search$\big($is\_monotone, $\eta,$ $\eta_0\big)$}
+\item[8:] $\eta = \big(f''(x_0), f''(x_1)\big)$\\$\eta_0 = \big(f''(x_0), f''(x_1)\big)$\\$f''(x_0), f''(x_1) = $\texttt{ line\_search$\big($is\_monotone, $\eta,$ $\eta_0\big)$}
 \end{itemize}
 \hrule
 \vspace{10pt}
