@@ -8,22 +8,39 @@
 from polynomial import fit
 
 # Given x and y values, construct a monotonic quintic spline fit.
-def monotone_quintic_spline(x, y, ends=2, mids=2, exact=True,
-                            max_steps=100, verbose=False):
+def monotone_quintic_spline(x, y=None, values=None, ends=2, mids=2, 
+                            exact=True, max_steps=100, shrink_rate=.99,
+                            min_value=2**(-26), verbose=False, **kwargs):
     if verbose: print()
     from polynomial import Spline
+    # Convert 'x' to exact values.
     if exact:
-        from util.math import Fraction
+        from fraction import Fraction
         x = list(map(Fraction, x))
-        y = list(map(Fraction, y))
-    # Check for which type of monotonicity this function maintains.
-    kwarg = {}
-    if   all(y[i+1] >= y[i] for i in range(len(y)-1)): kwarg = dict(min_d1=0)
-    elif all(y[i] >= y[i+1] for i in range(len(y)-1)): kwarg = dict(max_d1=0)
-    else: raise(Exception("Provided 'y' data is not monotone."))
-    # Construct an initial fit that is twice continuous.
-    f = fit(x, y, continuity=2, ends=ends, mids=mids, **kwarg)
-    values = f.values
+    # Build a set of 'values' if they were not provided.
+    if (y is not None):
+        if exact: y = list(map(Fraction, y))
+        # Check for which type of monotonicity this function maintains.
+        if   all(y[i+1] >= y[i] for i in range(len(y)-1)): kwargs.update(dict(min_d1=0))
+        elif all(y[i] >= y[i+1] for i in range(len(y)-1)): kwargs.update(dict(max_d1=0))
+        else: raise(Exception("Provided 'y' data is not monotone."))
+        # Pass in the method of fitting end and midpoints as keyword arguments.
+        kwargs.update(dict(mids=mids, ends=ends))
+        # Construct an initial fit that is twice continuous.
+        f = fit(x, y, continuity=2, **kwargs)
+        values = f.values
+    elif (values is not None):
+        if exact: values = [list(map(Fraction, row)) for row in values]
+        # Verify monotonicity.
+        if   all(values[i+1][0] >= values[i][0] for i in range(len(values)-1)): pass
+        elif all(values[i][0] >= values[i+1][0] for i in range(len(values)-1)): pass
+        else: raise(Exception("Provided 'y' data is not monotone."))
+        # Make a spline over the points and derivative values.
+        f = Spline(x, values)
+        values = f.values
+    else:
+        class UsageError(Exception): pass
+        raise(UsageError("Must provided either a flat 'y' array or a (N,3) values array."))
     # Make all pieces monotone.
     change_counts = {}
     to_check = list(range(len(values)-1))
@@ -35,18 +52,36 @@ def monotone_quintic_spline(x, y, ends=2, mids=2, exact=True,
         change_counts[i] = change_counts.get(i,0) + 1
         # Do NOT update this interval if it has been changed too many times.
         step = change_counts[i]
-        if (step > max_steps): continue
-        if verbose: print(f"  checking ({i+1}) ..")
+        if (step > max_steps):
+            print()
+            print(f"WARNING:  Skipping monotonicity fix on interval {i+1} because {step-1} changes have already")
+            print(f"          been made. Consider decreasing 'shrink_rate' or increasing 'max_steps'.")
+            change_counts[i] -= 1
+            continue
+        if verbose: print(f"\n  checking ({i+1}) ..")
         # Update this interval to make it monotone.
         changed = monotone_quintic(
             [x[i], x[i+1]], [values[i], values[i+1]])
         # Mark the adjacent intervals as needing to be checked,
         # since this adjustment may have broken their monotonicity.
         if changed:
+            # Shrink neighboring derivative values if this interval is looping.
+            if step > 1:
+                values[i][1]   *= shrink_rate**step
+                values[i+1][1] *= shrink_rate**step
+                # Zero values out that are getting too small.
+                if (values[i][1] <= min_value): values[i][1] = 0
+                if (values[i][1] <= min_value): values[i+1][1] = 0
             # Queue up this interval and its neighbors to be checked again.
-            if (i > 0):               to_check.append( i-1 )
-            if (step < max_steps):    to_check.append(i)
-            if (i+1 < len(to_check)): to_check.insert(0, i+1)
+            next_value  = to_check[0]  if (len(to_check) > 0) else None
+            second_last = to_check[-2] if (len(to_check) > 1) else None
+            last_value  = to_check[-1] if (len(to_check) > 0) else None
+            if (i > 0) and (i-1 not in {second_last, last_value}):
+                to_check.append( i-1 )
+            if (step < max_steps) and (i not in {last_value}):
+                to_check.append( i )
+            if (i+1 < len(to_check)) and (i+1 != next_value):
+                to_check.insert(0, i+1)
             # Maintain exactness if necessary!
             if exact:
                 values[i][:] = map(Fraction, values[i])
@@ -54,9 +89,9 @@ def monotone_quintic_spline(x, y, ends=2, mids=2, exact=True,
             # Show some printouts to the user for verbosity.
             if verbose:
                 print(f"   [update {step}] interval {i+1} changed..")
-                print(f"     {float(x[i]):.2f} {float(x[i+1]):.2f}")
-                print( "     ", ' '.join([f"{float(v): .2f}" for v in values[i]]))
-                print( "     ", ' '.join([f"{float(v): .2f}" for v in values[i+1]]))
+                print(f"     {float(x[i]):.2f} {float(x[i+1]):.2f} ({float(values[i][0]):.2e} {float(values[i+1][0]):.2e})")
+                print( "     ", ' '.join([f"{float(v): .2e}" for v in values[i]]))
+                print( "     ", ' '.join([f"{float(v): .2e}" for v in values[i+1]]))
     if verbose: print("done.\n")
     # Construct a new spline over the (updated) values for derivatives.
     return Spline(f.knots, f.values)
@@ -97,7 +132,7 @@ def monotone_quintic(x, y, accuracy=2**(-26)):
     # Use a (simplified) monotone cubic over this region if AB = 0.
     # Only consider the coefficients less than the x^4, because that
     # term is strictly positive.
-    if (A*B == 0):
+    if (A*B < accuracy):
         # Convert all the tests to the monotone increasing case (will undo).
         X0 *= sign
         X1 *= sign
@@ -194,7 +229,7 @@ def monotone_quintic(x, y, accuracy=2**(-26)):
         b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
         if b <= 6: bound = - (b + 2) / 2
         else:      bound = -2 * (b - 2)**(1/2)
-        return (a+2**(-26) > bound) and (g+2**(-26) > bound)
+        return (a+accuracy > bound) and (g+accuracy > bound)
 
     # Move the second derivative towards a working value until
     # monotonicity is achieved.
@@ -230,14 +265,34 @@ def monotone_quintic(x, y, accuracy=2**(-26)):
 
 
 # Given x and y values, construct a monotonic quintic spline fit.
-def monotone_cubic_spline(x, y):
+def monotone_cubic_spline(x, y=None, values=None, exact=False):
+    import numpy as np
     from polynomial import Spline
-    kwarg = {}
-    if   all(y[i+1] >= y[i] for i in range(len(y)-1)): kwarg = dict(min_d1=0)
-    elif all(y[i] >= y[i+1] for i in range(len(y)-1)): kwarg = dict(max_d1=0)
-    else: raise(Exception("Provided 'y' data is not monotone."))
-    f = fit(x, y, continuity=1, **kwarg)
-    values = f.values
+    # Convert 'x' to exact values.
+    if exact:
+        from fraction import Fraction
+        x = list(map(Fraction, x))
+    # Process the provided data to prepare for monotonicity checks.
+    if (y is not None):
+        if exact: y = list(map(Fraction, y))
+        kwarg = {}
+        if   all(y[i+1] >= y[i] for i in range(len(y)-1)): kwarg = dict(min_d1=0)
+        elif all(y[i] >= y[i+1] for i in range(len(y)-1)): kwarg = dict(max_d1=0)
+        else: raise(Exception("Provided 'y' data is not monotone."))
+        f = fit(x, y, continuity=1, **kwarg)
+        values = f.values
+    elif (values is not None):
+        if exact: values = [list(map(Fraction, row)) for row in values]
+        # Verify monotonicity.
+        if   all(values[i+1][0] >= values[i][0] for i in range(len(values)-1)): pass
+        elif all(values[i][0] >= values[i+1][0] for i in range(len(values)-1)): pass
+        else: raise(Exception("Provided 'y' data is not monotone."))
+        # Make a spline over the points and derivative values.
+        f = Spline(x, values)
+        values = f.values
+    else:
+        class UsageError(Exception): pass
+        raise(UsageError("Must provided either a flat 'y' array or a (N,2) values array."))
     # Make all pieces monotone.
     for i in range(len(values)-1):
         monotone_cubic([x[i], x[i+1]], [values[i], values[i+1]])
@@ -272,11 +327,11 @@ if __name__ == "__main__":
     #               TEST CASES
     # 
     # 0, 4, (None)      -> Good
-    # 1, 4, (None)      -> Bad (not monotone) (now good) [bad first derivative conditions]
-    # 0, 13, (None)     -> Bad (not monotone after first pass) (now good) [no previous-interval fix]
-    # 0, 30, (-3,None)  -> Bad (far right still not monotone after passes) (now good) [bad simplied conditions]
-    # 0, 100, (None)    -> Ehh (some intervals are barely non-monotone after 100 steps)
-    # 0, 1000, (None)   -> Ehh (same as above)
+    # 1, 4, (None)      -> Bad (now good) (not monotone) [bad first derivative conditions]
+    # 0, 13, (None)     -> Bad (now good) (not monotone after first pass) [no previous-interval fix]
+    # 0, 30, (-3,None)  -> Bad (now good) (far right still not monotone after passes) [bad simplied conditions]
+    # 0, 100, (None)    -> Ehh (now good) (barely non-monotone after 100 steps) [made lower ceiling for derivatives]
+    # 0, 1000, (None)   -> Good
     # 
     # --------------------------------------------------------------------
 
@@ -285,13 +340,13 @@ if __name__ == "__main__":
     # SUBSET = slice(None) 
 
     SEED = 0
-    NODES = 13
+    INTERNAL_NODES = 2
     SUBSET = slice(None)
 
     # Generate random data to test the monotonic fit function.
     import numpy as np
     np.random.seed(SEED)
-    nodes = NODES + 2
+    nodes = INTERNAL_NODES + 2
     x = np.linspace(0, 1, nodes)
     y = sorted(np.random.normal(size=(nodes,)))
     x -= min(x); x /= max(x)
@@ -300,13 +355,13 @@ if __name__ == "__main__":
     x, y = list(x)[SUBSET], list(y)[SUBSET]
 
     # Convert these arrays to exact arithmetic.
-    from util.math import Fraction
+    from fraction import Fraction
     x = list(map(Fraction, x))
     y = list(map(Fraction, y))
     interval = [float(min(x)), float(max(x))]
 
     # Generate a plot to see what it all looks like.
-    from util.plot import Plot
+    from plot import Plot
 
     p = Plot()
     p.add("Points", list(map(float, x)), list(map(float, y)))
@@ -333,9 +388,8 @@ if __name__ == "__main__":
     #            interval, group='2', **kwargs)
     # p.add_func("c2 d1", fit(x,y,continuity=2, min_d1=0).derivative(), 
     #            interval, dash="dash", color=p.color(p.color_num,alpha=.5), group='2', **kwargs)
-    print("Constructing monotone quintic..")
-    f = monotone_quintic_spline(x,y, verbose=True)
-    print("done.")
+
+    f = monotone_quintic_spline(x,y, verbose=False)
     # kwargs = dict(plot_points=10000)
     p.add_func("monotone c2", f, interval, group='2mf', color=p.color(7), **kwargs)
     p.add_func("monotone c2d1", f.derivative(), interval, 

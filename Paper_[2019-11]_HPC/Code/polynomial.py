@@ -647,11 +647,22 @@ def _test_solve_quadratic():
 
 if __name__ == "__main__":
     # Run the tests on this file.
+    print()
+    print("Running tests..")
+    print(" Polynomial")
     _test_Polynomial()
+    print(" NewtonPolynomial")
     _test_NewtonPolynomial()
+    print(" polynomial")
     _test_polynomial()
+    print(" polynomial_piece")
     _test_polynomial_piece(plot=False)
+    print(" Spline")
     _test_Spline()
+    print(" fit")
     _test_fit(plot=False)
+    print(" fill_derivative")
     _test_fill_derivative()
+    print(" solve_quadratic")
     _test_solve_quadratic()
+    print("tests complete.")
