@@ -3,6 +3,7 @@ import numpy as np
 import sys, os
 sys.path += [os.path.abspath("code")]
 from plot import Plot
+from polynomial import polynomial_piece
 sys.path.pop(-1)
 
 c = "rgba(50,50,50,.5)"
@@ -36,6 +37,33 @@ p.add_annotation(" 2 ", 1.55, 1.55, font_family="times", font_size=17,
 p.add_annotation(" 1 ", 2.3, 2.3, font_family="times", font_size=17,
                  show_arrow=False, border_width=1, x_anchor="left")
 
-
 p.show(file_name="cubic_projection.html", width=400, height=400, show_legend=False)
+
+
+
+VERIFY_CUBIC = False
+# --------------------------------------------------------------------
+#             VERIFY CORRECTNESS OF CUBIC INTERPOLANT
+if VERIFY_CUBIC:
+    # Knots
+    k0 = 0
+    k1 = 2
+    h0 = k1 - k0
+    # Truth function
+    f = lambda x: 0. if x < (k0+k1)/2 else 1.
+    df = lambda x: -1.
+    # Basis functions.
+    u = lambda t: 3*t**2 - 2*t**3
+    p = lambda t: t**3 - t**2
+    # Approximation function
+    fh = lambda x: f(k0) * u((k1-x)/h0) + f(k1) * u((x - k0)/h0) - \
+         h0 * df(k0) * p((k1-x)/h0) + h0 * df(k1) * p((x - k0)/h0)
+    pp = polynomial_piece([0,-1], [1,-1], (k0,k1))
+
+    # Plot this.
+    plot = Plot()
+    plot.add_func("F hat", fh, [k0, k1])
+    plot.add_func("Pp", pp, [k0, k1])
+    plot.show()
+# --------------------------------------------------------------------
 
