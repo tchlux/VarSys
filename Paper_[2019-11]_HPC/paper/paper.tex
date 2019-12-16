@@ -67,6 +67,9 @@
 %*
 %****************************************************************************
 
+%% Use a package to allow for multi-row cells in a table.
+\usepackage{multirow}
+
 %% Use a custom `algorithm` command for this paper.
 \input{lux-algorithm}
 
@@ -150,7 +153,7 @@ Yili Hong\\ [12pt]
 Department of Statistics\\
 Virginia Polytechnic Institute \& State University\\
 213 Hutcheson Hall, Blacksburg, VA, USA\\
-yilihong@vt.edu\\
+\{lix1992,yueyao94,yilihong\}@vt.edu\\
 }
 
 
@@ -274,13 +277,16 @@ These algorithms make use of first and second derivatives of the approximated fu
 
 \algorithm
     {is\_monotone$\big(x_0, x_1, f \big)$}
-    {where $x_0$, $x_1 \in \mathbb{R}$, $x_0 < x_1$, and $f$ is an order six polynomial. Returns \texttt{TRUE} if $f$ is monotone increasing on $[x_0,x_1]$.}
+    {where $x_0$, $x_1 \in \mathbb{R}$, $x_0 < x_1$, and $f$ is an order six polynomial defined by $f(x_0)$, $Df(x_0)$, $D^2f(x_0)$, $f(x_1)$,
+  $Df(x_1)$, $D^2f(x_1)$. Returns \texttt{TRUE} if $f$ is monotone increasing on $[x_0,x_1]$.}
     {\label{alg:check-monotone}
   \item if $\big(f(x_0) = f(x_1)\big)$ and not $\big( 0 = Df(x_0) = Df(x_1) = D^2f(x_0) = D^2f(x_1) \big)$
     \indented{return FALSE}
+    end if
   \item if $\big(Df(x_0) < 0$ or $Df(x_1) < 0\big)$
     \indented{return FALSE}
-    \comment{The necessity of these first two steps follows directly from the fact that $f$ is $C^2$. The next case that will be covered is in accordance with a simplified condition for quintic monotonicity that reduces to one of cubic positivity studied in \citeN{schmidt1988positivity}, where $\alpha$, $\beta$, $\gamma$, and $\delta$ are defined in terms of values and derivatives of $f$ at $x_0$ and $x_1$. Step \ref{alg1-alpha} checks for the necessary condition that $\alpha \ge 0$, Step \ref{alg1-beta} checks $\beta \geq \alpha$, and Step \ref{alg1-gamma} checks $\gamma \geq \delta$, all from \citeN{schmidt1988positivity}. If all necessary conditions are met, then the order six piece is monotone and Step \ref{alg1-simplified-true} concludes this check.}
+    end if
+    \comment{The necessity of these first two steps follows directly from the fact that $f$ is $C^2$. The next case is in accordance with a simplified condition for quintic monotonicity that reduces to one of cubic positivity studied in \citeN{schmidt1988positivity}, where $\alpha$, $\beta$, $\gamma$, and $\delta$ are defined in terms of values and derivatives of $f$ at $x_0$ and $x_1$. Step \ref{alg1-alpha} checks for the necessary condition that $\alpha \ge 0$, Step \ref{alg1-beta} checks $\beta \geq \alpha$, and Step \ref{alg1-gamma} checks $\gamma \geq \delta$, all from \citeN{schmidt1988positivity}. If all necessary conditions are met, then the order six piece is monotone and Step \ref{alg1-simplified-true} concludes this check.}
   \item if $\big(Df(x_0) = 0$ or $Df(x_1) = 0\big)$
   \item \indented{$w := x_0 - x_1$\\$v := f(x_0) - f(x_1)$}
   \item \indented{if $\big(D^2f(x_1) > {-4}Df(x_1) / w \big)$ return FALSE}
@@ -290,6 +296,7 @@ These algorithms make use of first and second derivatives of the approximated fu
   \item \indented{if $\big(D^2f(x_0) < 3 Df(x_0) / w \big)$ return FALSE}
     \label{alg1-gamma}
   \item \indented{return TRUE} \label{alg1-simplified-true}
+    end if
     \comment{The following code considers the remaining case where $Df(x_0) \neq 0$ and $Df(x_1) \neq 0$.}
   \item $\displaystyle A := Df(x_0)\frac{x_1 - x_0}{f(x_1) - f(x_0)}$
     \\ $\displaystyle B := Df(x_1) \frac{x_1 - x_0}{f(x_1) - f(x_0)}$
@@ -300,13 +307,14 @@ These algorithms make use of first and second derivatives of the approximated fu
     \\ $\displaystyle \alpha_1 := -\frac{x_1 - x_0}{Df(x_1)} (B/A)^{1/4}$
     \\ $\displaystyle \beta_0 := 30 - \frac{12 \big(Df(x_0) + Df(x_1)\big) (x_1 - x_0)}{\big(f(x_1) - f(x_0)\big) \sqrt{A}\sqrt{B}}$
     \\ $\displaystyle \beta_1 := \frac{-3 (x_1 - x_0)^2}{2 \big(f(x_1) - f(x_0)\big) \sqrt{A} \sqrt{B}} $ \label{alg1-linearized-abg}
-    \comment{The $\gamma,$ $\alpha,$ and $\beta$ terms with subscripts $0$ and $1$ are algebraic reductions of the simplified conditions for satisfying Theorem 2 in Equation (16) of \citeN{ulrich1994positivity}. These terms with subscripts $0$ and $1$ make the computation of $\alpha,$ $\beta,$ and $\gamma$ functions of the second derivative terms, as seen in Step \ref{alg1-abg} below.}
+    \comment{The $\gamma$, $\alpha$, and $\beta$ terms with subscripts $0$ and $1$ are algebraic reductions of the simplified conditions for satisfying Theorem 2 in Equation (16) of \citeN{ulrich1994positivity}. These terms with subscripts $0$ and $1$ make the computation of $\alpha$, $\beta$, and $\gamma$ functions of the second derivative terms, as seen in Step \ref{alg1-abg} below.}
   \item $\gamma := \gamma_0 + \gamma_1 D^2f(x_0)$
     \\ $\alpha := \alpha_0 + \alpha_1 D^2f(x_1)$
     \\ $\beta := \beta_0 + \beta_1 \big(D^2f(x_0) - D^2f(x_1)\big)$
     \label{alg1-abg}
-  \item if $(\beta \leq 6)$ then return $\big(\alpha > - (\beta + 2) / 2\big)$
-  \item else return $\big(\gamma > -2 \sqrt{\beta - 2}\big)$ \label{alg1-last}
+  \item if $(\beta \leq 6)$ return $\big(\alpha > - (\beta + 2) / 2\big)$
+  \item else $\qquad$ return $\big(\gamma > -2 \sqrt{\beta - 2}\big)$
+    \\ end if \label{alg1-last}
 }
 %% ----------------------------------------------------------------------
 
@@ -315,76 +323,82 @@ The reason for structuring the $\alpha$, $\beta$, and $\gamma$ computations in t
 %% ----------------------------------------------------------------------
 \algorithm
     {make\_monotone$\big (x_0$,$x_1$,$f \big)$}
-    {where $x_0,\ x_1 \in \mathbb{R}$, $x_0 < x_1$, and $f$ is an order six polynomial. Returns monotone $f$.}
+    {where $x_0,\ x_1 \in \mathbb{R}$, $x_0 < x_1$, and $f$ is an order six polynomial defined by $f(x_0)$, $Df(x_0)$, $D^2f(x_0)$, $f(x_1)$, $Df(x_1)$, $D^2f(x_1)$. Returns $f$ monotone on $[x_0,x_1]$.}
     {\label{alg:make-monotone}
-    \item if $\big(f(x_1) - f(x_0) = 0\big)$
+    \item if $\big(f(x_1) = f(x_0)\big)$
       \indented{$Df(x_0) := Df(x_1) := D^2f(x_0) := D^2f(x_1) := 0$}
-      \indented{return $f$}
+      \indented{return}
+      end if
     \item $Df(x_0) :=\ $median$\displaystyle \bigg(0,\ Df(x_0),\ 14 \frac{f(x_1) - f(x_0)}{x_1 - x_0} \bigg)$
       \\ $Df(x_1) :=\ $median$\displaystyle \bigg(0,\ Df(x_1),\ 14 \frac{f(x_1) - f(x_0)}{x_1 - x_0}\bigg)$ \label{alg2-init-df}
-      \comment{The selection of values in Step \ref{alg2-init-df} for $Df(x_0)$ and $Df(x_1)$ is suggested by \citeN{ulrich1994positivity} and originally from \citeN{huynh1993accurate}. These rules quickly enforce upper and lower bounds on derivative values to ensure quintic monotonicity is obtainable.}
-      \comment{The next case that will be covered is in accordance with a simplified condition for quintic monotonicity that reduces to one of cubic positivity studied in \citeN{schmidt1988positivity}, where $\alpha$, $\beta$, $\gamma$, and $\delta$ are defined in terms of values and derivatives of $f$ at $x_0$ and $x_1$. Steps \ref{alg2-dx-conditions} and \ref{alg2-rescale-dx} ensure that the following bounds on $D^2f(x_0)$ are compatible. Step \ref{alg2-ddx0-upper} is the final preparatory step, ensuring that the conditions on $D^2f(x_1)$ are compatible. To conclude the simplified case, Step \ref{alg2-gamma} first enforces $\gamma \geq \delta$, then Steps \ref{alg2-alpha} and \ref{alg2-beta} enforce $\alpha > 0$ and $\beta \geq \alpha$ respectively. Combined, these three conditions derived from Equation (2.18) in \citeN{schmidt1988positivity} guarantee monotonicity of this polynomial piece.}
+      \comment{The selection of values in Step \ref{alg2-init-df} for $Df(x_0)$ and $Df(x_1)$ is suggested by \citeN{ulrich1994positivity} and also by \citeN{huynh1993accurate}. These rules quickly enforce upper and lower bounds on derivative values to ensure quintic monotonicity is obtainable.}
+      \comment{The next case that will be covered is in accordance with a simplified condition for quintic monotonicity that reduces to one of cubic positivity studied in \citeN{schmidt1988positivity}, where $\alpha$, $\beta$, $\gamma$, and $\delta$ are defined in terms of values and derivatives of $f$ at $x_0$ and $x_1$. Steps \ref{alg2-dx-conditions} and \ref{alg2-rescale-dx} ensure that the following bounds on $D^2f(x_0)$ are compatible while Step \ref{alg2-ddx0-upper} ensures that the conditions on $D^2f(x_1)$ are compatible. To conclude the simplified case, Step \ref{alg2-gamma} first enforces $\gamma \geq \delta$, then Steps \ref{alg2-alpha} and \ref{alg2-beta} enforce $\alpha \geq 0$ and $\beta \geq \alpha$ respectively. Combined, these three conditions derived from Equation (2.18) in \citeN{schmidt1988positivity} guarantee monotonicity of this polynomial piece.}
     \item if $\big(Df(x_0) = 0$ or $Df(x_1) = 0\big)$
     \item \indented{$w := x_0 - x_1$\\$v := f(x_0) - f(x_1)$}
     \item \indented{if $\big(5 Df(x_0) + 4Df(x_1) > 20v / w)$} \label{alg2-dx-conditions}
     \item \indented{\indented{$Df(x_0) := Df(x_0) \text{ max}\displaystyle \bigg(0, \frac{20v}{w \big(5 Df(x_0) + 4 Df(x_1)\big)}\bigg) $}}
       \indented{\indented{$Df(x_1) := Df(x_1) \text{ max}\displaystyle \bigg(0, \frac{20v}{w \big(5 Df(x_0) + 4 Df(x_1)\big)}\bigg) $}} \label{alg2-rescale-dx}
+      \indented{end if}
     \item \indented{$D^2f(x_0) :=\ $min$\displaystyle \bigg(D^2f(x_0), \frac{4 (2 Df(x_0)+Df(x_1))+20 v/w}{w} \bigg)$} \label{alg2-ddx0-upper}
     \item  \indented{$D^2f(x_0) :=\ $max$\big(D^2f(x_0), 3 Df(x_0) / w \big)$} \label{alg2-gamma}
     \item \indented{$D^2f(x_1) :=\ $min$\big(D^2f(x_1), {-4}Df(x_1) / w \big)$} \label{alg2-alpha}
     \item  \indented{$D^2f(x_1) :=\ $max$\displaystyle \bigg(D^2f(x_1), \frac{3w D^2f(x_0) - 24 Df(x_0) - 32 Df(x_1) + 60v/w}{5w} \bigg)$} \label{alg2-beta}
-    \item
-      \indented{return $f$}
-      \comment{The following code considers the remaining case where $Df(x_0) \neq 0$ and $Df(x_1) \neq 0$.}
+      \indented{return}
+      end if
+      \comment{The following code considers the case where $Df(x_0) \neq 0$ and $Df(x_1) \neq 0$.}
     \item $\displaystyle A := Df(x_0)\frac{x_1 - x_0}{f(x_1) - f(x_0)}$
       \\ $\displaystyle B := Df(x_1) \frac{x_1 - x_0}{f(x_1) - f(x_0)}$
     \item if $\big($max$(A,B) > 6\big)$
-      \indented{$Df(x_0) := 6 Df(x_0)\ /\ $max$(A,B)$}
-      \indented{$Df(x_1) := 6 Df(x_1)\ /\ $max$(A,B)$}
-      \comment{This box bound ensures that $(A,B)$ remains within a viable region of monotonicity (satisfying Theorem 4, seen in Fig. 6 of \citeN{ulrich1994positivity}).}
+      \indented{$Df(x_0) := 6 Df(x_0) \big/ $max$(A,B)$}
+      \indented{$Df(x_1) := 6 Df(x_1) \big/ $max$(A,B)$}
+      end if
+      \comment{This ensures that $(A,B)$ remains within a viable region of monotonicity (satisfying Theorem 4, seen in Fig. 6 of \citeN{ulrich1994positivity}).}
     \item $\eta := \big(D^2f(x_0), D^2f(x_1)\big)$
-      \\ $\displaystyle \eta_0 := \bigg({-\frac{\sqrt{A}}{4}}\big(7\sqrt{A} + 3\sqrt{B}\big),\ \frac{\sqrt{B}}{4}\big(3\sqrt{A} + 7\sqrt{B}\big)  \bigg)$
-    \item $D^2f(x_0),\ D^2f(x_1) := $ binary\_search$\big($is\_monotone$(x_0,x_1,f)$, $\eta,$ $\eta_0\big)$
-      \comment{This binary search identifies feasible values of $D^2f(x_0)$ and $D^2f(x_1)$ that are nearest to the current values. This search is valid because $\eta_0$ is guaranteed to produce a monotone function, which can be seen in Equation (23) of \citeN{ulrich1994positivity}.}
-    \item return $f$
+      \\ $\displaystyle \eta_0 := \left({-\frac{\sqrt{A}}{4}}\big(7\sqrt{A} + 3\sqrt{B}\big),\ \frac{\sqrt{B}}{4}\big(3\sqrt{A} + 7\sqrt{B}\big) \right)$
+    \item $\bigl(D^2f(x_0)$, $D^2f(x_1)\bigr) :=$ binary\_search$\bigl(g,
+       \eta,\eta_0\bigr)$
+      \comment{Here $g(z) =$\texttt{ is\_monotone}$(x_0,x_1,f)$ where $x_0$, $x_1$, $f(x_0)$, $f(x_1)$, $Df(x_0)$, $Df(x_1)$ are fixed, and the variable $z=\bigl(D^2f(x_0),D^2f(x_1)\bigr)$. This binary search identifies feasible values of $D^2f(x_0)$ and $D^2f(x_1)$ that are nearest to the current values $\eta$. This search is valid because $\eta_0$ is guaranteed to produce a monotone function, which can be seen in Equation (23) of \citeN{ulrich1994positivity}.}
+    return
 }
 %% ----------------------------------------------------------------------
 
 
-Notice that both Algorithms \ref{alg:check-monotone} and \ref{alg:make-monotone} have $\mathcal{O}(1)$ runtime  assuming a fixed level of relative precision. A constant number of operations are needed for verifying monotonicity (Algorithm \ref{alg:check-monotone}), while a constant set of operations and a single binary search are performed for enforcing monotonicity (Algorithm \ref{alg:make-monotone}). The search requires a fixed number of steps to achieve any predetermined relative precision. Also note that an efficient implementation of Algorithm \ref{alg:make-monotone} only needs to recalculate Steps \ref{alg1-abg} through \ref{alg1-last} of Algorithm \ref{alg:check-monotone} during the binary search. Next, an algorithm for constructing a monotone quintic interpolating spline is presented.
+Notice that both Algorithms \ref{alg:check-monotone} and \ref{alg:make-monotone} have $\mathcal{O}(1)$ runtime  assuming a fixed level of relative precision. A constant number of operations are needed for verifying monotonicity (Algorithm \ref{alg:check-monotone}), while a constant set of operations and a single binary search are performed for enforcing monotonicity (Algorithm \ref{alg:make-monotone}). The search requires a fixed number of steps to achieve any predetermined relative precision. Also note that an efficient implementation of Algorithm \ref{alg:make-monotone} only needs to recalculate Steps \ref{alg1-abg} through \ref{alg1-last} of Algorithm \ref{alg:check-monotone} during the binary search. Next, an algorithm for constructing a monotone quintic spline interpolant is presented.
 
 %% ----------------------------------------------------------------------
 
 \algorithm
-    {monotone\_spline$\big(\{k_1,\ldots,k_n\},\ f,\ s\big)$}
-    {where $\{k_1,\ldots,k_n\}$ is an increasing sequence of real numbers, $f$ is a piecewise order six polynomial defined over intervals $[k_i, k_{i+1}]$  for $i = 1, \ldots, n-1$, and integer $s \geq 1$.}
+    {monotone\_spline$\big((k_1$, $\ldots$, $k_n)$, $f$, $s\big)$}
+    {where $(k_1$, $\ldots$, $k_n)$ is an increasing sequence of real numbers, $f$ is an order six piecewise polynomial with breakpoints $k_1$, $\ldots$, $k_n$ defined by the data $\bigl\{f(k_i)\bigr\}_{i=1}^n$, $\bigl\{Df(k_i)\bigr\}_{i=1}^n$, $\bigl\{D^2f(k_i)\bigr\}_{i=1}^n$, and $s > 1$ is an integer shrink factor.}
     {\label{alg:monotone-spline}
     \item create queue
-      \\ create changed$(1, \ldots, n) := $ FALSE
-      \\ create step\_size$(1, \ldots, n) := \{Df(k_i) / s$ for $i = 1, \ldots, n\}$\label{step:create}
-      \comment{The three variables defined in Step \ref{step:create} are used to ensure the eventual achievement of monotonicity. The \texttt{queue} is a standard first in first out (FIFO) queue with \texttt{enqueue} and \texttt{dequeue} operations. The array \texttt{changed} contains Booleans describing whether or not a partition point belongs to an interval that has been modified to enforce monotonicity. The \texttt{step\_size} array contains the real valued derivative step sizes to use in the search for a valid monotone spline.}
-    \item for $i := 1, \ldots, n-1$
-      \indented{enqueue $(k_i, k_{i+1})$}
+      \\ create changed$(1$, $\ldots$, $n) := $ FALSE
+      \\ create step\_size$(1$, $\ldots$, $n) := \bigl(Df(k_1)/s$, $\ldots$, $Df(k_n)/s\bigr)$ \label{step:create}
+      \comment{The three variables defined in Step \ref{step:create} are used to ensure the eventual achievement of monotonicity. The \texttt{queue} is a standard first in first out (FIFO) queue with \texttt{enqueue} and \texttt{dequeue} operations. The array \texttt{changed} contains Booleans describing whether or not a breakpoint belongs to an interval that has been modified to enforce monotonicity. The \texttt{step\_size} array contains the real-valued derivative decrement step sizes to use in the search for a valid monotone spline.}
+    \item for $i := 1$, $\ldots$, $n-1$
+      \indented{enqueue $\bigl((k_i, k_{i+1})\bigr)$}
       \comment{Initially, all intervals must be checked for monotonicity. The following loop will continue until all intervals are verified as monotone without need for modification.}
     \item while $($size$($queue$) > 0)$
-    \item \indented{$x_j,\ x_{j+1} := $ dequeue}
-    \item \indented{if $\big($not is\_monotone$(x_j,\ x_{j+1},\ f)\big)$}
-    \item \indented{\indented{if $\big($changed$(j)\big) \qquad \ Df(x_j) := Df(x_j) - $step\_size$(j)$}}
-      \indented{\indented{if $\big($changed$(j+1)\big) \quad Df(x_{j+1}) := Df(x_{j+1}) - $step\_size$(j+1)$}}
-      \indented{\indented{\comment{If a partition point belongs to an interval that has been previously modified, then the enforced monotonicity conditions on the second derivatives of adjacent intervals must contradict one another. In turn, the involved first derivatives are decreased towards zero by a predetermined step size.}}}
+    \item \indented{$(x_j$, $x_{j+1}) := $ dequeue}
+    \item \indented{if $\big($not is\_monotone$(x_j$, $x_{j+1}$, $f)\big)$}
+    \item \indented{\indented{if $\big($changed$(j)\big) \qquad \ Df(x_j) := Df(x_j) -{}$step\_size$(j) \qquad \ \ $ end if}}
+      \indented{\indented{if $\big($changed$(j+1)\big) \quad Df(x_{j+1}) := Df(x_{j+1}) -{}$step\_size$(j+1)$ end if}}
+      \indented{\indented{\comment{If a breakpoint belongs to an interval that has been previously modified, then the enforced monotonicity conditions on the second derivatives of adjacent intervals must contradict one another. In turn, the involved first derivatives are decreased towards zero by a predetermined step size.}}}
     \item \indented{\indented{make\_monotone$(x_j,\ x_{j+1},\ f)$}}
     \item \indented{\indented{changed$(j) :=$ TRUE}}
       \indented{\indented{changed$(j+1) :=$ TRUE}} \label{step:changed}
-    \item \indented{\indented{if $\big(j > 1$ and $(x_{j-1}, x_j) \not \in$ queue$\big)$ enqueue $(x_{j-1}, x_j)$}}
-      \indented{\indented{if $\big((x_j, x_{j+1}) \not \in$ queue$\big)$ enqueue $(x_j, x_{j+1})$}}
-      \indented{\indented{if $\big(j+1 < n$ and $(x_{j+1}, x_{j+2}) \not \in$ queue$\big)$ enqueue $(x_{j+1}, x_{j+2})$}} \label{step:requeue}
-      \indented{\indented{\comment{Step \ref{step:changed} records the endpoints of the current interval as having been changed, while \ref{step:requeue} adds adjacent intervals to \texttt{queue} that may have inadvertently been made nonmonotone by the changes to the present interval.}}}
+    \item \indented{\indented{if $\big(j > 1$ and $(x_{j-1}, x_j) \not\in$ queue$\big)$ enqueue $\bigl((x_{j-1}, x_j)\bigr)$ end if}}
+      \indented{\indented{enqueue $\bigl((x_j, x_{j+1})\bigr)$}}
+      \indented{\indented{if $\big(j+1 < n$ and $(x_{j+1}, x_{j+2}) \not\in$ queue$\big)$ enqueue $\bigl((x_{j+1}, x_{j+2})\bigr)$ end if}} \label{step:requeue}
+      \indented{\indented{\comment{Step \ref{step:changed} records the endpoints of the current interval as having been changed, while \ref{step:requeue} adds adjacent intervals to \texttt{queue} that may have inadvertently been made nonmonotone by the changes to the present interval.}}}      
+      \indented{end if}
+      end while
 }
 %% ----------------------------------------------------------------------
 
 It is mentioned in \citeN{ulrich1994positivity} that for sufficiently small $Df(k_i)$ and $Df(k_{i+1})$ the admissible solution interval of second derivative values becomes arbitrarily large. It can also be seen that decreasing the assigned derivative values towards zero will eventually cause Steps \ref{alg1-alpha} through \ref{alg1-gamma} of Algorithm \ref{alg:check-monotone} to all fail, resulting in Step \ref{alg1-simplified-true} returning \texttt{TRUE}.
 
-Given the potential for successive monotonicity fixes across all intervals, the worst case runtime of Algorithm \ref{alg:monotone-spline} is $\mathcal{O}(s n)$ for $n$ partition points and step size divisor $s$. In practice this worst case has been observed to be incredibly unlikely and difficult to produce.
+Given the potential for successive monotonicity fixes across all intervals, the worst case runtime of Algorithm \ref{alg:monotone-spline} is $\mathcal{O}(s n)$ for $n$ breakpoints and shrink factor $s$. In practice this worst case has been observed to be unlikely and difficult to produce.
 
 \section{Experimental Results}
 
@@ -392,7 +406,7 @@ Given the increased order of approximation, it is naturally expected that some a
 
 \subsection{Approximating a Trigonometric Function}
 
-For this experiment, the function $\sin(x) + x$ is considered over the interval $[0,(5/2)\pi]$ as seen in Figure \ref{fig:cubic_quintic_sin}. Given an increasing number of points, the maximum error of cubic and quintic approximations is shown in Figure \ref{fig:experiment_1}. The quintic approximation consistently has a maximum error that is roughly half that of the cubic approximation, given the same number of points. There is a (subtle) increase in the error gap between the two approximations as more points are added.
+For this experiment, the function $\sin(x) + x$ is considered over the interval $[0,(5/2)\pi]$ as seen in Figure \ref{fig:cubic_quintic_sin}. Given an increasing number of points, the maximum error of cubic and quintic approximations is shown in Figure \ref{fig:experiment_1}. The quintic approximation consistently has a maximum error that is roughly half that of the cubic approximation, given the same number of points. There is an increase in the error gap between the two approximations as more points are added. The quintic spline requires only $700$ points to approximate the function to the same accuracy achieved by the cubic with $1000$ points.
 
 \begin{figure}
   \centering
@@ -404,21 +418,21 @@ For this experiment, the function $\sin(x) + x$ is considered over the interval 
 \begin{figure}
   \centering
   \includegraphics[width=.7\textwidth]{experiment_1_errors}
-  \caption{The error in the quintic and cubic approximations of $\sin(x) + x$ with increasing number of points. Both axes are log scaled. The quintic approximation generally provides an approximation with slightly more than half of the maximum error of the cubic approximation, while the relative gap between grows with increasing number of points. For larger absolute errors, this means the accuracy of the cubic is achieved with about ten fewer samples from the quintic. However, for smaller absolute errors the quintic spline requires hundreds fewer samples to achieve the same accuracy as the cubic.}
+  \caption{The error in the quintic and cubic approximations of $\sin(x) + x$ with increasing number of points. Both axes are log scaled. The quintic approximation generally provides an approximation with about half of the maximum error of the cubic approximation, while the relative gap between grows with increasing number of points. In order to achieve the same absolute error the quintic spline requires ten fewer points at max error $10^{-4}$, thirty fewer points at max error $10^{-6}$, and $300$ fewer points at error $10^{-8}$.}
   \label{fig:experiment_1}
 \end{figure}
 
 
 \subsection{Random Number Generation}
 
-Consider the cumulative distribution function (CDF) defined by a mixture of $3$ Gaussian distributions and visualized in Figure \ref{fig:experiment_2_distribution}. The distributions have weights $(.3, .6, .1)$, means $(.2, .45, .85)$ and standard deviations $(.05, .08, .03)$. $200$ random samples are generated from this distribution with both cubic and quintic approximations from $4$ points, and over $100$ trials the resulting spread of empirical distribution functions (EDFs) are visualized in Figure \ref{fig:experiment_2_results}.
+Consider the cumulative distribution function (CDF) defined by a mixture of three Gaussian distributions and visualized in Figure \ref{fig:experiment_2_distribution}. The distributions have weights $(.3, .6, .1)$, means $(.2, .45, .85)$ and standard deviations $(.05, .08, .03)$. $200$ random samples are generated from this distribution with both cubic and quintic approximations from four points, and over $100$ trials the resulting spread of empirical distribution functions (EDFs) are visualized in Figure \ref{fig:experiment_2_results}.
 
 While an increased number of points could be used to decrease the error in either approximation, the purpose of this experiment is to demonstrate the effect approximation error has on random number generation. The errors in the CDFs are magnified by the variance involved in randomly sampling from a distribution. As a result, while the cubic and quintic spline approximations have similar maximum error, the cubic distribution is significantly distorted around the first and second modes.
 
 \begin{figure}
   \centering
   \includegraphics[width=.8\textwidth]{experiment_2_distribution}
-  \caption{The cumulative distribution function (top) and probability density function (bottom) for the Gaussian mixture distribution in experiment 2. The distributions have weights $(.3, .6, .1)$, means $(.2, .45, .85)$ and standard deviations $(.05, .08, .03)$. Random samples are generated from this mixture distribution by evaluating the inverse of the CDF at uniformly random numbers in the range $[0,1]$.}
+  \caption{The cumulative distribution function (top) and probability density function (bottom) for the Gaussian mixture distribution in Experiment 2. The distributions have weights $(.3, .6, .1)$, means $(.2, .45, .85)$ and standard deviations $(.05, .08, .03)$. Random samples are generated from this mixture distribution by evaluating the inverse of the CDF at random numbers uniformly distributed in the range $[0,1]$.}
   \label{fig:experiment_2_distribution}
 \end{figure}
 
@@ -426,7 +440,7 @@ While an increased number of points could be used to decrease the error in eithe
   \centering
   \includegraphics[width=.4\textwidth]{experiment_2_cubic_dist}
   \includegraphics[width=.4\textwidth]{experiment_2_quintic_dist}
-  \caption{Both cubic and quintic splines are used to approximate the CDF of a Gaussian mixture distribution with three components. $4$ CDF points are used to build the approximation, $200$ random samples are generated with the approximate CDFs over $100$ trials. The resulting cloud of empirical distribution function (EDF) values is seen above. The maximum approximation error in the CDFs are similar, $.08$ for the cubic and $.05$ for the quintic. However, the maximum EDf differences observed are doubled by the variance of random samples, $.15$ for the cubic and $.1$ for the quintic.}
+  \caption{Both cubic and quintic splines are used to approximate the CDF of a Gaussian mixture distribution with three components. Four CDF points are used to build the approximation, $200$ random samples are generated with the approximate CDFs over $100$ trials. The resulting cloud of empirical distribution function (EDF) values is seen above. The maximum approximation error in the CDFs are similar, $.08$ for the cubic and $.05$ for the quintic. However, the maximum EDf differences observed are doubled by the variance of random samples, $.15$ for the cubic and $.1$ for the quintic.}
   \label{fig:experiment_2_results}
 \end{figure}
 
@@ -437,26 +451,42 @@ While an increased number of points could be used to decrease the error in eithe
 
 \subsection{Random Monotone Data}
 
-This experiment studies the number of times the algorithms \texttt{is\_monotone} and \texttt{make\_monotone} are executed for increasingly large sequences of random monotone data. Statistics on the expected number of interval corrections are presented.
+This experiment studies the number of times the algorithms \texttt{is\_monotone} and \texttt{make\_monotone} are executed for increasingly large sequences of random monotone data. The minimum, median, and maximum number of times that Algorithms \ref{alg:check-monotone} and \ref{alg:make-monotone} are executed is recorded, as well as the number of steps taken in all calls to \texttt{binary\_search}. The number of calls and steps grows linearly with $n$ as expected, requiring roughly one call to \texttt{make\_monotone} and $20$ binary search steps to create a monotone piece. Some (less common) problems require an average of three calls to \texttt{make\_monotone} per interval.
 
-\texttt{NEED STATISTICS TABLE}
+\begin{table}
+  \centering
+  \begin{tabular}{c|c c c|c c c|c c c}
+    \hline
+    \multirow{2}{*}{$n$}
+      & \multicolumn{3}{c|}{Checks} & \multicolumn{3}{c}{Fixes} & \multicolumn{3}{|c}{Search Steps} \\
+      & min & median & max & min & median & max & min & median & max \\
+    \hline
+    5 & 4 & 6 & 274 & 0 & 1 & 154 & 3 & 31 & 2006\\
+    25 & 28 & 47 & 378 & 2 & 14 & 225 & 80 & 348 & 3742\\
+    50 & 61 & 124 & 484 & 6 & 40 & 238 & 217 & 851 & 4445\\
+    75 & 102 & 216 & 842 & 14 & 74 & 411 & 463 & 1491 & 6333\\
+    100 & 142 & 306 & 776 & 21 & 107 & 380 & 629 & 2140 & 7414\\
+    \hline
+  \end{tabular}
+  \caption{Here we see a table of the minimum, median, and maximum number of checks, fixes, and binary search steps required in the execution of \texttt{make\_spline} for increasing size sequences, $n$, over $100$ randomly generated sets of monotone data. Notice the maximum for each counter is often significantly greater than the minimum and median, because the distribution of each counter is skewed right.}
+  \label{table:e3_results}
+\end{table}
 
 \section{Discussion}
 
-This is an improvement over the cubic, although the complexity of the algorithm is increased as well. In the present state, the algorithm for enforcing monotonicity on a spline is not as trivially parallel as the cubic algorithm, however it can still be parallelized.
+The monotone quintic spline interpolant provides a distinct increase in accuracy of the monotone cubic variant. Although the complexity of the algorithm is increased, the number of points required to achieve the same level of accuracy has decreased. In the present state, the algorithm for enforcing monotonicity on a spline is not as trivially parallel as the cubic algorithm, however it can still be parallelized.
 
-Knowing this algorithm is slightly more complex than the cubic variant, it appears worth the computational effort because of gains in accuracy or a decreased necessary number of nodes.
-
+Acknowledging that the algorithm for constructing a monotone quintic spline interpolant is slightly more complex than the cubic case, gains in accuracy or a decreased necessary number of points are often worth the computational effort.
 
 \section{Conclusion and Future Work}
 
-This paper proposed and tested an algorithm for constructing monotone quintic interpolating splines. Experiments demonstrate an improvement in approximation accuracy over monotone cubic interpolating splines, as expected based on theory.
+This paper proposes and tests an algorithm for constructing monotone quintic spline interpolants. Experiments demonstrate an improvement in approximation accuracy over monotone cubic spline interpolants, as expected based on theory.
 
 There are still open avenues of research going forward, such as an alternative sufficient condition for enforcing monotonicity or increased order monotone approximations. If the monotonicity conditions can be generalized to any order or made linear, the search for a monotone interpolating spline could potentially be formulated as a convex optimization problem. Finally, this work could be used to improve cumulative distribution function (CDF) estimates as well as predictive models that use CDFs.
 
 
-\section*{Acknowledgments}
-The NSF is acknowledged for its support of this project.
+%% \section*{Acknowledgments}
+%% The NSF is acknowledged for its support of this project.
 
 % Please don't change the bibliographystyle style
 \bibliographystyle{scsproc}
