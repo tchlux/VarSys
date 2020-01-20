@@ -105,7 +105,7 @@ def consumer(func, iterable, return_queue, redirect):
 #                process, otherwise all print goes to standard out.
 #   chunk     -- Boolean, True if `split` should be called on the
 #                iterable automatically. WARNING: This will convert
-#                the iterable into a python list, maybe memory!
+#                the iterable into a python list, more memory!
 # 
 # RETURNS:
 #   An output generator, just like the builtin "map" function.
