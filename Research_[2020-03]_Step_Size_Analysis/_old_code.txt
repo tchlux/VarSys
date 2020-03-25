@@ -1,0 +1,176 @@
+possible_max_steps = [2**i for i in range(2,10+1)]
+
+
+# for max_steps in possible_max_steps:
+#     print("max steps:", max_steps)
+
+
+    print(" stepped_fit")
+    _test_stepped_fit(plot=False)
+
+
+# Test the "stepped_fit" function. (there is testing code built in, so
+# this test is strictly for generating a visual to verify).
+def _test_stepped_fit(plot=False):
+    x_vals = list(map(Fraction, [0,.5,2,3.5,4,5.3,6]))
+    # y_vals = [1,2,-1,3,1,4,3]
+    y_vals = list(map(Fraction, [1,2,2.2,3,3.5,4,4]))
+    # Execute with different operational modes, (tests happen internally).
+    kwargs = dict(min_d1=0)
+    f0 = stepped_fit(x_vals, y_vals, continuity=2, mids=0, ends=0, **kwargs)
+    f1 = stepped_fit(x_vals, y_vals, continuity=2, mids=1, ends=1, **kwargs)
+    f2 = stepped_fit(x_vals, y_vals, continuity=2, mids=2, ends=2, **kwargs)
+    if plot:
+        from util.plot import Plot
+        plot_range = [min(x_vals)-.1, max(x_vals)+.1]
+        p = Plot()
+        p.add("Points", list(map(float,x_vals)), list(map(float,y_vals)))
+        p.add_func("f (mids=0)", f0, plot_range)
+        p.add_func("f deriv (m0)", f0.derivative(1), plot_range, dash="dash")
+        p.add_func("f dd (m0)", f0.derivative(2), plot_range, dash="dot")
+        # f1
+        p.add_func("f (mids=1)", f1, plot_range)
+        p.add_func("f deriv (m1)", f1.derivative(1), plot_range, dash="dash")
+        p.add_func("f dd (m1)", f1.derivative(2), plot_range, dash="dot")
+        # f2
+        p.add_func("f (mids=2)", f2, plot_range)
+        p.add_func("f deriv (m2)", f2.derivative(1), plot_range, dash="dash")
+        p.add_func("f dd (m2)", f2.derivative(2), plot_range, dash="dot")
+        p.show()
+
+
+
+
+
+# Given data points "x" and data values "y", construct a monotone
+# interpolating spline over the given points with specified level of
+# continuity using the Newton divided difference method.
+#  
+# x: A strictly increasing sequences of numbers.
+# y: The function values associated with each point.
+# 
+# continuity:
+#   The level of continuity desired in the interpolating function.
+# 
+# kwargs:
+#   "max_d{i}" -- A maximum value for a specific derivative.
+#   "min_d{i}" -- A minimum value for a specific derivative.
+#   "ends"     -- An argument passed to the `fill_derivative` function.
+#   "mids"     -- An argument passed to the `fill_derivative` function.
+# 
+#   Otherwise, may include any keyword arguments for the `fill` function.
+def stepped_fit(x, y, continuity=0, **kwargs):
+    knots = [v for v in x]
+    values = [[v] for v in y]
+    fill_kwargs = {k:kwargs[k] for k in kwargs
+                   if k[:5] not in {"max_d","min_d"}}
+    # Construct further derivatives and refine the approximation
+    # ensuring monotonicity in the process.
+    for i in range(1,continuity+1):
+        deriv = fill_derivative(knots, [v[-1] for v in values], **fill_kwargs)
+        # Adjust for monotonicity conditions if appropriate.
+        max_name = f"max_d{i}"
+        if (max_name in kwargs): deriv = [min(kwargs[max_name], d) for d in deriv]
+        min_name = f"min_d{i}"
+        if (min_name in kwargs): deriv = [max(kwargs[min_name], d) for d in deriv]
+        # Append all derivative values.
+        for v,d in zip(values,deriv): v.append(d)
+    # Return the interpolating spline.
+    return Spline(knots, values)
+
+
+    original_seconds = {i:values[i][2] for i in range(len(values))}
+
+
+                # # Reset the second derivative values.
+                # values[i][2] = original_seconds[i]
+                # values[i+1][2] = original_seconds[i+1]
+
+
+        # # Make the first derivative 0 at the right end.
+        # values[-1][1] = 0
+        # # Make the second derivatives 0 at the ends.
+        # values[0][2] = values[-1][2] = 0
+
+
+    # p.add_func("continuity 1", fit(x,y,continuity=1, ends=1, mids=0), 
+    #            interval, group='1', **kwargs)
+    # p.add_func("c1 d1", fit(x,y,continuity=1, min_d1=0).derivative(), 
+    #            interval, dash="dash", color=p.color(p.color_num,alpha=.5), 
+    #            group='1', **kwargs)
+
+
+    # Continuity 2
+    # p.add_func("continuity 2", fit(x,y,continuity=2, min_d1=0), 
+    #            interval, group='2', **kwargs)
+    # p.add_func("c2 d1", fit(x,y,continuity=2, min_d1=0).derivative(), 
+    #            interval, dash="dash", color=p.color(p.color_num,alpha=.5), group='2', **kwargs)
+
+
+# Given data points "x" and data values "y", construct an
+# interpolating spline over the given points with specified level of
+# continuity using a sufficiently continuous polynomial fit over
+# neighboring points.
+#  
+# x: A strictly increasing sequences of numbers.
+# y: Function values associated with each point.
+# 
+# continuity:
+#   The level of continuity desired in the interpolating function.
+# 
+# kwargs:
+#   "max_d{i}" -- A maximum value for a specific derivative.
+#   "min_d{i}" -- A minimum value for a specific derivative.
+# 
+#   Otherwise, may include any keyword arguments for the `fill` function.
+def fit(x, y, continuity=0, **kwargs):
+    knots = [v for v in x]
+    values = [[v] for v in y]
+    # Construct further derivatives and refine the approximation
+    # ensuring monotonicity in the process.
+    for i in range(0,len(x)):
+        max_on_one_side = continuity // 2 + 1
+        left_candidates = list(range(max(0,i-max_on_one_side),i))
+        right_candidates = list(range(i+1,min(len(x), i+1+max_on_one_side)))
+        # How many more points are needed:
+        needed = (continuity+2) - (len(left_candidates) + len(right_candidates))
+        # Handle addition / subtraction of points.
+        if (len(left_candidates) < max_on_one_side):
+            # Build out the right candidates to fill in.
+            right_candidates += list(range(right_candidates[-1] + 1, min(
+                len(x), right_candidates[-1] + 1 + needed)))
+        elif (len(right_candidates) < max_on_one_side):
+            # Build out the left candidates to fill in.
+            left_candidates = list(range(max(0, left_candidates[0]-needed), 
+                                         left_candidates[0])) + left_candidates
+        # If the leftmost candidate is further away, remove it.
+        elif (x[i] - x[left_candidates[0]]) > (x[right_candidates[-1]] - x[i]):
+            left_candidates.pop(0)
+        # If the rightmost candidate is further away, remove it.
+        else: right_candidates.pop(-1)
+        # Construct the polynomial.
+        candidates = left_candidates + [i] + right_candidates
+        p = polynomial([x[idx] for idx in candidates],
+                       [y[idx] for idx in candidates])
+        # Evaluate the derivatives of the polynomial.
+        for d in range(1, continuity+1):
+            # Compute the next derivative of this polynomial and evaluate.
+            p = p.derivative()
+            deriv = p(x[i])
+            # Bound the derivatives if that was requested.
+            max_name = f"max_d{d}"
+            if (max_name in kwargs): deriv = min(kwargs[max_name], deriv)
+            min_name = f"min_d{d}"
+            if (min_name in kwargs): deriv = max(kwargs[min_name], deriv)
+            # Store the derivative.
+            values[i].append(deriv)
+    # Return the interpolating spline.
+    return Spline(knots, values)
+
+
+        # import numpy as np
+        # print()
+        # print("values_change:  ", np.array([list(map(float,v)) for v in values_change], dtype=float))
+        # exit()
+
+

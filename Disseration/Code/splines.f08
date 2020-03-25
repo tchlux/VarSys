@@ -1,3 +1,10 @@
+! TODO: The subroutines for ADD_SPLINES, MULTIPLY_SPLINES, and L2 should
+!       all assume a common knot sequence is shared by the values.
+! TODO: Create a routine that is given two knots sequences and
+!       produces a single knot sequence and two value sequences that
+!       align with the given knot sequence.
+
+
 MODULE SPLINES
     USE ISO_FORTRAN_ENV, ONLY: REAL64
     IMPLICIT NONE
@@ -219,7 +226,6 @@ CONTAINS
     !    END DO
     ! ! ----------------------------------------------------------------
 
-
   END SUBROUTINE ADD_SPLINES
 
 
@@ -234,15 +240,15 @@ CONTAINS
     !                  break-points bfor the interpolating spline.
     !   VALUES(N,C) -- The real-valued function values (column 1), and
     !                  derivative values (columns 2 onwards) that the
-    !                  interpolating spline should produce.
+    !                  interpolating spline should reproduce.
     ! 
     ! OUTPUT:
-    !   SPLINE_KNOTS(K) -- The non-decreasing real-valued locations
-    !                      of the breakpoints for the B-splines that
-    !                      compose the resulting spline.
+    !   SPLINE_KNOTS(NC+2C)     -- The non-decreasing real-valued locations
+    !                              of the breakpoints for the B-splines that
+    !                              compose the resulting spline.
     !   SPLINE_COEFFICIENTS(NC) -- The coefficients for each of the 
-    !                      B-splines that compose the interpolating
-    !                      spline.
+    !                              B-splines that compose the
+    !                              interpolating spline.
     ! 
     !   
     ! DESCRIPTION:

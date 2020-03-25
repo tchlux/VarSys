@@ -1,0 +1,65 @@
+\BOOKMARK [1][-]{titlepage.1}{Titlepage}{}% 1
+\BOOKMARK [1][-]{abstract.1}{Abstract}{}% 2
+\BOOKMARK [1][-]{abstractgenaud.1}{General Audience Abstract}{}% 3
+\BOOKMARK [0][-]{chapter*.2}{List of Figures}{}% 4
+\BOOKMARK [0][-]{chapter*.3}{List of Tables}{}% 5
+\BOOKMARK [0][-]{chapter.1}{The Importance and Applications of Variability}{}% 6
+\BOOKMARK [1][-]{section.1.1}{Broader Applications of Approximation}{chapter.1}% 7
+\BOOKMARK [1][-]{section.1.2}{An Initial Application of Approximation}{chapter.1}% 8
+\BOOKMARK [0][-]{chapter.2}{Algorithms for Constructing Approximations}{}% 9
+\BOOKMARK [1][-]{section.2.1}{Multivariate Regression}{chapter.2}% 10
+\BOOKMARK [2][-]{subsection.2.1.1}{Multivariate Adaptive Regression Splines}{section.2.1}% 11
+\BOOKMARK [2][-]{subsection.2.1.2}{Support Vector Regressor}{section.2.1}% 12
+\BOOKMARK [2][-]{subsection.2.1.3}{Multilayer Perceptron Regressor}{section.2.1}% 13
+\BOOKMARK [1][-]{section.2.2}{Multivariate Interpolation}{chapter.2}% 14
+\BOOKMARK [2][-]{subsection.2.2.1}{Delaunay}{section.2.2}% 15
+\BOOKMARK [2][-]{subsection.2.2.2}{Modified Shepard}{section.2.2}% 16
+\BOOKMARK [2][-]{subsection.2.2.3}{Linear Shepard}{section.2.2}% 17
+\BOOKMARK [0][-]{chapter.3}{Na\357ve Approximations of Variability}{}% 18
+\BOOKMARK [1][-]{section.3.1}{I/O Data}{chapter.3}% 19
+\BOOKMARK [2][-]{subsection.3.1.1}{Dimensional Analysis}{section.3.1}% 20
+\BOOKMARK [1][-]{section.3.2}{Na\357ve Variability Modeling Results}{chapter.3}% 21
+\BOOKMARK [2][-]{subsection.3.2.1}{I/O Throughput Mean}{section.3.2}% 22
+\BOOKMARK [2][-]{subsection.3.2.2}{I/O Throughput Variance}{section.3.2}% 23
+\BOOKMARK [2][-]{subsection.3.2.3}{Increasing Dimension and Decreasing Training Data}{section.3.2}% 24
+\BOOKMARK [1][-]{section.3.3}{Discussion of Na\357ve Approximations}{chapter.3}% 25
+\BOOKMARK [2][-]{subsection.3.3.1}{Modeling the System}{section.3.3}% 26
+\BOOKMARK [2][-]{subsection.3.3.2}{Extending the Analysis}{section.3.3}% 27
+\BOOKMARK [1][-]{section.3.4}{Takeaway From Na\357ve Approximation}{chapter.3}% 28
+\BOOKMARK [0][-]{chapter.4}{Box Splines: Uses, Constructions, and Applications}{}% 29
+\BOOKMARK [1][-]{section.4.1}{Box Splines}{chapter.4}% 30
+\BOOKMARK [1][-]{section.4.2}{Max Box Mesh}{chapter.4}% 31
+\BOOKMARK [1][-]{section.4.3}{Iterative Box Mesh}{chapter.4}% 32
+\BOOKMARK [1][-]{section.4.4}{Voronoi Mesh}{chapter.4}% 33
+\BOOKMARK [1][-]{section.4.5}{Data and Analysis}{chapter.4}% 34
+\BOOKMARK [2][-]{subsection.4.5.1}{High Performance Computing I/O \(n = 532, d = 4\)}{section.4.5}% 35
+\BOOKMARK [2][-]{subsection.4.5.2}{Forest Fire \(n = 517, d = 12\)}{section.4.5}% 36
+\BOOKMARK [2][-]{subsection.4.5.3}{Parkinson's Telemonitoring \(n = 468, d = 16\)}{section.4.5}% 37
+\BOOKMARK [2][-]{subsection.4.5.4}{Performance Analysis}{section.4.5}% 38
+\BOOKMARK [1][-]{section.4.6}{Discussion of Mesh Approximations}{chapter.4}% 39
+\BOOKMARK [1][-]{section.4.7}{Implications of Quasi-Mesh Results}{chapter.4}% 40
+\BOOKMARK [0][-]{chapter.5}{Stronger Approximations of Variability}{}% 41
+\BOOKMARK [1][-]{section.5.1}{Measuring Error}{chapter.5}% 42
+\BOOKMARK [2][-]{subsection.5.1.1}{Feature Weighting}{section.5.1}% 43
+\BOOKMARK [1][-]{section.5.2}{Variability Data}{chapter.5}% 44
+\BOOKMARK [1][-]{section.5.3}{Distribution Prediction Results}{chapter.5}% 45
+\BOOKMARK [1][-]{section.5.4}{Discussion of Distribution Prediction}{chapter.5}% 46
+\BOOKMARK [1][-]{section.5.5}{The Power of Distribution Prediction}{chapter.5}% 47
+\BOOKMARK [0][-]{chapter.6}{An Error Bound on Piecewise Linear Interpolation}{}% 48
+\BOOKMARK [1][-]{section.6.1}{Data and Empirical Analysis}{chapter.6}% 49
+\BOOKMARK [2][-]{subsection.6.1.1}{Forest Fire \(n = 504, d = 12\)}{section.6.1}% 50
+\BOOKMARK [2][-]{subsection.6.1.2}{Parkinson's Telemonitoring \(n = 5875, d = 19\)}{section.6.1}% 51
+\BOOKMARK [2][-]{subsection.6.1.3}{Australian Daily Rainfall Volume \(n = 2609, d = 23\)}{section.6.1}% 52
+\BOOKMARK [2][-]{subsection.6.1.4}{Credit Card Transaction Amount \(n = 5562, d = 28\)}{section.6.1}% 53
+\BOOKMARK [2][-]{subsection.6.1.5}{High Performance Computing I/O \(n = 3016, d = 4\)}{section.6.1}% 54
+\BOOKMARK [1][-]{section.6.2}{Discussion of Empirical Results}{chapter.6}% 55
+\BOOKMARK [1][-]{section.6.3}{Takeaway from Empirical Tests}{chapter.6}% 56
+\BOOKMARK [0][-]{chapter.7}{Improving Variability Estimates with Monotone C2 Splines}{}% 57
+\BOOKMARK [1][-]{section.7.1}{Related Work}{chapter.7}% 58
+\BOOKMARK [1][-]{section.7.2}{Achieved Progress}{chapter.7}% 59
+\BOOKMARK [1][-]{section.7.3}{Research Goal}{chapter.7}% 60
+\BOOKMARK [1][-]{section.7.4}{Timeline}{chapter.7}% 61
+\BOOKMARK [1][-]{section.7.5}{Final Remarks}{chapter.7}% 62
+\BOOKMARK [0][-]{chapter*.44}{Bibliography}{}% 63
+\BOOKMARK [0][-]{section*.45}{Appendices}{}% 64
+\BOOKMARK [0][-]{Appendix.a.A}{Appendix Error Bound Appendices}{}% 65

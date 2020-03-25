@@ -1,0 +1,486 @@
+
+MODULE REAL_PRECISION  ! module for 64-bit arithmetic
+  INTEGER, PARAMETER:: R8=SELECTED_REAL_KIND(13)
+END MODULE REAL_PRECISION
+
+MODULE SPLINES
+  USE REAL_PRECISION
+  IMPLICIT NONE
+
+CONTAINS
+
+SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFFICIENTS, STATUS)
+  ! Subroutine for computing a linear combination of B-splines that
+  ! interpolates the given function value (and function derivatives)
+  ! at the given breakpoints.
+  ! 
+  ! INPUT:
+  !   BREAKPOINTS(N) -- The increasing real-valued locations of
+  !                     the breakpoints for the interpolating spline.
+  !   VALUES(N,C)    -- VALUES(I,J) contains the (J-1)st derivative at
+  !                     BREAKPOINTS(I) to be interpolated.
+  ! 
+  ! OUTPUT:
+  !   KNOTS(N*C+2*C)    -- The nondecreasing real-valued locations
+  !                        of the knots for the B-spline basis.
+  !   COEFFICIENTS(N*C) -- The coefficients for the B-splines
+  !                        that define the interpolating spline.
+  !   STATUS -- The info flag as returned by DGBSV from LAPACK.
+  ! 
+  !   
+  ! DESCRIPTION:
+  ! 
+  !   This function uses the EVAL_BSPLINE subroutine to evaluate the
+  !   B-splines at all knots and the LAPACK routine
+  ! 
+  !     DGBSV
+  ! 
+  !   to compute the coefficients of all component B-splines. The
+  !   difference between the provided function (and derivative) values
+  !   and the actual values produced by this code can vary depending
+  !   on the spacing of the knots and the magnitudes of the values
+  !   provided. I.e., when computing higher derivatives it is best to
+  !   rescale the knots such that the smallest interval width is
+  !   greater than 1, but when computing function values it is best to
+  !   have the largest knot interval width less than or equal to 1.
+  ! 
+  REAL(KIND=R8), INTENT(IN),  DIMENSION(:)   :: BREAKPOINTS
+  REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: VALUES
+  REAL(KIND=R8), INTENT(OUT), DIMENSION(SIZE(VALUES)+2*SIZE(VALUES,2)) :: KNOTS
+  REAL(KIND=R8), INTENT(OUT), DIMENSION(SIZE(VALUES)) :: COEFFICIENTS
+  INTEGER, INTENT(OUT) :: STATUS
+  ! Local variables.
+  INTEGER, DIMENSION(SIZE(COEFFICIENTS)) :: IPIV
+  REAL(KIND=R8), DIMENSION(1 + 3*(2*SIZE(VALUES,2)-1), SIZE(VALUES)) :: AB
+  REAL(KIND=R8) :: SCALE, SHIFT, DIVISOR
+  INTEGER :: C, K, N, NC, DERIV, DEGREE, STEP, &
+       FIRST_BREAK, FIRST_ROW, FIRST_KNOT, &
+       LAST_BREAK,  LAST_ROW,  LAST_KNOT
+  ! LAPACK subroutine for solving banded linear systems.
+  EXTERNAL :: DGBSV
+
+  ! Define some local variables for notational convenience.
+  N = SIZE(BREAKPOINTS)
+  C = SIZE(VALUES,2)
+  NC = SIZE(VALUES)
+  K = NC + 2*C
+  DEGREE = 2*C - 1
+  STATUS = 0
+
+  ! Check the shape of incoming arrays.
+  IF (N .LT. 1) THEN
+     STATUS = 1
+     RETURN
+  ELSE IF (NC .LT. 1) THEN
+     STATUS = 2
+     RETURN
+  ELSE IF (SIZE(VALUES,1) .NE. N) THEN
+     STATUS = 3
+     RETURN
+  ELSE IF (SIZE(KNOTS) .NE. NC+2*C) THEN
+     STATUS = 4
+     RETURN
+  ELSE IF (SIZE(COEFFICIENTS) .NE. NC) THEN
+     STATUS = 5
+     RETURN
+  END IF
+
+  ! Verify that BREAKPOINTS are increasing.
+  DO STEP = 1, N - 1
+     IF (BREAKPOINTS(STEP) .GE. BREAKPOINTS(STEP+1)) THEN
+        STATUS = 6
+        RETURN
+     END IF
+  END DO
+
+  ! Copy over the knots that will define the B-spline representation.
+  ! Each knot will be repeataed C times to maintaining the
+  ! necessary level of continuity for this spline.
+  KNOTS(1:2*C) = BREAKPOINTS(1)
+  DO STEP = 2, N-1
+     KNOTS(STEP*C+1 : (STEP+1)*C) = BREAKPOINTS(STEP)
+  END DO
+  ! Assign the last knot to exist slightly outside the interval range,
+  ! ensuring the basis functions have a nonzero value on the far right.
+  KNOTS(K-DEGREE:) = BREAKPOINTS(N) + &
+       EPSILON(1.0_R8) * BREAKPOINTS(N)
+
+  ! Copy the VALUES into the COEFFICIENTS (output) variable.
+  DO STEP = 1, C
+     COEFFICIENTS(STEP::C) = VALUES(:,STEP)
+  END DO
+  ! PRINT *, "COEFFICIENTS: ",COEFFICIENTS
+
+  ! Note that DEGREE = 2*C - 1 for an interpolating spline, and each
+  ! B-spline will be defined by 2*C + 1 knots.
+  ! 
+  ! The next block of code will evaluate each B-spline and it's
+  ! derivatives at all breakpoints. The first and last elements of
+  ! BREAKPOINTS will be repeated DEGREE+1 times and each internal
+  ! breakpoint will have C repeated knots. As a result, each B-spline
+  ! will have nonzero values for at most three breakpoints. In
+  ! addition to function value, derivatives must be computed as
+  ! well. In all, each B-spline will have at most 3*C nonzero values
+  ! (in each column) and there will be N*C rows.
+  ! 
+  ! For example, a C^1 interpolating spline over three breakpoints
+  ! will match function value and first derivative at each breakpoint
+  ! requiring six fourth order (third degree) B-splines each composed
+  ! from five knots. Below, the six B-splines are numbered (first
+  ! number, columns) and may be nonzero at the three breakpoints
+  ! (middle letter, rows) for each function value (odd rows, terms end
+  ! with 0) and first derivative (even rows, terms end with 1). The
+  ! linear system will look like:
+  ! 
+  !       B-SPLINE VALUES AT BREAKPOINTS     SPLINE           VALUES
+  !        1st  2nd  3rd  4th  5th  6th    COEFICIENTS
+  !      _                              _     _   _           _    _ 
+  !     |                                |   |     |         |      |
+  !   B |  1a0  2a0  3a0  4a0            |   |  1  |         |  a0  |
+  !   R |  1a1  2a1  3a1  4a1            |   |  2  |         |  a1  |
+  !   E |  1b0  2b0  3b0  4b0  5b0  6b0  |   |  3  |   ===   |  b0  |
+  !   A |  1b1  2b1  3b1  4b1  5b1  6b0  |   |  4  |   ===   |  b1  |
+  !   K |            3c0  4c0  5c0  6c0  |   |  5  |         |  c0  |
+  !   S |            3c1  4c1  5c1  6c0  |   |  6  |         |  c1  |
+  !     |_                              _|   |_   _|         |_    _|
+  !   
+  ! Notice this matrix is banded with lower / upper bandwidths equal
+  ! to (one less than the maximum number of breakpoints for which a
+  ! spline takes on a nonzero value) times (the number of continuity
+  ! conditions) minus (one). In general KL = KU = DEGREE.
+  
+  ! PRINT *, 'SHAPE(AB):', SHAPE(AB)
+  ! Initialize all values in AB to zero.
+  AB(:,:) = 0_R8
+  ! Evaluate all B-splines at all breakpoints (walking through columns).
+  DO STEP = 1, NC
+     ! Compute indices of the first and last knot for the current B-spline.
+     FIRST_KNOT = STEP
+     LAST_KNOT  = STEP + 2*C
+     ! Compute the row indices in "A" that would be accessed.
+     FIRST_ROW = ((STEP-1)/C - 1) * C + 1
+     LAST_ROW  = FIRST_ROW + 3*C - 1
+     ! Only two breakpoints will be covered for the first C B-splines
+     ! and the last C B-splines.
+     IF   (STEP .LE. C)  FIRST_ROW = FIRST_ROW + C
+     IF (STEP+C .GT. NC) LAST_ROW = LAST_ROW - C
+     ! Compute the indices of the breakpoints that will be nonzero.
+     FIRST_BREAK = FIRST_ROW / C + 1
+     LAST_BREAK =  LAST_ROW  / C
+     ! PRINT *, ''
+     ! PRINT *, 'STEP: ', STEP
+     ! PRINT *, ' BRKS: ', FIRST_BREAK, LAST_BREAK
+     ! PRINT *, ' X:    ', BREAKPOINTS(FIRST_BREAK:LAST_BREAK)
+     ! PRINT *, ' KNOTS:', KNOTS(FIRST_KNOT:LAST_KNOT)
+     ! PRINT *, ' I1:I2 ', FIRST_ROW, LAST_ROW
+     ! PRINT *, ' J:    ', STEP
+     ! Convert the "i,j" indices in "A" to the banded storage scheme.
+     ! The mapping is looks like   AB[KL+KU+1+i-j,j] = A[i,j]
+     FIRST_ROW = 2*DEGREE+1 + FIRST_ROW - STEP
+     LAST_ROW  = 2*DEGREE+1 + LAST_ROW  - STEP
+     ! PRINT *, ' TRANS:', FIRST_ROW, LAST_ROW
+     ! Evaluate each derivative of this B-spline at relevant knots.
+     DO DERIV = 0, C-1
+        ! Place the evaluations into a block out of a column in AB,
+        ! shift according to which derivative is being evaluated
+        ! and use a stride appropriate for the continuity.
+        AB(FIRST_ROW+DERIV:LAST_ROW:C,STEP) = &
+             BREAKPOINTS(FIRST_BREAK:LAST_BREAK)
+        ! PRINT *, 'DERIV', DERIV
+        ! PRINT *, '  IN: ', AB(FIRST_ROW+DERIV:LAST_ROW:C,STEP)
+        CALL EVAL_BSPLINE(KNOTS(FIRST_KNOT:LAST_KNOT), &
+             AB(FIRST_ROW+DERIV:LAST_ROW:C,STEP), DERIV)
+        ! PRINT *, '  OUT:', AB(FIRST_ROW+DERIV:LAST_ROW:C,STEP)
+     END DO
+  END DO
+  ! PRINT *, ''
+  ! PRINT *, 'MIN(A):', MINVAL(AB(:,:), AB(:,:) .GT. 0)
+  ! PRINT *, 'MAX(A):', MAXVAL(AB(:,:))
+  ! Call the SUBROUTINE to solve the banded linear system.
+  CALL DGBSV(NC, DEGREE, DEGREE, 1, AB, SIZE(AB,1), IPIV, &
+       COEFFICIENTS, NC, STATUS)
+  ! Check for errors in the execution of DGBSV, (this should not happen).
+  IF (STATUS .NE. 0) STATUS = STATUS + 10
+  ! 
+  ! TODO: Check to see if the linear system was correctly solved by
+  !       looking at the difference between prouduced B-spline values
+  !       and provided values.
+  ! 
+END SUBROUTINE FIT_SPLINE
+
+
+SUBROUTINE EVAL_SPLINE(KNOTS, COEFFICIENTS, XY, D)
+  ! Evaluate a spline construced with FIT_SPLINE. Similar interface
+  ! to EVAL_BSPLINE. Evaluate D derivative at all XY, result in XY.
+  ! 
+  ! INPUT:
+  !   KNOTS(N+2*C)    -- The nondecreasing real-valued locations of the
+  !                      breakpoints for the underlying B-splines, 
+  !                      where "C" is the continuity level of the spline.
+  !   COEFFICIENTS(N) -- The coefficients assigned to each B-spline
+  !                      that underpins this interpolating spline.
+  ! 
+  ! INPUT / OUTPUT:
+  !   XY(Z) -- The locations at which the spline is evaluated on
+  !            input, on output holds the value of the spline with
+  !            KNOTS and COEFFICIENTS evaluated at the given locations.
+  ! 
+  ! OPTIONAL INPUT:
+  !   D [= 0]  --  The derivative to take of the evaluated spline.
+  !                When negative, this subroutine integrates the spline.
+  !                The higher integrals of this spline are capped at
+  !                the rightmost knot, using constant-valued extrapolation.
+  ! 
+  ! 
+  ! DESCRIPTION:
+  ! 
+  !    This subroutine serves as a convenient wrapper to the
+  !    underlying calls to EVAL_BSPLINE that need to be made to
+  !    evaluate a full spline. Internally it uses a matrix-vector
+  !    multiplication of the B-spline evaluations with the assigned
+  !    coefficients. This requires O(Z*N) memory, meaning single XY
+  !    points should be evaluated at a time when memory-constrained.
+  ! 
+  REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: KNOTS
+  REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: COEFFICIENTS
+  REAL(KIND=R8), INTENT(INOUT),  DIMENSION(:) :: XY
+  INTEGER, INTENT(IN), OPTIONAL :: D
+  ! Local variables.
+  INTEGER :: DERIV, STEP, NUM_KNOTS
+  REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(COEFFICIENTS)) :: VALUES
+  ! Compute the NUM_KNOTS (number of knots) for each B-spline.
+  NUM_KNOTS = SIZE(KNOTS) - SIZE(COEFFICIENTS)
+  ! Assign the local value of the optional derivative "D" argument.
+  set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
+  ELSE ; DERIV = 0
+  END IF set_derivative
+  ! Evaluate all splines at all the X positions.
+  DO STEP = 1, SIZE(COEFFICIENTS)
+     VALUES(:,STEP) = XY(:)
+     CALL EVAL_BSPLINE(KNOTS(STEP:STEP+NUM_KNOTS), VALUES(:,STEP), DERIV)
+  END DO
+  ! Store the values into Y as the weighted sums of B-spline evaluations.
+  XY(:) = MATMUL(VALUES(:,:), COEFFICIENTS(:))
+END SUBROUTINE EVAL_SPLINE
+
+
+SUBROUTINE EVAL_BSPLINE(KNOTS, XY, D)
+  ! Subroutine for evaluating a B-spline with provided knot sequence.
+  ! 
+  ! INPUT:
+  !   KNOTS(N) -- The nondecreasing sequence of break points for the B-spline.
+  ! 
+  ! INPUT / OUTPUT:
+  !   XY(Z)    -- The locations at which the B-spline is evaluated on
+  !               input, on output holds the value of the B-spline with
+  !               prescribed knots evaluated at the given X locations.
+  ! 
+  ! OPTIONAL INPUT:
+  !   D [= 0]  --  The derivative to take of the evaluated B-spline.
+  !                When negative, this subroutine integrates the B-spline.
+  ! 
+  ! 
+  ! DESCRIPTION:
+  ! 
+  !    This function uses the recurrence relation defining a B-spline:
+  ! 
+  !      B_{K,1}(X)   =   1     if KNOTS(K) <= X < KNOTS(K+1),
+  !                       0     otherwise,
+  ! 
+  !    where K is the knot index, I = 2, ..., SIZE(KNOTS)-MAX(D,0)-1, and
+  ! 
+  !                               X - KNOTS(K)                      
+  !      B_{K,I}(X) =      ------------------------- B_{K,I-1}(X)   
+  !                         KNOTS(K+I-1) - KNOTS(K)                 
+  !                                                                   
+  !                             KNOTS(K+I) - X                    
+  !                     +  ------------------------- B_{K+1,I-1}(X).
+  !                         KNOTS(K+I) - KNOTS(K+1)                 
+  ! 
+  !    However, all of the intermediate steps (I) are stored in a
+  !    single block of memory that is overwritten at each step.
+  ! 
+  !    For the computation of the integral of the B-spline, the
+  !    continuation of the above formula proceeds one integration step
+  !    at a time by adding a duplicate of the last knot, raising the
+  !    order of all intermediate B-splines, summing their values,
+  !    and dividing the sums by the width of the supported interval
+  !    and the integration coefficient.
+  ! 
+  !    For the computation of the derivative of the B-spline, the
+  !    continuation of the standard recurrence relation is used that
+  !    builds from I = SIZE(KNOTS)-D, ..., SIZE(KNOTS)-1 as
+  ! 
+  !                           (I-1) B_{K,I-1}(X)     
+  !      B_{K,I}(X) =      -------------------------
+  !                         KNOTS(K+I-1) - KNOTS(K)  
+  !                                                   
+  !                           (I-1) B_{K+1,I-1}(X)    
+  !                     -  -------------------------.
+  !                         KNOTS(K+I) - KNOTS(K+1) 
+  ! 
+  !     The B-spline is right continuous everywhere except at the
+  !     last knot, at which it is both left and right continuous.
+  ! 
+  REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: KNOTS
+  REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
+  INTEGER, INTENT(IN), OPTIONAL :: D
+  ! Local variables.
+  REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(KNOTS)) :: VALUES
+  INTEGER :: K, STEP, DERIV, NUM_KNOTS
+  REAL(KIND=R8) :: DIV_LEFT, DIV_RIGHT, LAST_KNOT
+  ! Assign the local value of the optional derivative "D" argument.
+  set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
+  ELSE ; DERIV = 0
+  END IF set_derivative
+  ! Store local useful variable.
+  NUM_KNOTS = SIZE(KNOTS)
+  LAST_KNOT = KNOTS(NUM_KNOTS)
+  ! For integration, cap all X values to be in the knot range.
+  IF (DERIV .LT. 0) XY(:) = MIN(XY(:), LAST_KNOT)
+
+  ! If this is a large enough derivative, we know it is zero everywhere.
+  IF (DERIV+1 .GE. NUM_KNOTS) THEN
+     XY(:) = 0.0_R8
+     RETURN
+  ! This is a standard B-spline with multiple unique knots, right continuous.
+  ELSE
+     ! Initialize all values to 0.
+     VALUES(:,:) = 0.0_R8
+     ! Assign the first value for each knot index.
+     first_b_spline : DO K = 1, NUM_KNOTS-1
+        IF (KNOTS(K) .EQ. KNOTS(K+1)) CYCLE
+        ! Compute all right-continuous order-1 B-spline values.
+        WHERE ( (KNOTS(K) .LE. XY(:)) .AND. (XY(:) .LT. KNOTS(K+1)) )
+           VALUES(:,K) = 1.0_R8
+        END WHERE
+     END DO first_b_spline
+  END IF
+
+  ! Compute the remainder of B-spline by building up from the first.
+  ! Omit the final steps of this computation for derivatives.
+  compute_spline : DO STEP = 2, NUM_KNOTS - 1 - MAX(DERIV,0)
+     ! Cycle over each knot accumulating the values for the recurrence.
+     DO K = 1, NUM_KNOTS - STEP
+        ! Enforce nonzero divisors, 0 divisors add 0 value to the B-spline.
+        DIV_LEFT = (KNOTS(K+STEP-1) - KNOTS(K))
+        DIV_RIGHT = (KNOTS(K+STEP) - KNOTS(K+1))
+        ! Compute the B-spline recurrence relation (cases based on divisor).
+        IF (DIV_LEFT .GT. 0) THEN
+           IF (DIV_RIGHT .GT. 0) THEN
+              VALUES(:,K) = &
+                   ((XY(:) - KNOTS(K))      / DIV_LEFT)  * VALUES(:,K) + &
+                   ((KNOTS(K+STEP) - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
+           ELSE
+              VALUES(:,K) = &
+                   ((XY(:) - KNOTS(K))      / DIV_LEFT)  * VALUES(:,K)
+           END IF
+        ELSE
+           IF (DIV_RIGHT .GT. 0) THEN
+              VALUES(:,K) = &
+                   ((KNOTS(K+STEP) - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
+           END IF
+        END IF
+     END DO
+  END DO compute_spline
+
+  ! If integration is being performed, then we need to raise the
+  ! order of all (sub) B-splines to be the same order as the first.
+  integration_or_differentiation : IF (DERIV .LT. 0) THEN
+     ! Integrals will be nonzero on [LAST_KNOT, \infty).
+     WHERE (LAST_KNOT .LE. XY(:))
+        VALUES(:,NUM_KNOTS) = 1.0_R8
+     END WHERE
+     ! Loop through starting at the back, raising the order of all
+     ! constituents to match the order of the first.
+     raise_order : DO STEP = 1, NUM_KNOTS-2
+        DO K = NUM_KNOTS-STEP, NUM_KNOTS-1
+           DIV_LEFT = (LAST_KNOT - KNOTS(K))
+           DIV_RIGHT = (LAST_KNOT - KNOTS(K+1))
+           IF (DIV_LEFT .GT. 0) THEN
+              IF (DIV_RIGHT .GT. 0) THEN
+                 VALUES(:,K) = &
+                      ((XY(:) - KNOTS(K))  / DIV_LEFT)  * VALUES(:,K) + &
+                      ((LAST_KNOT - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
+              ELSE
+                 VALUES(:,K) = &
+                      ((XY(:) - KNOTS(K))  / DIV_LEFT)  * VALUES(:,K)
+              END IF
+           ELSE
+              IF (DIV_RIGHT .GT. 0) THEN
+                 VALUES(:,K) = &
+                      ((LAST_KNOT - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
+              END IF
+           END IF
+        END DO
+     END DO raise_order
+     
+     ! Compute the integral(s) of the B-spline.
+     compute_integral : DO STEP = 1, -DERIV
+        ! Do a forward evaluation of all constituents.
+        DO K = 1, NUM_KNOTS-1
+           DIV_LEFT = (LAST_KNOT - KNOTS(K))
+           DIV_RIGHT = (LAST_KNOT - KNOTS(K+1))
+           IF (DIV_LEFT .GT. 0) THEN
+              IF (DIV_RIGHT .GT. 0) THEN
+                 VALUES(:,K) = &
+                      ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K) + &
+                      ((LAST_KNOT - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
+              ELSE
+                 VALUES(:,K) = ((XY(:) - KNOTS(K)) / DIV_LEFT) * VALUES(:,K)
+              END IF
+           ELSE
+              IF (DIV_RIGHT .GT. 0) THEN
+                 VALUES(:,K) = ((LAST_KNOT - XY(:)) / DIV_RIGHT) * VALUES(:,K+1)
+              END IF
+           END IF
+        END DO
+        ! Sum the constituent functions at each knot (from the back).
+        DO K = NUM_KNOTS-1, 1, -1
+           VALUES(:,K) = (VALUES(:,K) + VALUES(:,K+1))
+        END DO
+        ! Divide by the order plus the integration coefficient.
+        VALUES(:,1) = VALUES(:,1) / (NUM_KNOTS-2+STEP)
+        ! Rescale then integral by its width.
+        VALUES(:,1) = VALUES(:,1) * (LAST_KNOT - KNOTS(1))
+        ! Extend the previous two computations if more integrals need
+        ! to be computed after this one.
+        IF (STEP+DERIV .LT. 0) THEN
+           VALUES(:,2:) = VALUES(:,2:) / (NUM_KNOTS-2+STEP)
+           DO K = 2, NUM_KNOTS
+              VALUES(:,K) = VALUES(:,K) * (LAST_KNOT - KNOTS(K))
+           END DO
+        END IF
+     END DO compute_integral
+
+  ELSE IF (DERIV .GT. 0) THEN
+     ! Compute the derivative of the B-spline (if D > 0).
+     compute_derivative : DO STEP = NUM_KNOTS-DERIV, NUM_KNOTS-1
+        ! Cycle over each knot, following the same structure with the
+        ! derivative computing relation instead of the B-spline one.
+        DO K = 1, NUM_KNOTS - STEP
+           ! Assure that the divisor will not cause invalid computations.
+           DIV_LEFT = (KNOTS(K+STEP-1) - KNOTS(K))
+           DIV_RIGHT = (KNOTS(K+STEP) - KNOTS(K+1))
+           ! Compute the derivative recurrence relation.
+           IF (DIV_LEFT .GT. 0) THEN
+              IF (DIV_RIGHT .GT. 0) THEN
+                 VALUES(:,K) =  (STEP-1) * (&
+                      VALUES(:,K) / DIV_LEFT - VALUES(:,K+1) / DIV_RIGHT )
+              ELSE
+                 VALUES(:,K) =  (STEP-1) * (VALUES(:,K) / DIV_LEFT)
+              END IF
+           ELSE
+              IF (DIV_RIGHT .GT. 0) THEN
+                 VALUES(:,K) =  (STEP-1) * ( - VALUES(:,K+1) / DIV_RIGHT )
+              END IF
+           END IF
+        END DO
+     END DO compute_derivative
+  END IF integration_or_differentiation
+
+  ! Assign the values into the "Y" output.
+  XY(:) = VALUES(:,1)
+END SUBROUTINE EVAL_BSPLINE
+
+END MODULE SPLINES

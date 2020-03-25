@@ -1,0 +1,88 @@
+  DIVISOR = 1.0_R8
+
+
+     IF (STEP .GT. 1) DIVISOR = DIVISOR * (STEP-1)
+
+
+     DIVISOR = 1.0_R8
+
+
+        ! Down-scale higher derivatives to maintain numerical stability.
+        IF (DERIV .GT. 1) DIVISOR = DIVISOR * DERIV
+        AB(FIRST_ROW+DERIV:LAST_ROW:C,STEP) = &
+             AB(FIRST_ROW+DERIV:LAST_ROW:C,STEP) / DIVISOR
+
+
+  ! Undo the knot normilazation before returning.
+  KNOTS(:) = (KNOTS(:) * SCALE) + SHIFT
+
+
+  ! Temporarily normalize the knots (will be undone at the end).
+  KNOTS(:) = (KNOTS(:) - SHIFT) / SCALE
+
+
+
+  ! Normalize the provided data to make the smallest gap between
+  ! breakpoints 1. This property will ensure the derivatives of the
+  ! B-spline basis do not get extremely large for high values of C.
+  SHIFT = BREAKPOINTS(1)
+  SCALE = 1.0_R8
+  DO STEP = 1, N-1
+     SCALE = MIN(SCALE, BREAKPOINTS(STEP+1) - BREAKPOINTS(STEP))
+  END DO
+  SHIFT = 1.0
+  SCALE = 1.0
+
+
+    # SHIFT       SCALE
+    #   MIN(A):   6.6796687186444850E-319
+    #   MAX(A):   1.2097163888991751E+035
+    # 
+    # SHIFT = 0   SCALE = 1
+    #  MIN(A):   1.2539880157096679E-319
+    #  MAX(A):   2.7725230705146585E+060
+    # 
+    # SHIFT       SCALE = 1
+    #  MIN(A):   1.2539880157096679E-319
+    #  MAX(A):   2.7725230705146585E+060
+    # 
+    # SHIFT       SCALE * 10
+    #  MIN(A):   6.6796687186444850E-319
+    #  MAX(A):   1.2097163888991747E+055
+    # 
+    # SHIFT       SCALE / 10
+    #  MIN(A):   2.0256691479491108E-322
+    #  MAX(A):   1209716388899175.5     
+    # 
+    # SHIFT       SCALE / 100
+    #  MIN(A):   4.0513382958982217E-321
+    #  MAX(A):   1.0000000000000000     
+    # 
+    # 
+    # 
+    # 
+    # 
+    # ----------------------------------------------------------------
+    # 
+    # =0
+    #  MIN(A):   4.0513382958982217E-322
+    #  MAX(A):   2907201.1511879996     
+    # 
+    # 0
+    #  MIN(A):   4.0513382958982217E-322
+    #  MAX(A):   2907201.1511879996     
+    # 
+    # -100
+    #  MIN(A):   4.0513382958982217E-322
+    #  MAX(A):   2907201.1511879996     
+    # 
+    # -1000    very inaccurate
+    #  MIN(A):   1.6519694087892497E-010
+    #  MAX(A):   2907201.1511878767         
+    # 
+    # +1000    very inaccurate
+    #  MIN(A):   1.6519694087892497E-010
+    #  MAX(A):   2907201.1511878767     
+    # 
+
+

@@ -1,0 +1,23 @@
+
+
+- set a reasonable timeline
+- let the committee know how the step-size experiments go
+- connect the results I'm getting with the distribution approximations back to a real-world outcome explicitly
+- present different measures of "error" and justify the choice of measure
+- split up the VarSys data into similar configurations to help ensure the distribution approximations are *good*
+- investigate making the approximation *smoother* so that the pictures I show look good
+
+
+----------------------------------------------------------------------
+
+
+- distributions that go from R to R are absolutely continuous, the integral (reimann) requires it! don't bother thinking about applications that are only right continuous, because the probability density is not well defined in that case.
+- mention application to any type of distribution when doing interpolation
+- talk about "sampling error" with distributions, don't use the word "measurement error" because that is misleading
+- say less (speak more concisely, avoid unnecessary detail, allow the audience to ask questions when they want details filled in and don't give the details otherwise)
+- say "provably" *only when you can write or cite the proof*, why is quintic provably more accurate than cubic?
+
+
+1:21:17 -- the great blunder, saying "provably" and not being able to prove it
+
+- personal note, the way I speak is terrible, I use emphasis on simple things, I repeat simple things, I speak non technically, maybe this is a function of being tired? I need to be more concise, and more interesting to listen to. my lack of technical confidence is oozing throughout the entire presentation.

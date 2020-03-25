@@ -1,0 +1,51 @@
+This is BibTeX, Version 0.99d (TeX Live 2016)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: prelim.aux
+The style file: plainnat.bst
+Database file #1: prelim.bib
+Warning--empty journal in stanford1993fast
+Warning--can't use both volume and number fields in kohavi1995study
+Warning--empty journal in iozone
+Warning--empty journal in rudy2017pyearth
+You've used 65 entries,
+            2773 wiz_defined-function locations,
+            989 strings with 18474 characters,
+and the built_in function-call counts, 36747 in all, are:
+= -- 3247
+> -- 2590
+< -- 57
++ -- 873
+- -- 807
+* -- 3103
+:= -- 5664
+add.period$ -- 237
+call.type$ -- 65
+change.case$ -- 453
+chr.to.int$ -- 64
+cite$ -- 134
+duplicate$ -- 1510
+empty$ -- 2637
+format.name$ -- 911
+if$ -- 7715
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 68
+newline$ -- 359
+num.names$ -- 260
+pop$ -- 915
+preamble$ -- 1
+purify$ -- 393
+quote$ -- 0
+skip$ -- 1266
+stack$ -- 0
+substring$ -- 1256
+swap$ -- 236
+text.length$ -- 26
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 690
+warning$ -- 4
+while$ -- 295
+width$ -- 0
+write$ -- 908
+(There were 4 warnings)
