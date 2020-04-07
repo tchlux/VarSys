@@ -348,6 +348,14 @@ class Polynomial:
 #    the same length, construct a standard Newton
 #    Polynomial. Coefficients are stored from highest order term to
 #    lowest order. Earlier points are evaluated earlier.
+# 
+# EXAMPLE:
+# NewtonPolynomial([a,b,c], [s1, s2, s3])
+#   =  c + (x - s3)(b + (x - s2)(a))
+# 
+# NOTE:
+#   Notice that "s1" is never used in the computation, as it is
+#   redundant with the term "a".
 class NewtonPolynomial(Polynomial):
     _points = None
     @property
@@ -358,9 +366,11 @@ class NewtonPolynomial(Polynomial):
     # Store the coefficients and points for this Newton Polynomial.
     def __init__(self, coefficients, points):
         if (len(points) != len(coefficients)): raise(IndexError)
+        # Strip off the 0-valued coefficients (all these will be 0'd out).
         for i in range(len(coefficients)):
             if (coefficients[i] != 0): break
         else: i = len(coefficients)-1
+        # Store locally.
         self.coefficients = coefficients[i:]
         self.points = points[i:]
 
@@ -709,10 +719,9 @@ def local_quadratic(x, y, idx):
     print("error(ab):    ",error(ab))
     a,b = ab
     # ----------------------------------------------------------------
-    # Construct the two functions.
-    # sf = lambda z: ab[0]*z**2 + ab[1]*z**2
-    sf = lambda z: a*z**2 + b*z**2
-    f = lambda z: sf(z-shift_x) + shift_y
+    # Construct the shifted and unshifted fits.
+    f = NewtonPolynomial([a,b,shift_y],[None,shift_x,shift_x])
+    sf = NewtonPolynomial([a,b,0],[None,0,0])
     # Generate a plot for sanity checking.
     from util.plot import Plot
     p = Plot()
@@ -789,6 +798,7 @@ def _test_NewtonPolynomial():
     assert(str(Polynomial(f)) == "-1 x  +  1")
     f = NewtonPolynomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1])
     assert(str(f) == "-32 + (x + 1)(32 + (x + 1)(24 + (x + 1)(-16 + (x - 1)(10 + (x - 1)(-1)))))")
+
 
 # Test the "polynomial" interpolation routine (uses Newton form).
 def _test_polynomial():
