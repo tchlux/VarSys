@@ -21,6 +21,8 @@
 #   fit              -- Use a local polynomial interpolant to estimate
 #                       derivatives and construct an interpolating
 #                       Spline with a specified level of continuity.
+#   local_polynomial -- Construct a local polynomial interpolant about
+#                       a given point in a list of points.
 #   fill_derivative  -- Compute all derivatives at points to be
 #                       reasonable values using either a linear or a
 #                       quadratic fit over neighboring points. 
@@ -32,7 +34,6 @@
 #                       "index" in the set. Use Shepard weighting.
 #   inverse          -- Given a function, use the Newton method to
 #                       find the nearest inverse to a guess point.
-
 # 
 
 from fraction import Fraction
@@ -215,7 +216,7 @@ class Spline:
             k = knots[i]
             my_poly = self.function_at(k)
             other_poly = other.function_at(k)
-            order = len(my_poly.coefficients) + len(other_poly.coefficients) - 1
+            order = max(2,len(my_poly.coefficients) + len(other_poly.coefficients) - 1)
             # Evaluate the function at equally spaced "x" values, TODO:
             # this should be Chebyshev nodes for numerical stability.
             x = [(step / (order-1)) * (right - left) + left for step in range(order)]
@@ -410,21 +411,37 @@ def to_polynomial(coefficients, points):
 # Given unique "x" values and associated "y" values (of same length),
 # construct an interpolating polynomial with the Newton divided
 # difference method. Return that polynomial as a function.
-def polynomial(x, y):
+def polynomial(given_x, given_y, **derivs):
     # Sort the data by "x" value.
-    indices = sorted(range(len(x)), key=lambda i: x[i])
-    x = [x[i] for i in indices]
-    y = [y[i] for i in indices]
+    indices = sorted(range(len(given_x)), key=lambda i: given_x[i])
+    # Construct the initial x and y (with repetitions to match derivatives).
+    x = []; y = []; index_ranges = {}
+    for i in indices:
+        dxs = sorted(key for key in derivs if (i == int(key.split('x')[1])))
+        largest_d = ([key.count("d") for key in dxs] + [0])[0]
+        index_ranges[(len(x), len(x)+largest_d)] = i
+        x += [given_x[i]] * (largest_d+1)
+        y += [given_y[i]] * (largest_d+1)
     # Compute the divided difference table.
+    divisor = 1
     dd_values = [y]
     for d in range(1, len(x)):
+        divisor *= d
         slopes = []
         for i in range(len(dd_values[-1])-1):
-            if (x[i+d] != x[i]): 
-                dd = (dd_values[-1][i+1] - dd_values[-1][i]) / (x[i+d] - x[i])
+            # Identify which "original point index" this spot belongs to.
+            idx = ''
+            for (start, end) in index_ranges:
+                if (start <= i <= end-d): idx = index_ranges[(start,end)]
+            # Substitute in derivative value if it was provided.
+            key = d*"d"+f"x{idx}"
+            if key in derivs: slopes.append( derivs[key] / divisor )
+            # Otherwise a value wasn't provided, compute the divided difference.
             else:
-                dd = 0
-            slopes.append( dd )
+                if (x[i+d] != x[i]): dd = (dd_values[-1][i+1] - dd_values[-1][i]) / (x[i+d] - x[i])
+                else:                dd = 0
+                slopes.append( dd )
+        # Add in the finished next row of the divided difference table.
         dd_values.append( slopes )
     # Get the divided difference (polynomial coefficients) in reverse
     # order so that the most nested value (highest order) is first.
@@ -543,71 +560,91 @@ def polynomial_piece(left, right, interval=(0,1), stable=True):
 # continuity:
 #   The level of continuity desired in the interpolating function.
 # 
-# kwargs:
-#   "max_d{i}" -- A maximum value for a specific derivative.
-#   "min_d{i}" -- A minimum value for a specific derivative.
-# 
-#   Otherwise, may include any keyword arguments for the `fill` function.
-def fit(x, y, continuity=0, **kwargs):
-    assert( all(x[i] < x[i+1] for i in range(len(x)-1)) )
+def fit(x, y, continuity=0):
+    assert( len(x) == len(y) )
+    # Sort the "x" values if they were not given in sorted order.
+    if not all(x[i] < x[i+1] for i in range(len(x)-1)):
+        indices = sorted(range(len(x)), key=lambda i: x[i])
+        x = [x[i] for i in indices]
+        y = [y[i] for i in indices]
+    # Get the knots and initial values for the spline.
     knots = [v for v in x]
     values = [[v] for v in y]
+    # Use a local interpolating polynomial to estimate all derivatives.
+    order = 2*(continuity+1)
     # Construct further derivatives and refine the approximation
     # ensuring monotonicity in the process.
-    max_on_one_side = continuity // 2 + 1
     for i in range(0,len(x)):
-        # Get initial candidates from the left and right.
-        left_candidates = list(range(max(0,i-max_on_one_side),i))
-        right_candidates = list(range(i+1,min(len(x), i+1+max_on_one_side)))
-        # How many more points are needed:
-        needed = (continuity+2) - (len(left_candidates) + len(right_candidates))
-        # Add more candidates from the right side.
-        if (len(left_candidates) < max_on_one_side):
-            # Build out the right candidates to fill in.
-            right_candidates += list(range(right_candidates[-1] + 1, min(
-                len(x), right_candidates[-1] + 1 + needed)))
-        # Add more candidates from the left side.
-        elif (len(right_candidates) < max_on_one_side):
-            # Build out the left candidates to fill in.
-            left_candidates = list(range(max(0, left_candidates[0]-needed), 
-                                         left_candidates[0])) + left_candidates
-        # If the leftmost candidate is further away, remove it.
-        elif (x[i] - x[left_candidates[0]]) > (x[right_candidates[-1]] - x[i]):
-            left_candidates.pop(0)
-        # If the rightmost candidate is further away, remove it.
-        else: right_candidates.pop(-1)
-        # Construct the polynomial.
-        candidates = left_candidates + [i] + right_candidates
-        p = polynomial([x[idx] for idx in candidates],
-                       [y[idx] for idx in candidates])
+        # Construct a local polynomial interpolant of the same
+        # order that this piecewise polynomial will be.
+        df = local_polynomial(x, y, i, order=order)
         # Evaluate the derivatives of the polynomial.
         for d in range(1, continuity+1):
             # Compute the next derivative of this polynomial and evaluate.
-            p = p.derivative()
-            deriv = p(x[i])
-            # Bound the derivatives if that was requested.
-            max_name = f"max_d{d}"
-            if (max_name in kwargs): deriv = min(kwargs[max_name], deriv)
-            min_name = f"min_d{d}"
-            if (min_name in kwargs): deriv = max(kwargs[min_name], deriv)
+            df = df.derivative()
             # Store the derivative.
-            values[i].append(deriv)
+            values[i].append( df(x[i]))
     # Return the interpolating spline.
     return Spline(knots, values)
+
+# Construct a local polynomial interpolant over nearby data points.
+# Given "x" values, "y" values, and the index "i" at which a local
+# polynomial should be (roughly) centered.
+def local_polynomial(x, y, i, order=3, local_indices=None,
+                     local_derivs=None, **derivs):
+    # Sort indices first by their index nearness to x[i], then
+    # secondly by their value nearness to x[i].
+    all_indices = list(range(len(x)))
+    all_indices.sort(key=lambda j: ( abs(j - i), abs(x[j] - x[i])*abs(y[j]-y[i]) ))
+    # Convert all provided derivative information to the relative
+    # index in this local polynomial. Only incorporate as much
+    # information as the given "order" polynomial can contain.
+    if local_indices is None: local_indices = list()
+    if local_derivs is None: local_derivs = dict()
+    for step,j in enumerate(all_indices):
+        if (order <= 0): break
+        if j not in local_indices:
+            local_indices.append(j)
+            order -= 1
+        # Append the next point if it is the same distance away,
+        # before considering the derivatives of the current point.
+        if ((order > 0) and (step+1 < len(all_indices))
+            and (abs(x[j]-x[i]) == abs(x[all_indices[step+1]] - x[i]))):
+            local_indices.append(all_indices[step+1])
+            order -= 1
+        # Find all the derivatives that were given for this index and
+        # are capable of being approximated, highest derivative first.
+        given_derivatives = sorted(key for key in derivs
+                                   if int(key.split('x')[1]) == j)
+        kept_derivatives = [key for key in given_derivatives
+                            if order >= key.count('d')]
+        # If derivatives are being approximated, then lower the 
+        # remaining approximation power by the derivative number.
+        if (len(kept_derivatives) > 0):
+            order -= kept_derivatives[0].count('d')
+        # Store the transformed derivative assignments.
+        for key in kept_derivatives:
+            # Update the index of the keys that are being kept.
+            d, k = key.split('x')
+            local_derivs['x'.join((d,str(step)))] = derivs[key]
+    # Return the interpolating polynomial of specified order.
+    return polynomial([x[j] for j in local_indices],
+                      [y[j] for j in local_indices],
+                      **local_derivs)
 
 # Compute all derivatives between points to be reasonable values
 # using either a linear or a quadratic fit over adjacent points.
 #  
 # ends:
-#   (zero)   endpoints to zero.
-#   (lin)    endpoints to secant slope through endpoint neighbor.
-#   (quad)   endpoints to capped quadratic interpolant slope.
+#   (0 zero)   endpoints to zero.
+#   (1 lin)    endpoints to secant slope through endpoint neighbor.
+#   (2 quad)   endpoints to capped quadratic interpolant slope.
 #   (manual) a 2-tuple provides locked-in values for derivatives.
 # 
 # mids:
-#   (zero)   all slopes are locked into the value 0.
-#   (lin)    secant slope between left and right neighbor.
-#   (quad)   slope of quadratic interpolant over three point window.
+#   (0 zero)   all slopes are locked into the value 0.
+#   (1 lin)    secant slope between left and right neighbor.
+#   (2 quad)   slope of quadratic interpolant over three point window.
 #   (manual) an (n-2)-tuple provides locked-in values for derivatives.
 def fill_derivative(x, y, ends=1, mids=1):
     # Initialize the derivatives at all points to be 0.
@@ -670,34 +707,60 @@ def solve_quadratic(x, y):
 # an idx (integer), build a weighted least squares quadratic fit over
 # the point values using inverse squared distances from x[idx] as
 # weights.
-def local_quadratic(x, y, idx):
-    # Numpy functions.
-    from numpy import asarray, sum, dot
-    from numpy.linalg import norm
-    from util.optimize import minimize
-    # Shift the "x" and "y" to interpolate the point at "idx".
-    x = asarray(x, dtype=float)
-    y = asarray(y, dtype=float)
-    # Compute the shift (to enforce interpolation)
-    shift_x = x[idx]
-    shift_y = y[idx]
-    # Construct the shifted points.
-    sx = x - shift_x
-    sy = y - shift_y
-    # Compute the min's and max's
-    min_max = [min(x), max(x)]
-    shifted_min_max = [min(sx), max(sx)]
-    # Delete the center point and compute the weights for remaining.
-    sx[idx], sy[idx] = sx[-1], sy[-1]
-    sx, sy = sx[:-1], sy[:-1]
-    w = 1 / sx**2
+def local_quadratic(x, y, idx, **derivs):
+    # Check for proper usage.
+    assert(len(x) == len(y))
+    assert(0 <= idx < len(x))
+    # Define a "Vector" subclass of a "list" for convenience.
+    class Vector(list):
+        # Define add, subtract, multiply, divide, assume a vector is given
+        # and if the object given is not iterable assume it's scalar.
+        def __add__(self, value):
+            try:              return Vector(v1 + v2 for (v1,v2) in zip(self,value))
+            except TypeError: return Vector(v + value for v in self)
+        def __sub__(self, value):
+            try:              return Vector(v1 - v2 for (v1,v2) in zip(self,value))
+            except TypeError: return Vector(v - value for v in self)
+        def __mul__(self, value):
+            try:              return Vector(v1 * v2 for (v1,v2) in zip(self,value))
+            except TypeError: return Vector(v * value for v in self)
+        def __truediv__(self, value):
+            try:              return Vector(v1 / v2 for (v1,v2) in zip(self,value))
+            except TypeError: return Vector(v / value for v in self)
+        # Define "absolute value", "dot product" and "norm".
+        def __abs__(self):  return Vector(map(abs,self))
+        def dot(self, vec): return sum(v1*v2 for (v1,v2) in zip(self, vec))
+        def norm(self):     return self.dot(self)**(1/2)
+    # Convert "x" and "y" to vectors.
+    x, y = Vector(x), Vector(y)
+    # Shift the "x" and "y" to interpolate the point at "idx", remove
+    # that point from both vectors.
+    shift_x, shift_y = x[idx], y[idx]
+    x.pop(idx); y.pop(idx)
+    # Pop out any repetitions of the center "x" point (they don't affect the fit).
+    while (shift_x in x):
+        i = x.index(shift_x)
+        x.pop(i)
+        y.pop(i)
+    # Construct the shifted point set (to interpolate the origin).
+    sx, sy = x - shift_x, y - shift_y
     # Compute x and y normalized by their weight.
-    nx = sx / abs(sx)
-    ny = sy / abs(sx)
-    # Compute the linear term in the quadratic fit.
-    pos_mean = sum(ny[nx>0]) / sum(nx>0)
-    neg_mean = sum(ny[nx<0]) / sum(nx<0)
-    b = (pos_mean - neg_mean) / 2
+    nx, ny = sx/abs(sx), sy/abs(sx)
+    # Compute the linear term in the quadratic fit (interpolating
+    # the means of normalized data (on left and right).
+    if (max(nx) > 0):
+        pos_y = [yv for (xv,yv) in zip(nx,ny) if xv > 0]
+        right = (1, sum(pos_y) / len(pos_y))
+    else: right = (0, 0)
+    if (min(nx) < 0):
+        neg_y = [yv for (xv,yv) in zip(nx,ny) if xv < 0]
+        left = (-1, sum(neg_y) / len(neg_y))
+    else: left = (0, 0)
+    # Compute the linear term.
+    if (left[0] == right[0]): b = 0
+    else: b = (right[1] - left[1]) / (right[0] - left[0])
+    # Overwrite the linear term if it was provided.
+    b = derivs.get(f"dx{idx}", b)
     # Compute the quadratic term in the fit, considering we want to
     # minimize:
     # 
@@ -707,34 +770,106 @@ def local_quadratic(x, y, idx):
     # closest to the point "ny - b*nx". This can be achieved by
     # projecting "ny - b*nx" onto the normalized line "abs(sx)". Then
     # the solution is (projection length / current length).
-    a = dot((ny - b*nx), abs(sx)) / norm(sx)**2
-    # ----------------------------------------------------------------
-    print("a:  ",a)
-    print("b:  ",b)
-    # Minimize the error function to verify correctness of solution.
-    error = lambda ab: sum(w*(ab[0]*sx**2 + ab[1]*sx - sy)**2)
-    ab = minimize(error, [a,b], max_steps=500, display=False)
-    print("ab: ",ab)
-    print("error((a,b)): ",error((a,b)))
-    print("error(ab):    ",error(ab))
-    a,b = ab
-    # ----------------------------------------------------------------
-    # Construct the shifted and unshifted fits.
-    f = NewtonPolynomial([a,b,shift_y],[None,shift_x,shift_x])
-    sf = NewtonPolynomial([a,b,0],[None,0,0])
-    # Generate a plot for sanity checking.
-    from util.plot import Plot
-    p = Plot()
-    p.add("Original points", x, y, group=0)
-    p.add_func("fit", f, min_max, color=p.color(0), group=0)
-    p.add("shifted points", sx, sy, group=1)
-    p.add_func("shifted fit", sf, shifted_min_max, color=p.color(1), group=1)
-    p.add("weighted points", sx/abs(sx), sy/abs(sx))
-    p.show(file_name="weighted_quadratic_fit.html")
+    a = (ny - nx*b).dot(abs(sx)) / sx.norm()**2
+    # Overwrite the quadratic term if it was provided.
+    a = derivs.get(f"ddx{idx}", a)
+    # Return the quadratic in NewtonPolynomial form.
+    return NewtonPolynomial([a,b,shift_y],[None,shift_x,shift_x])
 
-import random
-local_quadratic(list(range(9)), [random.random() for i in range(9)], 4)
-exit()
+
+def _test_local_quadratic():
+    # Minimize the error function to verify correctness of solution.
+    def opt_min_fit(x,y,idx):
+        # Numpy functions.
+        from numpy import asarray, sum, dot
+        from numpy.linalg import norm
+        from util.optimize import minimize
+
+        # Convert "x" and "y" to vectors.
+        x, y = list(x), list(y)
+        # Shift the "x" and "y" to interpolate the point at "idx", remove
+        # that point from both vectors.
+        shift_x, shift_y = float(x[idx]), float(y[idx])
+        x.pop(idx); y.pop(idx)
+        # Pop out any repetitions of the center "x" point (they don't affect the fit).
+        while (shift_x in x):
+            i = x.index(shift_x);  x.pop(i); y.pop(i)
+        # Convert to numpy arrays.
+        x, y = asarray(x, dtype=float), asarray(y, dtype=float)
+        # Construct the shifted point set (to interpolate the origin).
+        sx, sy = x - shift_x, y - shift_y
+        # Compute x and y normalized by their weight.
+        nx, ny = sx/abs(sx), sy/abs(sx)
+        # Compute the linear term in the quadratic fit (interpolating
+        # the means of normalized data (on left and right).
+        if (max(nx) > 0):
+            pos_y = [yv for (xv,yv) in zip(nx,ny) if xv > 0]
+            right = (1, sum(pos_y) / len(pos_y))
+        else: right = (0, 0)
+        if (min(nx) < 0):
+            neg_y = [yv for (xv,yv) in zip(nx,ny) if xv < 0]
+            left = (-1, sum(neg_y) / len(neg_y))
+        else: left = (0, 0)
+        # Compute the linear term and quadratic term estimates.
+        if (left[0] == right[0]): b = 0
+        else: b = (right[1] - left[1]) / (right[0] - left[0])
+        a = (ny - nx*b).dot(abs(sx)) / norm(sx)**2
+        # Minimize this error function.
+        w = 1 / sx**2
+        error = lambda ab: sum(w*(a*sx**2 + b*sx - sy)**2)
+        # Perform optimization.
+        ab = minimize(error, [a,b], max_steps=100, display=False)
+        # Check for greater than a "epsilon" error.
+        if (error([a,b]) - error(ab)) > 2**(-52):
+            print("ERROR: Quadratic fit was not as good as expected.")
+            print("  error([a,b]): ",error([a,b]))
+            print("  error(ab):    ",error(ab))
+            exit()
+        elif (error([a,b]) - error(ab)) > 0:
+            print(f"WARNING: Deterministic quadratic fit was off by {error([a,b]) - error(ab)}.")
+            print("  error([a,b]): ",error([a,b]))
+            print("  error(ab):    ",error(ab))
+        # Return optimized interpolating polynomial.
+        return NewtonPolynomial([a,b,shift_y],[None,shift_x,shift_x])
+
+    # Generate random "x", "y", and "i" to do the fitting.
+    import random
+    random.seed(0)
+    def random_xyi(n=9):
+        x = list(range(n))
+        y = [random.random() for i in range(n)]
+        i = random.randint(0,n-1)
+        return (x,y,i)
+
+    # Cycle through some randomly generated tests.
+    for size in range(3, 34, 10):
+        # print("size:", size)
+        for trial in range(10):
+            # print("  trial:", trial)
+            size = 9
+            trial = 0
+            x,y,i = random_xyi(n=size)
+            x, y = list(map(Fraction,x)), list(map(Fraction,y))
+            # Get the exact value from local quadratic function.
+            f = Polynomial(local_quadratic(x, y, i))
+            # Try to optimize a better solution.
+            opt_f = Polynomial(opt_min_fit(x, y, i))
+
+            # Check for consistency between optimized solutoin and calculated solution.
+            if any(abs(c1 - c2) > 2**(-51) for c1,c2 in zip(
+                    f.coefficients, opt_f.coefficients)):
+                print("ERROR: Unexpectedly large error in local quadratic fit.")
+                print("f:     ",f)
+                print("opt_f: ",opt_f)
+                print()
+                print("size:", size)
+                print("  trial:", trial)
+                exit()
+            # elif any(abs(float(c1) - float(c2)) > 0 for c1,c2 in zip(
+            #         f.coefficients, opt_f.coefficients)):
+            #     print("WARNING: Did not find consistent local quadratic.")
+            #     print("f:     ",f)
+            #     print("opt_f: ",opt_f)
 
 
 # Given a function, use the Newton method to find the nearest inverse
@@ -801,7 +936,7 @@ def _test_NewtonPolynomial():
 
 
 # Test the "polynomial" interpolation routine (uses Newton form).
-def _test_polynomial():
+def _test_polynomial(plot=True):
     SMALL = 1.4901161193847656*10**(-8) 
     # ^^ SQRT(EPSILON(REAL(1.0)))
     x_vals = [0,1,2,3,4,5]
@@ -919,19 +1054,35 @@ def _test_fit(plot=False):
     x_vals = list(map(Fraction, [0,.5,2,3.5,4,5.3,6]))
     y_vals = list(map(Fraction, [1,2,2.2,3,3.5,4,4]))
     # Execute with different operational modes, (tests happen internally).
-    kwargs = dict(min_d1=0)
-    f = fit(x_vals, y_vals, continuity=2, **kwargs)
+    f = fit(x_vals, y_vals, continuity=2)
     for i in range(len(f._functions)):
         f._functions[i] = Polynomial(f._functions[i])
     if plot:
+        print("f: ",f)
         from util.plot import Plot
         plot_range = [min(x_vals)-.1, max(x_vals)+.1]
         p = Plot()
         p.add("Points", list(map(float,x_vals)), list(map(float,y_vals)))
-        p.add_func("f (mids=0)", f, plot_range)
-        p.add_func("f deriv (m0)", f.derivative(1), plot_range, dash="dash")
-        p.add_func("f dd (m0)", f.derivative(2), plot_range, dash="dot")
+        p.add_func("f (min_d1=0)", f, plot_range)
+        p.add_func("f' (min_d1=0)", f.derivative(1), plot_range, dash="dash")
+        p.add_func("f'' (min_d1=0)", f.derivative(2), plot_range, dash="dot")
+
+        def L2(f, low, upp):
+            f2 = f**2
+            p.add_func("f''<sup>2</sup>", f2, plot_range)
+            int_f2 = f2.integral()
+            return int_f2(upp) - int_f2(low)
+        print("L2(f''):", float(L2(f.derivative(2), x_vals[0], x_vals[-1])))
+
+        # Add local fits.
+        s = .2
+        for i in range(len(x_vals)):
+            f = Polynomial(local_polynomial(x_vals, y_vals, i, order=6))
+            p.add_func(f"{i}", f, [x_vals[i]-s, x_vals[i]+s],
+                       color=(0,0,0,.2), dash="dot")
+
         p.show()
+        exit()
 
 
 # Test "fill_derivative" function.
@@ -1015,6 +1166,8 @@ if __name__ == "__main__":
     _test_fill_derivative()
     print(" solve_quadratic")
     _test_solve_quadratic()
+    print(" local_quadratic")
+    _test_local_quadratic()
     print(" inverse")
     _test_inverse(plot=False)
     print("tests complete.")

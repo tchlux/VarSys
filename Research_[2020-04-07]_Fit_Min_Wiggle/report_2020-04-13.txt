@@ -1,0 +1,88 @@
+Methods of Estimating Derivatives
+In the context of quintic spline interpolation
+:: Thomas Lux :: tchlux@vt.edu :: https://people.cs.vt.edu/tchlux
+
+The problem of piecewise monotone quintic spline interpolation is posed given points $\big\{x_i\big\}_{i=1}^{n},$ $x_i < x_{i+1}$ and associated function values $\big\{f(x_i)\big\}_{i=1}^{n}$. The process of making a monotone quintic spline interpolant from monotone data was discussed in my previous paper [[lux2020quintic]], but not how to make a *piecewise* monotone quintic spline interpolant over nonmonotone data. This report outlines the process of constructing a *piecewise* monotone quintic spline interpolant, which requires a few additional steps.
+
+The only change required is in the estimation of initial derivative values of the function. Two different methods for approximating the first and second derivatives of the function $f$ at points $x_i$ are studied here. The first and second derivative estimates produced by these two methods are refined with the same "step towards monotonicity" procedure defined in my HPC SpringSim paper [[lux2020quintic]]. The same procedure for stepping towards monotonicity works on the entire quintic spline regardless of the direction of the function over individual intervals because the convergence towards monotonicity is guaranteed by shrinking first derivative values to zero, which is applicable regardless of the direction of monotonicity of intervals.
+
+First and second derivative constraints for the approximation can be constructed based on the points and function values, namely:
+
+
+1) $f(x_{j-1}) < f(x_j) < f(x_{j+1})$ implies $Df(x_j) \geq 0,$
+2) $f(x_{j-1}) > f(x_j) > f(x_{j+1})$ implies $Df(x_j) \leq 0,$
+3) $\big(f(x_j) - f(x_{j-1}) \big) \big(f(x_{j+1}) - f(x_j)\big) < 0$ implies $Df(x_j) = 0$, and
+4) $f(x_j) = f(x_{j+1})$ implies $0 = Df(x_j)$ $= Df(x_{j+1})$ $= DDf(x_j)$ $= DDf(x_{j+1}).$
+
+
+In the general case, the two derivative estimation methods considered in this report are:
+
+
+| **METHOD** | | | **Description** |
+| **1** | *Quintic*<br>*interpolant* $\hat f_6$  | $\quad$ | For strictly monotone data this method interpolates at $x_{j-2},$ $x_{j-1},$ $x_j,$ $x_{j+1},$ $x_{j+2},$ and the nearer to $x_j$ of $x_{j-3}$ and $x_{j+3}.$ For nonmonotone data this method interpolates increasingly many nearby values and derivatives (derivatives constructed from 1--4) until a quintic is produced. This requires a lot of cases to clearly define, but generally picks nearer points and lower derivatives to build the quintic (or lower order when there are not enough values to make a quintic). |
+| **2** | *Quadratic*<br>*regressor* $\hat f_r$  |         | Interpolates at $x_j,$ performs weighted quadratic regression over all $x_i$ for $i \neq j,$ where weight of $x_i$ is proportional to $1 / |x_j - x_i|^2.$ When a first derivative is given at $x_j$, that constraint is included in the fit. |
+
+$ $
+
+What follows are examples of the resulting piecewise monotone quintic spline interpolants constructed after each method provides initial derivative estimates. The spline will be a solid blue line, the provided points are styled according to constraints (see legend below), and the shape of the local fit for each point is a dotted line interpolating that point (if you can't see it, it's because it overlaps the blue line). The first test problem considered is as follows.
+
+{{pmqsi_example.html|330px|100%}}
+
+For context, here is the PCHIP (Piecewise **Cubic** Hermite Interpolating Polynomial) interpolant produced over these points and values.
+
+{{pchip_example.html|330px|100%}}
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Method 1: Quintic interpolant
+
+{{6_pmqsi_example.html|330px|100%}}
+
+# Method 2: Quadratic regression
+
+{{r_pmqsi_example.html|330px|100%}}
+
+# Extended Test Problems
+
+In addition to that one problem, the following examples may also be of interest. The resulting piecewise monotone quintic spline interpolant from method one is a blue solid line, from method two is the dotted green line.
+
+{{test_0.html}}
+
+Test 0 above is a repeat visual of the same point set from before. It is only included to observe both methods on the same plot.
+
+{{test_1.html}}
+
+{{test_2.html}}
+
+{{test_3.html}}
+
+{{test_4.html}}
+
+{{test_5.html}}
+
+{{test_6.html}}
+
+{{test_7.html}}
+
+
+
+# Discussion of Results
+
+While the local quintic approximation (method 1) seems to work well for random data, it is unfortunately wiggly where true underlying functions transition between linear pieces. However, if the true underlying function is actually piecewise linear, then isn't it a bad idea to use a $C^2$ approximation?
+
+I'm very open to suggestions for better methods! Some ideas: minimize "oscillation" for quintic interpolant (minimize L2 of third derivative), or only use the nearest five points in the weighted quadratic regression.
+
+======================================================================
+
+@inproceedings{lux2020quintic,
+ author = {Lux, Thomas C. H. and Watson, Layne T. and Chang, Tyler H. and Xu, Li and Wang, Yueyao and Hong, Yili},
+ title = {An Algorithm for Constructing Monotone Quintic Interpolating Splines},
+ year = {2020},
+ publisher = {Society for Computer Simulation International},
+ address = {San Diego, CA, USA},
+ booktitle = {Proceedings of the High Performance Computing Symposium},
+ articleno = {Article 42},
+ numpages = {12},
+ keywords = {monotone, quintic spline, Hermite interpolation, sixth order polynomial},
+ series = {HPC ’20},
+ url = {https://tchlux.github.io/papers/tchlux-2019-HPC-1.pdf},
+}

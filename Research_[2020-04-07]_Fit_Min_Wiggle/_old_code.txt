@@ -1,0 +1,109 @@
+    print('-'*70)
+    print()
+    print("x: ",list(x))
+    print("y: ",list(y))
+
+
+    print("i: ",i)
+    print(" local_indices =",local_indices)        
+    print(" x =",[x[j] for j in local_indices])
+    print(" y =",[y[j] for j in local_indices])
+
+
+    # Sort the local indices, so they come out in the expected order.
+    ld = sorted(((key, local_derivs[key]) for key in local_derivs),
+                 key=lambda d: (int(d[0].split('x')[1]), d[0].count('d')))
+    print("i: ",i)
+    print(" local_indices =",local_indices)        
+    print(" local_derivs  =",ld)
+    print(" x =",[x[j] for j in local_indices])
+    print(" y =",[y[j] for j in local_indices])
+
+
+        # Go back and re-estimate the second derivatives at all transition points.
+        for i in transitions:
+            if verbose:
+                print(f"Updating estimates for transition at {i}")
+                print("  local x: ",x[i-1:i+1])
+                print("  local y: ",y[i-1:i+1])
+            # Fit a quintic that matches neighbor first derivatives
+            # and has a first derivative of 0 at this point.
+            local_quintic = polynomial(x[i-1:i+1], y[i-1:i+1],
+                                       dx0=values[i-1][1],
+                                       dx1=0,
+                                       dx2=values[i+1][1])
+            local_d2 = local_quintic.derivative(2)
+            values[i][1] = 0
+            values[i][2] = local_d2(x[i])
+
+
+        # Construct an initial fit that is twice continuous.
+        f = fit(x, y, continuity=2, **kwargs)
+
+
+    if verbose:
+        # Compute the change in "values" from start to finish.
+        values_change = [[f - i for (f,i) in zip(vi,vf)]
+                         for (vf,vi) in zip(values, initial_values)]
+        print()
+        print("check_counts:  ",check_counts)
+        print("change_counts: ",change_counts)
+        print("initial_values: ",[list(map(float,v)) for v in initial_values])
+        print("final_values:   ",[list(map(float,v)) for v in values])
+        print("values_change:  ",[list(map(float,v)) for v in values_change])
+        print()
+        print("done.\n")
+        orig_f = fit(x, y, continuity=2, **kwargs)
+        return Spline(x, values), check_counts, change_counts, orig_f
+
+
+# Construct a "piecewise monotone quintic spline interpolant".
+def pmqsi(knots, y, eps=2**(-26), **kwargs):
+    # Make sure knots are unique and equal length to values.
+    assert(len(knots) == len(y))
+    assert(all(knots[i] != knots[i-1] for i in range(1,len(knots))))
+    # Identify the transition points between monotone pieces.
+    transitions = [i for i in range(1, len(y)-1) if
+                   (y[i]-y[i-1]) * (y[i+1]-y[i]) <= 0]
+    print()
+    print("transitions: ",transitions)
+    print()
+    # If a single monotone function is appropriate, return that.
+    if (len(transitions) == 0): return monotone_quintic_spline(knots, y)
+    # else ... construct monotone pieces and stitch them together.
+    values = []
+    previous = 0
+    # Do the first interval.
+    i = transitions[0]
+    local_x = list(knots[:i+1]) + [knots[i]+eps]
+    local_y = list(y[:i+1]) + [y[i]]
+    f = monotone_quintic_spline(local_x, y=local_y, **kwargs)
+    values += f.values[:-1]
+    # Do all the middle intervals.
+    previous = transitions[0]
+    for i in transitions[1:]:
+        # Create repetitions of endpoints when derivaties should beforced to 0.
+        local_x = [knots[previous]-eps] + list(knots[previous:i+1]) + [knots[i]+eps]
+        local_y = [y[previous]] + list(y[previous:i+1]) + [y[i]]
+        f = monotone_quintic_spline(local_x, y=local_y, **kwargs)
+        values += f.values[2:-1]
+        previous = i
+    # Do the last interval.
+    local_x = [knots[previous]-eps] + list(knots[previous:])
+    local_y = [y[previous]] + list(y[previous:])
+    f = monotone_quintic_spline(local_x, y=local_y, **kwargs)
+    values += f.values[2:]
+    # Return the final monotone quintic interpolating Spline.
+    print()
+    print("len(knots):  ",len(knots))
+    print("len(values): ",len(values))
+    print("knots: ",list(map(float,knots)))
+    print("values:\n ","\n  ".join([str(list(map(float,v))) for v in values]))
+    print()
+    return Spline(knots, values)
+
+
+            print("(d,i,key): ",(d,i,d*"d"+f"x{idx}"),
+                  derivs.get(d*"d"+f"x{idx}", " "))
+
+

@@ -1,3 +1,8 @@
+# TODO: Local quintic fits can pass through nonmonotone pieces as long
+#       as they meet the requirments. So make sure the first derivative
+#       is zero at the points? Look into this, but it might cause
+#       unwanted oscilation.
+
 
 # This file provides the function `monotone_quintic_spline` which
 # constructs spline interpolant over provided data. It starts by using
@@ -6,15 +11,17 @@
 # adjusts the derivatives and second derivatives until all quintic
 # polynomial pieces are monotone. A `Spline` object is returned.
 
-from polynomial import fit, UsageError
+from polynomial import Spline, fit, UsageError
 IS_MONOTONE_CALLS = 0
 
 # Given x and y values, construct a monotonic quintic spline fit.
 def monotone_quintic_spline(x, y=None, values=None, exact=True, 
-                            max_steps=1000, adaptive=1,
-                            verbose=False, **kwargs):
+                            max_steps=1000, adaptive=1, verbose=False,
+                            local_fits=None, method=6):
     if verbose: print()
-    from polynomial import Spline
+    from polynomial import Spline, Polynomial, polynomial, \
+        local_polynomial, local_quadratic
+    if local_fits is None: local_fits = dict()
     # Convert 'x' to exact values.
     if exact:
         from fraction import Fraction
@@ -22,13 +29,67 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
     # Build a set of 'values' if they were not provided.
     if (y is not None):
         if exact: y = list(map(Fraction, y))
-        # Check for which type of monotonicity this function maintains.
-        if   all(y[i+1] >= y[i] for i in range(len(y)-1)): kwargs.update(dict(min_d1=0))
-        elif all(y[i] >= y[i+1] for i in range(len(y)-1)): kwargs.update(dict(max_d1=0))
-        else: raise(Exception("Provided 'y' data is not monotone."))
-        # Construct an initial fit that is twice continuous.
-        f = fit(x, y, continuity=2, **kwargs)
-        values = f.values
+
+        # Compute all known first and second derivative constraints.
+        transitions = [i for i in range(1,len(y)-1)
+                       if ((y[i]-y[i-1]) * (y[i+1]-y[i]) < 0)]
+        flats = [i for i in range(1, len(y)-1)
+                 if ((y[i]-y[i-1]) * (y[i+1]-y[i]) == 0)]
+        d_pos = {i for i in range(1, len(y)-1)
+                 if ((y[i] > y[i-1]) and (y[i+1] > y[i]))}
+        d_neg = {i for i in range(1, len(y)-1)
+                 if ((y[i] < y[i-1]) and (y[i+1] < y[i]))}
+        if (len(y) > 2):
+            if     (y[0] < y[1]): d_pos = d_pos.union({0})
+            elif   (y[0] > y[1]): d_neg = d_neg.union({0})
+            if   (y[-2] < y[-1]): d_pos = d_pos.union({len(y)-1})
+            elif (y[-2] > y[-1]): d_neg = d_neg.union({len(y)-1})
+        # Establish all derivative conditions based on flats and transitions.
+        derivs = {f"ddx{j}":0 for j in flats}
+        derivs.update({f"dx{j}":0 for j in flats})
+        derivs.update({f"dx{j}":0 for j in transitions})
+        # Print out the derivative conditions.
+        if verbose and (len(derivs) > 0):
+            print()
+            print(f"Derivative conditions:")
+            for key in sorted(derivs, key=lambda k: (int(k.split('x')[1]),k.count('d'))):
+                print(f" {key} = {derivs[key]}")
+            print()
+        # Build local quintic fits satisfying derivative constraints.
+        values = []
+        for i in range(len(x)):
+            # Fit appropriate local polynomial depending on how
+            # many derivative conditions will be matched.
+            constraints = derivs.copy()
+            # Loop until we match all necessary constraints.
+            while True:
+                used_indices = []
+                if (type(method) == int):
+                    f = local_polynomial(x, y, i, order=method, local_indices=used_indices, **constraints)
+                elif (method == "r"):
+                    used_indices = list(range(len(x)))
+                    f = local_quadratic(x, y, i, **constraints)
+                else: raise(Exception(f"No method named {method}."))
+                df = f.derivative()
+                ddf = df.derivative()
+                # Check the inequality constraints on derivatives.
+                if   ((df(x[i]) < -2**(-26)) and (i in d_pos)): constraints.update({f"dx{i}":0})
+                elif ((df(x[i]) > 2**(-26)) and (i in d_neg)): constraints.update({f"dx{i}":0})
+                # Otherwise, the inequality constraints match and we're good!
+                else: break
+            values.append( [y[i], df(x[i]), ddf(x[i])] )
+            # Store this fit information.
+            local_fits[i] = (f, [min(x[i] for i in used_indices),
+                                 max(x[i] for i in used_indices)])
+            if verbose: print(f" estimate at {x[i]}: ", values[-1], Polynomial(f))
+            
+        if verbose:
+            print()
+            print("Final values:")
+            for i in range(len(x)):
+                print(" at", x[i], "=", values[i])
+
+    # If values were manually provided, use those.
     elif (values is not None):
         if exact: values = [list(map(Fraction, row)) for row in values]
         # Verify monotonicity.
@@ -40,6 +101,7 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
         values = f.values
     else:
         raise(UsageError("Must provided either a flat 'y' array or a (N,3) values array."))
+
     # Make all pieces monotone.
     initial_values = [v.copy() for v in values]
     check_counts = {}
@@ -47,8 +109,11 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
     change_values = {i:values[i][1] / max_steps for i in range(len(values))}
     to_check = list(range(len(values)-1))
     if verbose:
-        print("Starting quintic monotonicity fix..\n")
-        print("change_values: ",{k:float(change_values[k]) for k in change_values})
+        print()
+        print("Starting quintic monotonicity fix, smallest allowed steps:")
+        for k in sorted(change_values):
+            print(f" at {k} =",change_values[k])
+        print()
     # Cycle over all intervals that need to be checked for monotonicity.
     while (len(to_check) > 0):
         i = to_check.pop(0)
@@ -70,6 +135,8 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                 # Compute the amount by which the second derivative
                 # had violated the monotonicity constraint.
                 for j, init_vals in zip([i,i+1], initial_values):
+                    # Skip derivatives that have already been zeroed.
+                    if values[j][1] == 0: continue
                     # Compute the second derivative change (violation)
                     # and the magnitude of the derivative at each end.
                     violation = abs(init_vals[2] - values[j][2])
@@ -80,11 +147,9 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                     change = max(change_values[j], values[j][1] * relative_change)
                     # Make sure the change does not push past 0.
                     change = min(change, values[j][1])
-                    print("  relative_change: ",float(relative_change))
-                    print("  change:          ",float(change))
-                    print("  values[j][1]:    ",float(values[j][1]))
                     values[j][1] -= change
-                    print("values[j][1] < 0:  ",values[j][1] < 0)
+                change_counts[i] = 0
+                change_counts[i+1] = 0
             # Queue up this interval and its neighbors to be checked again.
             next_value  = to_check[0]  if (len(to_check) > 0) else None
             second_last = to_check[-2] if (len(to_check) > 1) else None
@@ -105,23 +170,9 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                 print(f"     {float(x[i]):.3f} {float(x[i+1]):.3f} ({float(values[i][0]):.2e} {float(values[i+1][0]):.2e})")
                 print( "     ", ' '.join([f"{float(v): .5e}" for v in values[i]]))
                 print( "     ", ' '.join([f"{float(v): .5e}" for v in values[i+1]]))
-    if verbose:
-        # Compute the change in "values" from start to finish.
-        values_change = [[f - i for (f,i) in zip(vi,vf)]
-                         for (vf,vi) in zip(values, initial_values)]
-        print()
-        print("check_counts:  ",check_counts)
-        print("change_counts: ",change_counts)
-        print("initial_values: ",[list(map(float,v)) for v in initial_values])
-        print("final_values:   ",[list(map(float,v)) for v in values])
-        print("values_change:  ",[list(map(float,v)) for v in values_change])
-        print()
-        print("done.\n")
-        orig_f = fit(x, y, continuity=2, **kwargs)
-        return Spline(f.knots, f.values), check_counts, change_counts, orig_f
         
     # Construct a new spline over the (updated) values for derivatives.
-    return Spline(f.knots, f.values)
+    return Spline(x, values)
 
 # Given a (x1, x2) and ([y1, d1y1, d2y1], [y2, d1y2, d2y2]), compute
 # the rescaled derivative values for a monotone quintic piece.
