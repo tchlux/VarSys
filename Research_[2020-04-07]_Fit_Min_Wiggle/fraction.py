@@ -34,6 +34,7 @@ def auto_same_type(operator):
 
 # This can be 'float_fallback' or 'auto_same_type'.
 TYPE_HANDLER = auto_same_type
+ACCURACY = float('inf')
 
 # A fraction instance. Initialized as:
 # 
@@ -42,9 +43,7 @@ TYPE_HANDLER = auto_same_type
 # The arguments to the Fraction must either be Python integers or
 # convertible to Python float via the 'float' built-in function.
 class Fraction: 
-    def __init__(self, numerator=0, denominator=1, reduce=True,
-                 accuracy=2**(2**10)):
-                 # accuracy=float('inf'):
+    def __init__(self, numerator=0, denominator=1, reduce=True):
         # If "None" was provided, then set this fraction to have "None" values.
         if ((numerator is None) or (denominator is None)):
             self._numerator = None
@@ -96,9 +95,10 @@ class Fraction:
         # If this is indeterminate form, do not reduce!
         if (numerator == 0 == denominator): reduce = False
         # If the number has too much accuracy, round it.
-        if (denominator > accuracy):
-            numerator = numerator * accuracy // denominator
-            denominator = accuracy
+        global ACCURACY
+        if (denominator > ACCURACY):
+            numerator = numerator * ACCURACY // denominator
+            denominator = ACCURACY
         # Simplify the numerator and denominator if appropriate.
         if reduce:
             divisor = gcd(numerator, denominator)
@@ -128,7 +128,13 @@ class Fraction:
     # Provide a represenation of this Fraction.
     def __repr__(self): return f"{self.__class__.__name__}({self.numerator}, {self.denominator})"
     # Provide a string representation of this Fraction.
-    def __str__(self): return f"{self.numerator} / {self.denominator}"
+    def __str__(self):
+        if (self.denominator == 0):
+            if  (self.numerator == 0): return '0 / 0'
+            elif (self.numerator > 0): return '+inf'
+            elif (self.numerator < 0): return '-inf'
+        elif (self.denominator == 1): return str(self.numerator)
+        return f"{self.numerator} / {self.denominator}"
     # Format this Fraction by converting it to a float.
     def __format__(self, *args, **kwargs): return float(self).__format__(*args,**kwargs)
     # Create a "hash" of this object.
@@ -205,18 +211,21 @@ class Fraction:
             b = Fraction(b)
             # Handle infinite values in a reasonable way.
             if (b.denominator == 0):
-                if   (b.numerator > 0): return Fraction(a * float('inf'))
-                elif (b.numerator < 0): return Fraction(0)
-                else: b = Fraction(0,1)
+                # Raising to 0 power returns 1
+                if (b.numerator == 0): return Fraction(1)
+                # Raising to negative powers inverts the result.
+                elif (b.numerator < 0): a = 1 / a
+                # Handle balues based on "a" to determine where the limit is.
+                if   (abs(a.numerator) > a.denominator): return Fraction(1,0)
+                elif (abs(a.numerator) < a.denominator): return Fraction(0,1)
+                else:                                    return a
             # If this is essentially an integer, just use that operation.
             elif (b.denominator == 1): return a ** b.numerator
             # First do the integer power (exact operation).
             intermediate = a ** abs(b.numerator)
             # Second do the inexact operation (converts to a float).
             result = float(intermediate) ** (1 / b.denominator)
-            if (b.numerator < 0):
-                if (result != 0): return 1 / result
-                else:             return Fraction(1,0)
+            if (b.numerator < 0): result = 1 / result
             return result
 
     # When taking a Fraction as a power..
@@ -325,16 +334,18 @@ def _test_Fraction(display=False, print=lambda *args, **kwargs: None):
     print("float(c-c) ", float(c-c))
     assert(float(c-c) == 0.0)
     print()
-    print("a * (c - c)", a*(c - c))
+    print("a * (c - c)  ", a*(c - c))
     assert((a*(c-c)) == Fraction(0,0))
-    print("a / (c - c)", a/(c - c))
+    print("a / (c - c)  ", a/(c - c))
     assert((a/(c-c)) == Fraction(0,0))
-    print("a ** c     ", a**c)
-    assert((a**c) == Fraction(1,0))
-    print("a ** (-c)  ", a**(-c))
-    assert((a**(-c)) == Fraction(0,1))
-    print("(-a) ** c  ", (-a)**c)
-    assert(((-a)**c) == Fraction(-1,0))
+    print("a ** c       ", a**c)
+    assert((a**c) == Fraction(0,1))
+    print("a ** (-c)    ", a**(-c))
+    assert((a**(-c)) == Fraction(1,0))
+    print("(-a) ** c    ", (-a)**c)
+    assert(((-a)**c) == Fraction(0,1))
+    print("(-a) ** (-c) ", (-a)**(-c))
+    assert(((-a)**(-c)) == Fraction(1,0))
     print()
 
     print("d = Fraction(1,float('inf')): ",Fraction(1,float('inf')))
@@ -370,5 +381,5 @@ if __name__ == "__main__":
     print()
     print("Testing Fraction..")
     _test_Fraction(display=False)
-    print("done.")
+    print("  done.")
     

@@ -1,0 +1,79 @@
+Methods of Estimating Derivatives (cont.)
+In the context of quintic spline interpolation
+:: Thomas Lux :: tchlux@vt.edu :: https://people.cs.vt.edu/tchlux
+
+The setup for this report is the same as for @{the previous report}{https://people.cs.vt.edu/tchlux/files/%5B2020-04-13%5D_report_on_pqmsi/report.html}@. However, in this report the following two methods are considered.
+
+| **METHOD** | | | **Description** |
+| **facet**     | *3 pt.*<br>*facet*<br>*model* | $\quad$ | Constructs local linear regression models over $\{x_{j-2},$ $x_{j-1},$ $x_j\},$ $\{x_{j-1},$ $x_j,$ $x_{j+1}\},$ and $\{x_{j},$ $x_{j+1},$ $x_{j+2}\}.$ The assigned slope at $x_j$ is that of the regression model with the lowest sum of squared error (over its domain) of the three regression models. When the first derivative is given at $x_j$ it is directly assigned. The second derivative is always assigned to zero. |
+| **quadratic** | *Quadratic*<br>*interpolant*  |         | Interpolates at $x_{j-1},$ $x_j,$ and $x_{j+1}.$ When a first derivative is given at $x_j$, that constraint is included in the interpolant and the function value at the nearer of $x_{j-1}$ or $x_{j+1}$ is interpolated. |
+
+$ $
+
+What follows are examples of the resulting piecewise monotone quintic spline interpolants constructed after each method provides initial derivative estimates. The spline will be a solid blue line, the provided points are styled according to constraints (see legend below), and the shape of the local fit for each point is a dotted line interpolating that point (if you can't see it, it's because it overlaps the blue line). The first test problem considered is as follows.
+
+{{pmqsi_example.html|530px|100%}}
+
+For context, here is the PCHIP (Piecewise **Cubic** Hermite Interpolating Polynomial) interpolant produced over these points and values.
+
+{{pchip_example.html|530px|100%}}
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Method 1: Facet model
+
+{{facet_pmqsi_example.html|330px|100%}}
+
+# Method 2: Quadratic interpolant
+
+{{3_pmqsi_example.html|330px|100%}}
+
+# Extended Test Problems
+
+In addition to that one problem, the following examples may also be of interest. The resulting piecewise monotone quintic spline interpolant from {3c5096}the facet model{3c5096} is a blue solid line, from {64b414}the local quadratic interpolant{64b414} is the dotted green line.
+
+{{test_0.html}}
+
+Test 0 above is similar to the point set from before, but with one more point in the upper linear segment.
+
+{{test_6.html}}
+
+{{test_1.html}}
+
+{{test_2.html}}
+
+{{test_3.html}}
+
+{{test_4.html}}
+
+{{test_5.html}}
+
+{{test_7.html}}
+
+
+
+# Discussion of Results
+
+The facet model is producing much more favorable results in general. There are a few instances where the local quadratic estimate to the second derivative is better. It seems like the facet model is the best going forward, especially if a better estimate of second derivative can be calculated.
+
+On possible methods for estimating the second derivatives:
+
+1) A local quintic interpolant could interpolate the first derivative at $x_{j-1},$ $x_j,$ and $x_{j+1}.$ The second derivative of this interpolant could be used.
+2) The local quadratic interpolant over $x_{j-1},$ $x_j,$ $x_{j+1}$ could also be used to estimated the second derivative.
+
+
+======================================================================
+
+@inproceedings{lux2020quintic,
+ author = {Lux, Thomas C. H. and Watson, Layne T. and Chang, Tyler H. and Xu, Li and Wang, Yueyao and Hong, Yili},
+ title = {An Algorithm for Constructing Monotone Quintic Interpolating Splines},
+ year = {2020},
+ publisher = {Society for Computer Simulation International},
+ address = {San Diego, CA, USA},
+ booktitle = {Proceedings of the High Performance Computing Symposium},
+ articleno = {Article 42},
+ numpages = {12},
+ keywords = {monotone, quintic spline, Hermite interpolation, sixth order polynomial},
+ series = {HPC ’20},
+ url = {https://tchlux.github.io/papers/tchlux-2019-HPC-1.pdf},
+}
+

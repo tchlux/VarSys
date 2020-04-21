@@ -17,7 +17,7 @@
 
     <!-- Script for setting up the author block -->
     <script type="text/front-matter">
-      title: Methods of Estimating Derivatives
+      title: Methods of Estimating Derivatives (cont.)
       description: In the context of quintic spline interpolation
       authors:
        - Thomas Lux: https://people.cs.vt.edu/tchlux
@@ -111,59 +111,49 @@
     </style>
 
     <dt-article>
-    <h1>Methods of Estimating Derivatives</h1>
+    <h1>Methods of Estimating Derivatives (cont.)</h1>
     <p>In the context of quintic spline interpolation</p>
     <dt-byline></dt-byline>
 
     
 <p>
-The problem of piecewise monotone quintic spline interpolation is posed given points \(\big\{x_i\big\}_{i=1}^{n},\) \(x_i < x_{i+1}\) and associated function values \(\big\{f(x_i)\big\}_{i=1}^{n}\). The process of making a monotone quintic spline interpolant from monotone data was discussed in my previous paper <dt-cite key="lux2020quintic"></dt-cite>, but not how to make a <i>piecewise</i> monotone quintic spline interpolant over nonmonotone data. This report outlines the process of constructing a <i>piecewise</i> monotone quintic spline interpolant, which requires a few additional steps.</p>
-
-<p>The only change required is in the estimation of initial derivative values of the function. Two different methods for approximating the first and second derivatives of the function \(f\) at points \(x_i\) are studied here. The first and second derivative estimates produced by these two methods are refined with the same "step towards monotonicity" procedure defined in my HPC SpringSim paper <dt-cite key="lux2020quintic"></dt-cite>. The same procedure for stepping towards monotonicity works on the entire quintic spline regardless of the direction of the function over individual intervals because the convergence towards monotonicity is guaranteed by shrinking first derivative values to zero, which is applicable regardless of the direction of monotonicity of intervals.</p>
-
-<p>First and second derivative constraints for the approximation can be constructed based on the points and function values, namely:</p>
-
-<p>
-<ol><li> \(f(x_{j-1}) < f(x_j) < f(x_{j+1})\) implies \(Df(x_j) \geq 0,\)</li>
-<li> \(f(x_{j-1}) > f(x_j) > f(x_{j+1})\) implies \(Df(x_j) \leq 0,\)</li>
-<li> \(\big(f(x_j) - f(x_{j-1}) \big) \big(f(x_{j+1}) - f(x_j)\big) < 0\) implies \(Df(x_j) = 0\), and</li>
-<li> \(f(x_j) = f(x_{j+1})\) implies \(0 = Df(x_j)\) \(= Df(x_{j+1})\) \(= DDf(x_j)\) \(= DDf(x_{j+1}).\)</li></ol></p>
-
-<p>In the general case, the two derivative estimation methods considered in this report are:</p>
+The setup for this report is the same as for <a href='https://people.cs.vt.edu/tchlux/files/%5B2020-04-13%5D_report_on_pqmsi/report.html'>the previous report</a>. However, in this report the following two methods are considered.</p>
 
 <table>
 <tr><td> <b>METHOD</b> </td><td> </td><td> </td><td> <b>Description</b> </td></tr>
 
-<tr><td> <b>1</b> </td><td> <i>Quintic</i><br><i>interpolant</i> \(\hat f_6\)  </td><td> \(\quad\) </td><td> For strictly monotone data this method interpolates at \(x_{j-2},\) \(x_{j-1},\) \(x_j,\) \(x_{j+1},\) \(x_{j+2},\) and the nearer to \(x_j\) of \(x_{j-3}\) and \(x_{j+3}.\) For nonmonotone data this method interpolates increasingly many nearby values and derivatives (derivatives constructed from 1--4) until a quintic is produced. This requires a lot of cases to clearly define, but generally picks nearer points and lower derivatives to build the quintic (or lower order when there are not enough values to make a quintic). </td></tr>
+<tr><td> <b>facet</b>     </td><td> <i>3 pt.</i><br><i>facet</i><br><i>model</i> </td><td> \(\quad\) </td><td> Constructs local linear regression models over \(\{x_{j-2},\) \(x_{j-1},\) \(x_j\},\) \(\{x_{j-1},\) \(x_j,\) \(x_{j+1}\},\) and \(\{x_{j},\) \(x_{j+1},\) \(x_{j+2}\}.\) The assigned slope at \(x_j\) is that of the regression model with the lowest sum of squared error (over its domain) of the three regression models. When the first derivative is given at \(x_j\) it is directly assigned. The second derivative is always assigned to zero. </td></tr>
 
-<tr><td> <b>2</b> </td><td> <i>Quadratic</i><br><i>regressor</i> \(\hat f_r\)  </td><td>         </td><td> Interpolates at \(x_j,\) performs weighted quadratic regression over all \(x_i\) for \(i \neq j,\) where weight of \(x_i\) is proportional to \(1 / |x_j - x_i|^2.\) When a first derivative is given at \(x_j\), that constraint is included in the fit. </td></tr></table>
+<tr><td> <b>quadratic</b> </td><td> <i>Quadratic</i><br><i>interpolant</i>  </td><td>         </td><td> Interpolates at \(x_{j-1},\) \(x_j,\) and \(x_{j+1}.\) When a first derivative is given at \(x_j\), that constraint is included in the interpolant and the function value at the nearer of \(x_{j-1}\) or \(x_{j+1}\) is interpolated. </td></tr></table>
 
 <p>\( \)</p>
 
 <p>What follows are examples of the resulting piecewise monotone quintic spline interpolants constructed after each method provides initial derivative estimates. The spline will be a solid blue line, the provided points are styled according to constraints (see legend below), and the shape of the local fit for each point is a dotted line interpolating that point (if you can't see it, it's because it overlaps the blue line). The first test problem considered is as follows.</p>
 
-<p><p style='position: relative; height: 330px;'><iframe src='pmqsi_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
+<p><p style='position: relative; height: 530px;'><iframe src='pmqsi_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 
 <p>For context, here is the PCHIP (Piecewise <b>Cubic</b> Hermite Interpolating Polynomial) interpolant produced over these points and values.</p>
 
-<p><p style='position: relative; height: 330px;'><iframe src='pchip_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
+<p><p style='position: relative; height: 530px;'><iframe src='pchip_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 
 <p>
 <p style="page-break-after: always;"></p>
 
-</p><span class='header' id='Method 1: Quintic interpolant'></span><h2> Method 1: Quintic interpolant</h2>
+</p><span class='header' id='Method 1: Facet model'></span><h2> Method 1: Facet model</h2>
 
-<p><p style='position: relative; height: 330px;'><iframe src='6_pmqsi_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
-<span class='header' id='Method 2: Quadratic regression'></span><h2> Method 2: Quadratic regression</h2>
+<p><p style='position: relative; height: 330px;'><iframe src='facet_pmqsi_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
+<span class='header' id='Method 2: Quadratic interpolant'></span><h2> Method 2: Quadratic interpolant</h2>
 
-<p><p style='position: relative; height: 330px;'><iframe src='r_pmqsi_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
+<p><p style='position: relative; height: 330px;'><iframe src='3_pmqsi_example.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 <span class='header' id='Extended Test Problems'></span><h2> Extended Test Problems</h2>
 
-<p>In addition to that one problem, the following examples may also be of interest. The resulting piecewise monotone quintic spline interpolant from method one is a blue solid line, from method two is the dotted green line.</p>
+<p>In addition to that one problem, the following examples may also be of interest. The resulting piecewise monotone quintic spline interpolant from <font color='3c5096'> the facet model </font> is a blue solid line, from <font color='64b414'> the local quadratic interpolant </font> is the dotted green line.</p>
 
 <p><p style='position: relative; height: 420px;'><iframe src='test_0.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 
-<p>Test 0 above is a repeat visual of the same point set from before. It is only included to observe both methods on the same plot.</p>
+<p>Test 0 above is similar to the point set from before, but with one more point in the upper linear segment.</p>
+
+<p><p style='position: relative; height: 420px;'><iframe src='test_6.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 
 <p><p style='position: relative; height: 420px;'><iframe src='test_1.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 
@@ -175,22 +165,21 @@ The problem of piecewise monotone quintic spline interpolation is posed given po
 
 <p><p style='position: relative; height: 420px;'><iframe src='test_5.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 
-<p><p style='position: relative; height: 420px;'><iframe src='test_6.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
-
 <p><p style='position: relative; height: 420px;'><iframe src='test_7.html' frameBorder='0' style='left: 0; top: 0; position: absolute; height: 100%; width: 100%;'></iframe></p></p>
 <span class='header' id='Discussion of Results'></span><h2> Discussion of Results</h2>
 
-<p>While the local quintic approximation (method 1) seems to work well for random data, it is unfortunately wiggly where true underlying functions transition between linear pieces. However, if the true underlying function is actually piecewise linear, then isn't it a bad idea to use a \(C^2\) approximation?</p>
+<p>The facet model is producing much more favorable results in general. There are a few instances where the local quadratic estimate to the second derivative is better. It seems like the facet model is the best going forward, especially if a better estimate of second derivative can be calculated.</p>
 
-<p>I'm very open to suggestions for better methods! Some ideas: minimize "oscillation" for quintic interpolant (minimize L2 of third derivative), or only use the nearest five points in the weighted quadratic regression.</p>
+<p>On possible methods for estimating the second derivatives:</p>
+
+<p>
+<ol><li> A local quintic interpolant could interpolate the first derivative at \(x_{j-1},\) \(x_j,\) and \(x_{j+1}.\) The second derivative of this interpolant could be used.</li>
+<li> The local quadratic interpolant over \(x_{j-1},\) \(x_j,\) \(x_{j+1}\) could also be used to estimated the second derivative.</li></ol></p>
 
 
     </dt-article>
 
     
-<dt-appendix>
-</dt-appendix>
-
 
     <script type="text/bibliography">
 
@@ -208,6 +197,7 @@ The problem of piecewise monotone quintic spline interpolation is posed given po
  series = {HPC ’20},
  url = {https://tchlux.github.io/papers/tchlux-2019-HPC-1.pdf},
 }
+
 </script>
 
     

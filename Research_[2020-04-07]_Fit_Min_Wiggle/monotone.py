@@ -20,7 +20,7 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                             local_fits=None, method=6):
     if verbose: print()
     from polynomial import Spline, Polynomial, polynomial, \
-        local_polynomial, local_quadratic
+        local_polynomial, local_quadratic, local_facet
     if local_fits is None: local_fits = dict()
     # Convert 'x' to exact values.
     if exact:
@@ -69,6 +69,11 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                 elif (method == "r"):
                     used_indices = list(range(len(x)))
                     f = local_quadratic(x, y, i, **constraints)
+                elif ("facet" in method):
+                    n = int('0'+method.split("facet")[1])
+                    f = local_facet(x, y, i, size=n, local_indices=used_indices, **constraints)
+                    # ^^ This function is linear, add a second
+                    #    derivative estimatae.
                 else: raise(Exception(f"No method named {method}."))
                 df = f.derivative()
                 ddf = df.derivative()
@@ -78,11 +83,23 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                 # Otherwise, the inequality constraints match and we're good!
                 else: break
             values.append( [y[i], df(x[i]), ddf(x[i])] )
+            # values.append( [y[i], df(x[i]), 0] )
             # Store this fit information.
             local_fits[i] = (f, [min(x[i] for i in used_indices),
                                  max(x[i] for i in used_indices)])
             if verbose: print(f" estimate at {x[i]}: ", values[-1], Polynomial(f))
-            
+        # Update second derivative estimates based on first derivative.
+        if (type(method) == str) and ("facet" in method):
+            for i in range(len(values)):
+                # Skip places where DDf is zero.
+                if i in flats: continue
+                lower = max(i-1, 0)
+                upper = min(i+1, len(x)-1)
+                left_slope = values[lower][1]
+                right_slope = values[upper][1]
+                ddf = (right_slope - left_slope) / ((x[upper] - x[lower])/2)
+                values[i][2] = ddf
+        # Print out the final set of values to the user.
         if verbose:
             print()
             print("Final values:")

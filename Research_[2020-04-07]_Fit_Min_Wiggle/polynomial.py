@@ -8,35 +8,29 @@
 #   Polynomial       -- A polynomial with nonrepeating coefficients,
 #                       evaluation, derivative, and a string method.
 #   NewtonPolynomial -- A Newton polynomial with stored coefficients,
-#                       points, evaluation, derivative, and a string method.
+#                       offsets, evaluation, derivative, and a string method.
 # 
 # The following functions are provided:
 # 
-#   polynomial       -- Given x and y values, this produces a minimum
-#                       degree Newton polynomial that interpolates the
-#                       provided points (this is a *single* polynomial).
-#   polynomial_piece -- Given a function value and derivatives,
-#                       produce a polynomial that interpolates these
-#                       values at the endpoints of an interval.
 #   fit              -- Use a local polynomial interpolant to estimate
 #                       derivatives and construct an interpolating
 #                       Spline with a specified level of continuity.
+#   polynomial       -- Given x and y values, this produces a minimum
+#                       degree Newton polynomial that interpolates the
+#                       provided points (this is a *single* polynomial).
 #   local_polynomial -- Construct a local polynomial interpolant about
 #                       a given point in a list of points.
-#   fill_derivative  -- Compute all derivatives at points to be
-#                       reasonable values using either a linear or a
-#                       quadratic fit over neighboring points. 
-#   solve_quadratic  -- Given three points, this will solve the equation
-#                       for the quadratic function which interpolates
-#                       all 3 values. Returns coefficient 3-tuple. 
 #   local_quadratic  -- Given a set of points and an index, construct
 #                       a weighted quadratic fit about the point at
 #                       "index" in the set. Use Shepard weighting.
+#   local_facet      -- Given a set of opints and an index, construct
+#                       local linear fits near the index and return
+#                       the local linear regression with lowest error.
 #   inverse          -- Given a function, use the Newton method to
 #                       find the nearest inverse to a guess point.
 # 
 
-from fraction import Fraction
+
 
 # This general purpose exception will be raised during user errors.
 class UsageError(Exception): pass
@@ -45,6 +39,7 @@ class UsageError(Exception): pass
 # recieves a fraction and returns a "float" if a fraction was not
 # provided as input (ensuring internal methods only recieve fractions).
 def float_fallback(class_method):
+    from fraction import Fraction
     def wrapped_method(obj, x):
         # Check for vector usage.
         try: return [wrapped_method(obj, v) for v in x]
@@ -89,6 +84,9 @@ class Spline:
     @functions.setter
     def functions(self, functions): self._functions = list(functions)
     
+    # Create a piecewise polynomial that matches the given values at
+    # the given knots, alternatively provide a list of functions that
+    # exist over a set of intervals defined by knots.
     def __init__(self, knots, values=None, functions=None):
         assert(len(knots) >= 1)
         self.knots = knots
@@ -108,9 +106,13 @@ class Spline:
             for i in range(len(knots)-1):
                 v0, v1 = self.values[i], self.values[i+1]
                 k0, k1 = self.knots[i], self.knots[i+1]
-                # Make the polynomial over a range starting a 0 to
-                # increase stability of the resulting piece.
-                f = polynomial_piece(v0, v1, (k0, k1))
+                x = [k0, k1]
+                y = [v0[0], v1[0]]
+                derivs = {i*'d'+'x0':v0[i] for i in range(1,len(v0))}
+                derivs.update({i*'d'+'x1':v1[i] for i in range(1,len(v1))})
+                # Construct a local polynomial that interpolates the 
+                # function (and derivative) values.
+                f = polynomial(x, y, **derivs)
                 # Store the function (assuming it's correct).
                 self._functions.append( f )
         # No 'values' nor 'functions' were provided, usage error.
@@ -118,7 +120,7 @@ class Spline:
 
     # Evaluate this Spline at a given x coordinate.
     def function_at(self, x):
-        # If "x" was given as a vector, then iterate over that vector.
+        # If "x" was given as an iterable, then iterate over it.
         try:    return [self.function_at(v) for v in x]
         except: pass
         # Deterimine which interval this "x" values lives in.
@@ -130,7 +132,7 @@ class Spline:
         # If no interval was found, then something unexpected must have happened.
         else:
             class UnexpectedError(Exception): pass
-            raise(UnexpectedError("This problem exhibited unexpected behavior."))
+            raise(UnexpectedError("This problem exhibited unexpected behavior. Check code."))
         # Return the applicable function.
         return self._functions[i]
 
@@ -165,9 +167,8 @@ class Spline:
         return s
 
     # Evaluate this Spline at a given x coordinate.
-    @float_fallback
     def __call__(self, x):
-        # If "x" was given as a vector, then iterate over that vector.
+        # If "x" was given as an iterable, then iterate over it.
         try:    return [self(v) for v in x]
         except: pass
         # Get the appropriate function and compute the output value.
@@ -229,8 +230,8 @@ class Spline:
 
     # Raise an existing spline to a power.
     def __pow__(self, number):
-        if (type(number) != int) or (number <= 1):
-            raise(TypeError(f"Only possible to raise '{type(self)}' to integer powers greater than 1."))
+        if (type(number) != int) or (number < 1):
+            raise(TypeError(f"Only possible to raise '{type(self)}' to integer powers greater than  or equal to 1."))
         # Start with a copy of "self", multiply in until complete.
         outcome = Spline(self.knots, values=self.values,
                          functions=[Polynomial(f) for f in self.functions])
@@ -257,7 +258,6 @@ class Spline:
         s += str(self._functions[-1])
         return s
 
-
 # A generic Polynomial class that stores coefficients in a fully
 # expanded form. Provides numerically stable evaluation, derivative,
 # integration, and string operations for convenience. Coefficients
@@ -266,6 +266,10 @@ class Spline:
 # Polynomial(coefficients):
 #    Given coefficients (or optionally a "NewtonPolynomial")
 #    initialize this Polynomial representation of a polynomial function.
+# 
+# EXAMPLE:
+# Polynomial([a,b,c])
+#   = a x^2  +  b x  +  c
 class Polynomial:
     # Initialize internal storage for this Polynomial.
     _coefficients = None
@@ -275,80 +279,86 @@ class Polynomial:
     def coefficients(self): return self._coefficients
     @coefficients.setter
     def coefficients(self, coefs): self._coefficients = list(coefs)
-    # Define an alternative alias shortform "coefs".
-    @property
-    def coefs(self): return self._coefficients
-    @coefs.setter
-    def coefs(self, coefs): self._coefficients = list(coefs)
-
-    def __init__(self, coefficients):
+    # Initialize this Polynomial given coefficients.
+    def __init__(self, coefficients=(0,)):
         # If the user initialized this Polynomial with a Newton
         # Polynomial, then extract the points and coefficients.
         if (type(coefficients) == NewtonPolynomial):
-            coefficients = to_polynomial(coefficients.coefficients,
-                                         coefficients.points)
+            # Unpack the NewtonPolynomial into coefficients and points
+            # by multiplying everything out (and unrolling it).
+            newton_polynomial = coefficients
+            c, p = newton_polynomial.coefficients, newton_polynomial.zeros
+            coefficients = [c[0]]
+            for i in range(1,len(c)):
+                # Compute the old coefficients multiplied by a constant and
+                # add the lower power coefficients that are shifted up.
+                coefficients.append(c[i])
+                coefficients = [coefficients[0]] + \
+                               [coefficients[j+1]-p[i]*coefficients[j]
+                                for j in range(len(coefficients)-1)]
         # If the user initialized this Polynomial, do a copy.
         elif (type(coefficients) == type(self)):
             coefficients = coefficients.coefficients
-        # Remove all leading 0 coefficients.
-        for i in range(len(coefficients)):
-            if (coefficients[i] != 0): break
-        else: i = len(coefficients)-1
         # Store the coeficients.
-        self.coefficients = coefficients[i:]
+        self.coefficients = coefficients # <- implicit copy
+        # Remove all leading 0 coefficients.
+        for i in range(len(self._coefficients)):
+            if (self._coefficients[i] != 0): break
+        else: i = len(self._coefficients)-1 # <- include the last 0, if needed
+        self._coefficients = self._coefficients[i:]
 
     # Evaluate this Polynomial at a point "x" in a numerically stable way.
     def __call__(self, x):
-        if (len(self.coefficients) == 0): return 0
-        total = self.coefficients[0]
-        for d in range(1,len(self.coefficients)):
-            total = self.coefficients[d] + x * total
+        if (len(self._coefficients) == 0): return 0
+        total = self._coefficients[0]
+        for d in range(1,len(self._coefficients)):
+            total = self._coefficients[d] + x * total
         return total
 
     # Construct the polynomial that is the integral of this polynomial.
     def integral(self, i=1): return self.derivative(-i)
 
-    # Construct the polynomial that is the derivative of this polynomial.
+    # Construct the polynomial that is the derivative (or integral) of this polynomial.
     def derivative(self, d=1):
         if (d == 0): return self
         elif (d > 1):  return self.derivative(1).derivative(d-1)
         elif (d == 1): return Polynomial([c*i for (c,i) in zip(
-                self.coefficients, range(len(self.coefficients)-1,0,-1))])
+                self._coefficients, range(len(self._coefficients)-1,0,-1))])
         elif (d < -1):  return self.derivative(-1).derivative(d+1)
         elif (d == -1): return Polynomial([c/(i+1) for (c,i) in zip(
-                self.coefficients, range(len(self.coefficients)-1,-1,-1))]+[0])
+                self._coefficients, range(len(self._coefficients)-1,-1,-1))]+[0])
 
     # Determines if two polynomials are equivalent.
     def __eq__(self, other):
         if type(other) == NewtonPolynomial: other = Polynomial(other)
-        return all(c1 == c2 for (c1, c2) in zip(self.coefficients, other.coefficients))
+        return all(c1 == c2 for (c1, c2) in zip(self._coefficients, other._coefficients))
 
     # Negate this polynomial.
-    def __neg__(self): return Polynomial([-c for c in self.coefficients])
+    def __neg__(self): return Polynomial([-c for c in self._coefficients])
 
     # Construct a string representation of this Polynomial.
     def __str__(self):
         s = ""
-        for i in range(len(self.coefficients)):
-            if (self.coefficients[i] == 0): continue
-            if   (i == len(self.coefficients)-1): x = ""
-            elif (i == len(self.coefficients)-2): x = "x"
-            else:   x = f"x^{len(self.coefficients)-1-i}"
-            s += f"{self.coefficients[i]} {x}  +  "
+        for i in range(len(self._coefficients)):
+            if (self._coefficients[i] == 0): continue
+            if   (i == len(self._coefficients)-1): x = ""
+            elif (i == len(self._coefficients)-2): x = "x"
+            else:   x = f"x^{len(self._coefficients)-1-i}"
+            s += f"{self._coefficients[i]} {x}  +  "
         # Remove the trailing 
         s = s.rstrip(" +")
         # Return the final string.
         return s
 
 # Extend the standard Polymomial class to hold Newton polynomials with
-# points in addition to the coefficients. This is more convenient when
+# zeros in addition to the coefficients. This is more convenient when
 # constructing interpolating polynomials from divided difference tables.
 # 
-# NewtonPolynomial(coefficients, points):
-#    Given a set of coefficients and a set of points (offsets), of
+# NewtonPolynomial(coefficients, zeros):
+#    Given a set of coefficients and a set of zeros (offsets), of
 #    the same length, construct a standard Newton
 #    Polynomial. Coefficients are stored from highest order term to
-#    lowest order. Earlier points are evaluated earlier.
+#    lowest order. Earlier zeros are evaluated earlier.
 # 
 # EXAMPLE:
 # NewtonPolynomial([a,b,c], [s1, s2, s3])
@@ -358,22 +368,22 @@ class Polynomial:
 #   Notice that "s1" is never used in the computation, as it is
 #   redundant with the term "a".
 class NewtonPolynomial(Polynomial):
-    _points = None
+    _zeros = None
     @property
-    def points(self): return self._points
-    @points.setter
-    def points(self, points): self._points = list(points)
+    def zeros(self): return self._zeros
+    @zeros.setter
+    def zeros(self, zeros): self._zeros = list(zeros)
 
-    # Store the coefficients and points for this Newton Polynomial.
-    def __init__(self, coefficients, points):
-        if (len(points) != len(coefficients)): raise(IndexError)
+    # Store the coefficients and zeros for this Newton Polynomial.
+    def __init__(self, coefficients, zeros):
+        self.coefficients = coefficients
         # Strip off the 0-valued coefficients (all these will be 0'd out).
-        for i in range(len(coefficients)):
-            if (coefficients[i] != 0): break
-        else: i = len(coefficients)-1
+        for i in range(len(self._coefficients)):
+            if (self._coefficients[i] != 0): break
+        else: i = len(self._coefficients)-1
         # Store locally.
-        self.coefficients = coefficients[i:]
-        self.points = points[i:]
+        self._coefficients = self._coefficients[i:]
+        self._zeros = [p for (j,p) in enumerate(zeros) if j >= i]
 
     # Construct the polynomial that is the derivative of this
     # polynomial by converting to polynomial form and differntiating.
@@ -381,9 +391,9 @@ class NewtonPolynomial(Polynomial):
 
     # Evaluate this Newton Polynomial (in a numerically stable way).
     def __call__(self, x):
-        total = self.coefficients[0]
-        for d in range(1,len(self.coefficients)):
-            total = self.coefficients[d] + (x - self.points[d]) * total
+        total = self._coefficients[0]
+        for d in range(1,len(self._coefficients)):
+            total = self._coefficients[d] + (x - self._zeros[d]) * total
         return total
 
     # Negate this polynomial.
@@ -391,26 +401,93 @@ class NewtonPolynomial(Polynomial):
 
     # Construct a string representation of this Newton Polynomial.
     def __str__(self):
-        s = f"{self.coefficients[0]}"
-        for i in range(1,len(self.coefficients)):
-            sign = "-" if (self.points[i] >= 0) else "+"
-            s = f"{self.coefficients[i]} + (x {sign} {abs(self.points[i])})({s})"
+        s = f"{self._coefficients[0]}"
+        for i in range(1,len(self._coefficients)):
+            sign = "-" if (self._zeros[i] >= 0) else "+"
+            s = f"{self._coefficients[i]} + (x {sign} {abs(self._zeros[i])})({s})"
         return s
 
-# Given Newton form coefficients and points, convert them to polynomial
-# form (where all points are 0) having only coefficients.
-def to_polynomial(coefficients, points):
-    coefs = [coefficients[0]]
-    for i in range(1,len(coefficients)):
-        # Compute the old coefficients multiplied by a constant and
-        # add the lower power coefficients that are shifted up.
-        coefs.append(coefficients[i])
-        coefs = [coefs[0]] + [coefs[j+1]-points[i]*coefs[j] for j in range(len(coefs)-1)]
-    return coefs
+
+# A "Vector" subclass of a "list" for convenience, allows component-
+# wise addition, subtraction, multiplication, and (float) division.
+# Also provides negation, "dot" product, and "norm" methods (2-norm).
+# 
+# WARNING: This not not an extensively supported vector class, it only
+#          handles a few expected simplpe uperations. It does not
+#          check for usage errors and may provided unexpected results
+#          if used incorrectly.
+class Vector(list):
+    # Define add, subtract, multiply, divide, assume a vector is given
+    # and if the object given is not iterable assume it's scalar.
+    def __add__(self, value):
+        try:              return Vector(v1 + v2 for (v1,v2) in zip(self,value))
+        except TypeError: return Vector(v + value for v in self)
+    def __sub__(self, value):
+        try:              return Vector(v1 - v2 for (v1,v2) in zip(self,value))
+        except TypeError: return Vector(v - value for v in self)
+    def __mul__(self, value):
+        try:              return Vector(v1 * v2 for (v1,v2) in zip(self,value))
+        except TypeError: return Vector(v * value for v in self)
+    def __truediv__(self, value):
+        try:              return Vector(v1 / v2 for (v1,v2) in zip(self,value))
+        except TypeError: return Vector(v / value for v in self)
+    # Define "absolute value", "dot product" and "norm".
+    def __abs__(self):  return Vector(map(abs,self))
+    def dot(self, vec): return sum(v1*v2 for (v1,v2) in zip(self, vec))
+    def norm(self):     return self.dot(self)**(1/2)
+
+
+# Given data points "x" and data values "y", construct an
+# interpolating spline over the given points with specified level of
+# continuity using a sufficiently continuous polynomial fit over
+# neighboring points.
+#  
+# x: A strictly increasing sequences of numbers.
+# y: Function values associated with each point.
+# 
+# continuity:
+#   The level of continuity desired in the interpolating function.
+# 
+def fit(x, y, continuity=0):
+    assert( len(x) == len(y) )
+    # Sort the "x" values if they were not given in sorted order.
+    if not all(x[i] < x[i+1] for i in range(len(x)-1)):
+        indices = sorted(range(len(x)), key=lambda i: x[i])
+        x = [x[i] for i in indices]
+        y = [y[i] for i in indices]
+    # Get the knots and initial values for the spline.
+    knots = [v for v in x]
+    values = [[v] for v in y]
+    # Use a local interpolating polynomial to estimate all derivatives.
+    order = continuity + 2
+    # Construct the first polynomial fit to initialize the derivative values.
+    df = local_polynomial(x, y, 0, order=order)
+    for d in range(continuity):
+        df = df.derivative()
+        values[0].append(df(x[0]))
+    # Construct the remaining polynomials by extending the first.
+    for i in range(1, len(x)):
+        constraints = {f"{d*'d'}x0":values[i-1][d]
+                       for d in range(1, continuity+1)}
+        df = polynomial([x[i-1], x[i]], [y[i-1], y[i]], **constraints)
+        for d in range(continuity):
+            df = df.derivative()
+            values[i].append(df(x[i]))
+    # Return the interpolating spline.
+    return Spline(knots, values)
+
 
 # Given unique "x" values and associated "y" values (of same length),
 # construct an interpolating polynomial with the Newton divided
-# difference method. Return that polynomial as a function.
+# difference method. Allows for the incorporation of derivative
+# constraints via keyword arguments. I.e. the keyword argument "dx0=0"
+# makes the derivative of the polynomial 0 at the first element of x.
+# Returns a NewtonPolynomial object.
+# 
+# EXAMPLE:
+# polynomial([1, 2, 3], [-1, 2, -3], dx1=0)
+#   => cubic polynomial interpolating the points (0,-1), (1,2), and
+#      (2,-3) that has a first derivative of 0 at x=2.
 def polynomial(given_x, given_y, **derivs):
     # Sort the data by "x" value.
     indices = sorted(range(len(given_x)), key=lambda i: given_x[i])
@@ -435,157 +512,50 @@ def polynomial(given_x, given_y, **derivs):
                 if (start <= i <= end-d): idx = index_ranges[(start,end)]
             # Substitute in derivative value if it was provided.
             key = d*"d"+f"x{idx}"
-            if key in derivs: slopes.append( derivs[key] / divisor )
+            if key in derivs: dd = derivs[key] / divisor
             # Otherwise a value wasn't provided, compute the divided difference.
-            else:
-                if (x[i+d] != x[i]): dd = (dd_values[-1][i+1] - dd_values[-1][i]) / (x[i+d] - x[i])
-                else:                dd = 0
-                slopes.append( dd )
+            elif (x[i+d] == x[i]): dd = 0
+            else: dd = (dd_values[-1][i+1] - dd_values[-1][i]) / (x[i+d] - x[i])
+            slopes.append( dd )
         # Add in the finished next row of the divided difference table.
         dd_values.append( slopes )
     # Get the divided difference (polynomial coefficients) in reverse
     # order so that the most nested value (highest order) is first.
-    coefs = [row[0] for row in reversed(dd_values)]
-    points = list(reversed(x))
-    # Return the interpolating polynomial.
-    return NewtonPolynomial(coefs, points)
+    # Return as an interpolating polynomial in Newton form.
+    return NewtonPolynomial(
+        (row[0] for row in reversed(dd_values)),  reversed(x))
 
-# Given a (left value, left d1, ...), (right value, right d1, ...)
-# pair of tuples, return the lowest order polynomial necessary to
-# exactly match those values and derivatives at interval[0] on the left
-# and interval[1] on the right ("interval" is optional, default [0,1]).
-def polynomial_piece(left, right, interval=(0,1), stable=True):
-    # Make sure the code is used correctly.
-    assert( len(interval) == 2 )
-    assert( interval[0] != interval[1] )
-    # Store the unscaled version for stability checks afterwards.
-    v0, v1 = left, right
-    # Make sure both are lists.
-    left  = list(left)
-    right = list(right)
 
-    # Fill values by matching them on both sides of interval (reducing order).
-    for i in range(len(left) - len(right)):
-        right.append( left[len(right)] )
-    for i in range(len(right) - len(left)):
-        left.append( right[len(left)] )
+# Given a function, use the Newton method to find the nearest inverse
+# to a guess. If this method gets trapped, it will exit without having
+# computed an inverse.
+def inverse(f, y, x=0, accuracy=2**(-52), max_steps=100):
+    import fraction
+    from fraction import Fraction    
+    # Change the accuracy to only be enough to achieve an acceptable answer.
+    previous_acc = fraction.ACCURACY
+    fraction.ACCURACY = 8 * int(1 / accuracy)
+    # Get the derivative of the function.
+    df = f.derivative()
+    # Convert 'x' and 'y' to Fractions.
+    x, y = Fraction(x), Fraction(y)
+    # Search for a solution iteratively.
+    for i in range(max_steps):
+        diff = f(x) - y
+        x -= diff / df(x)
+        # Stop the loop if we have gotten close to the correct answer.
+        if (abs(diff) <= accuracy): break
+    # Check for correctness, warn the user if result is bad.
+    if (abs(f(x) - y) > accuracy):
+        import warnings
+        warnings.warn(f"\n\n  The calculated inverse has high error ({float(abs(f(x)-y)):.2e}).\n"+
+                      "  Consider providing better initial position.\n"+
+                      "  This problem may also not be solvable.\n")
+    # Reset the accuracy of the instantiated Fraction classes.
+    fraction.ACCURACY = previous_acc
+    # Return the final value.
+    return Fraction(x)
 
-    # Rescale left and right to make their usage in the divided
-    # difference table correct (by dividing by the factorial).
-    mult = 1
-    for i in range(2,len(left)):
-        mult *= i
-        left[i] /= mult
-        right[i] /= mult
-    # First match the function value, then compute the coefficients
-    # for all of the higher order terms in the polynomial.
-    coefs = list(left)
-    # Compute the divided difference up until we flatten out the
-    # highest provided derivative between the two sides.
-    interval_width = interval[1] - interval[0]
-    if (len(left) == 1): dds = []
-    else:                dds = [(right[0] - left[0]) / interval_width]
-    for i in range(len(left)-2):
-        new_vals = [ (dds[0] - left[i+1]) / interval_width ]
-        for j in range(len(dds)-1):
-            new_vals.append( (dds[j+1] - dds[j]) / interval_width )
-        new_vals.append( (right[i+1] - dds[-1]) / interval_width )
-        dds = new_vals
-    # Now the last row of the dd table should be level with "left" and
-    # "right", we can complete the rest of the table in the normal way.
-    row = [left[-1]] + dds + [right[-1]]
-    # Build out the divided difference table.
-    while (len(row) > 1):
-        row = [ (row[i+1]-row[i])/interval_width for i in range(len(row)-1) ]
-        coefs.append(row[0])
-    # Reverse the coefficients to go from highest order (most nested) to
-    # lowest order, set the points to be the left and right ends.
-    points = [interval[1]]*len(left) + [interval[0]]*len(left)
-    coefs = list(reversed(coefs))
-
-    # Finally, construct a Newton polynomial.
-    f = NewtonPolynomial(coefs, points)
-    # If a stability check is not necessaary, return the function immediately.
-    if not stable: return f
-
-    # Check for errors in this polynomial, see if it its values are correct.
-    error_tolerance = 2**(-26)
-    k0, k1 = interval
-    # Make sure all the function values match.
-    for i in range(len(v0)):
-        df = f.derivative(i)
-        bad_left  = abs(df(k0) - (v0[i] if i < len(v0) else v1[i])) >= error_tolerance
-        bad_right = abs(df(k1) - (v1[i] if i < len(v1) else v0[i])) >= error_tolerance
-        if (bad_left or bad_right):
-            # Convert knots and values to floats for printing.
-            k0, k1 = map(float, interval)
-            v0, v1 = list(map(float,left)), list(map(float,right))
-            import sys
-            print(file=sys.stderr)
-            print("-"*70, file=sys.stderr)
-            print("bad_left:  ",bad_left, "  ", abs(df(k0) - (v0[i] if i < len(v0) else v1[i])))
-            print("bad_right: ",bad_right, "  ", abs(df(k1) - (v1[i] if i < len(v1) else v0[i])))
-            print("error_tolerance: ",error_tolerance, file=sys.stderr)
-            print(f"Interval:              [{k0: .3f}, {k1: .3f}]", file=sys.stderr)
-            print("Assigned left values: ", v0, file=sys.stderr)
-            print("Assigned right values:", v1, file=sys.stderr)
-            print(file=sys.stderr)
-            lf = f"{'d'*i}f({k0: .3f})"
-            print(f"Expected {lf} == {v0[i]}", file=sys.stderr)
-            print(f"     got {' '*len(lf)} == {df(k0)}", file=sys.stderr)
-            print(f"     error {' '*(len(lf) - 2)} == {v0[i] - df(k0): .3e}", file=sys.stderr)
-            rf = f"{'d'*i}f({k1: .3f})"
-            print(f"Expected {rf} == {v1[i]}", file=sys.stderr)
-            print(f"     got {' '*len(rf)} == {df(k1)}", file=sys.stderr)
-            print(f"     error {' '*(len(rf) - 2)} == {v1[i] - df(k1): .3e}", file=sys.stderr)
-            print(file=sys.stderr)
-            print(f"{' '*i}coefs:",coefs, file=sys.stderr)
-            print(f"{' '*i}f:    ",f, file=sys.stderr)
-            print(f"{'d'*i}f:    ",df, file=sys.stderr)
-            print("-"*70, file=sys.stderr)
-            print(file=sys.stderr)
-            raise(Exception("The generated polynomial piece is numerically unstable."))
-
-    # Return the polynomial function.
-    return f
-
-# Given data points "x" and data values "y", construct an
-# interpolating spline over the given points with specified level of
-# continuity using a sufficiently continuous polynomial fit over
-# neighboring points.
-#  
-# x: A strictly increasing sequences of numbers.
-# y: Function values associated with each point.
-# 
-# continuity:
-#   The level of continuity desired in the interpolating function.
-# 
-def fit(x, y, continuity=0):
-    assert( len(x) == len(y) )
-    # Sort the "x" values if they were not given in sorted order.
-    if not all(x[i] < x[i+1] for i in range(len(x)-1)):
-        indices = sorted(range(len(x)), key=lambda i: x[i])
-        x = [x[i] for i in indices]
-        y = [y[i] for i in indices]
-    # Get the knots and initial values for the spline.
-    knots = [v for v in x]
-    values = [[v] for v in y]
-    # Use a local interpolating polynomial to estimate all derivatives.
-    order = 2*(continuity+1)
-    # Construct further derivatives and refine the approximation
-    # ensuring monotonicity in the process.
-    for i in range(0,len(x)):
-        # Construct a local polynomial interpolant of the same
-        # order that this piecewise polynomial will be.
-        df = local_polynomial(x, y, i, order=order)
-        # Evaluate the derivatives of the polynomial.
-        for d in range(1, continuity+1):
-            # Compute the next derivative of this polynomial and evaluate.
-            df = df.derivative()
-            # Store the derivative.
-            values[i].append( df(x[i]))
-    # Return the interpolating spline.
-    return Spline(knots, values)
 
 # Construct a local polynomial interpolant over nearby data points.
 # Given "x" values, "y" values, and the index "i" at which a local
@@ -632,76 +602,6 @@ def local_polynomial(x, y, i, order=3, local_indices=None,
                       [y[j] for j in local_indices],
                       **local_derivs)
 
-# Compute all derivatives between points to be reasonable values
-# using either a linear or a quadratic fit over adjacent points.
-#  
-# ends:
-#   (0 zero)   endpoints to zero.
-#   (1 lin)    endpoints to secant slope through endpoint neighbor.
-#   (2 quad)   endpoints to capped quadratic interpolant slope.
-#   (manual) a 2-tuple provides locked-in values for derivatives.
-# 
-# mids:
-#   (0 zero)   all slopes are locked into the value 0.
-#   (1 lin)    secant slope between left and right neighbor.
-#   (2 quad)   slope of quadratic interpolant over three point window.
-#   (manual) an (n-2)-tuple provides locked-in values for derivatives.
-def fill_derivative(x, y, ends=1, mids=1):
-    # Initialize the derivatives at all points to be 0.
-    deriv = [0] * len(x)
-    # Set the endpoints according to desired method.
-    if (ends == 0) or (len(x) < 2): pass
-    # If the end slopes should be determined by a secant line..
-    elif (ends == 1) or (len(x) < 3):
-        deriv[0] = (y[1] - y[0]) / (x[1] - x[0])
-        deriv[-1] = (y[-1] - y[-2]) / (x[-1] - x[-2])
-    # If the end slopes should be determined by a quadratic..
-    elif (ends == 2):
-        # Compute the quadratic fit through the first three points and
-        # use the slope of the quadratic as the estimate for the slope.
-        a,b,c = solve_quadratic(x[:3], y[:3])
-        deriv[0] = 2*a*x[0] + b
-        # Do the same for the right endpoint.
-        a,b,c = solve_quadratic(x[-3:], y[-3:])
-        deriv[-1] = 2*a*x[-1] + b
-    # If the ends were manually specified..
-    elif (len(ends) == 2):
-        deriv[0], deriv[-1] = ends
-    else:
-        raise(UsageError("Manually defined endpoints must provide exactly two numbers."))
-    # Initialize all the midpoints according to desired metohd.
-    if (mids == 0) or (len(x) < 2): pass
-    elif (mids == 1) or (len(x) < 3):
-        for i in range(1, len(x)-1):
-            deriv[i] = (y[i+1] - y[i-1]) / (x[i+1] - x[i-1])
-    elif (mids == 2):
-        for i in range(1, len(x)-1):
-            # Compute the quadratic fit of the three points and use
-            # its slope at x[i] to estimate the derivative at x[i].
-            a, b, c = solve_quadratic(x[i-1:i+1+1], y[i-1:i+1+1])
-            deriv[i] = 2*a*x[i] + b
-    elif (len(mids) == len(deriv)-2):
-        deriv[1:-1] = mids
-    else:
-        raise(UsageError("Manually defined endpoints must provide exactly two numbers."))
-    # Return the computed derivatives.
-    return deriv
-
-# Given three points, this will solve the equation for the quadratic
-# function which interpolates all 3 values. Returns coefficient 3-tuple.
-# 
-# This could be done by constructing a Polynomial interpolant, however
-# that is slightly less computationally efficient and less stable.
-def solve_quadratic(x, y):
-    if len(x) != len(y): raise(UsageError("X and Y must be the same length."))
-    if len(x) != 3:      raise(UsageError(f"Exactly 3 (x,y) coordinates must be given, received '{x}'."))
-    x1, x2, x3 = x
-    y1, y2, y3 = y
-    a = -((-x2 * y1 + x3 * y1 + x1 * y2 - x3 * y2 - x1 * y3 + x2 * y3)/((-x1 + x2) * (x2 - x3) * (-x1 + x3)))
-    b = -(( x2**2 * y1 - x3**2 * y1 - x1**2 * y2 + x3**2 * y2 + x1**2 * y3 - x2**2 * y3)/((x1 - x2) * (x1 - x3) * (x2 - x3)))
-    c = -((-x2**2 * x3 * y1 + x2 * x3**2 * y1 + x1**2 * x3 * y2 - x1 * x3**2 * y2 - x1**2 * x2 * y3 + x1 * x2**2 * y3)/((x1 - x2) * (x1 - x3) * (x2 - x3)))
-    return (a,b,c)
-
 
 # Given x (points, list of floats) and y (values list of floats), and
 # an idx (integer), build a weighted least squares quadratic fit over
@@ -711,26 +611,6 @@ def local_quadratic(x, y, idx, **derivs):
     # Check for proper usage.
     assert(len(x) == len(y))
     assert(0 <= idx < len(x))
-    # Define a "Vector" subclass of a "list" for convenience.
-    class Vector(list):
-        # Define add, subtract, multiply, divide, assume a vector is given
-        # and if the object given is not iterable assume it's scalar.
-        def __add__(self, value):
-            try:              return Vector(v1 + v2 for (v1,v2) in zip(self,value))
-            except TypeError: return Vector(v + value for v in self)
-        def __sub__(self, value):
-            try:              return Vector(v1 - v2 for (v1,v2) in zip(self,value))
-            except TypeError: return Vector(v - value for v in self)
-        def __mul__(self, value):
-            try:              return Vector(v1 * v2 for (v1,v2) in zip(self,value))
-            except TypeError: return Vector(v * value for v in self)
-        def __truediv__(self, value):
-            try:              return Vector(v1 / v2 for (v1,v2) in zip(self,value))
-            except TypeError: return Vector(v / value for v in self)
-        # Define "absolute value", "dot product" and "norm".
-        def __abs__(self):  return Vector(map(abs,self))
-        def dot(self, vec): return sum(v1*v2 for (v1,v2) in zip(self, vec))
-        def norm(self):     return self.dot(self)**(1/2)
     # Convert "x" and "y" to vectors.
     x, y = Vector(x), Vector(y)
     # Shift the "x" and "y" to interpolate the point at "idx", remove
@@ -776,6 +656,54 @@ def local_quadratic(x, y, idx, **derivs):
     # Return the quadratic in NewtonPolynomial form.
     return NewtonPolynomial([a,b,shift_y],[None,shift_x,shift_x])
 
+
+# Construct local linear fits, pick the one that has the lowest
+# residual and return it in a Polynomial form.
+def local_facet(x, y, idx, size=3, local_indices=None, **derivs):
+    if (local_indices is None): local_indices = []
+    # Look for this derivative being pre-defined, if so return the required function.
+    key = f"dx{idx}"
+    if key in derivs:
+        local_indices += [idx]
+        return polynomial([x[idx]], [y[idx]], dx0=derivs[key])
+    # Adjust size to be a reasonable value based on available points,
+    # should always be an odd number, should be at least 3.
+    size = min(max(3, 2*(size//2)+1), len(x))
+    # Construct local liner models about each group of points.
+    import numpy as np
+    from util.approximate.linear_model import LinearModel
+    lm = LinearModel()
+    ranges = []
+    residuals = []
+    functions = []
+    for center in range(idx-size//2, idx+size//2 +1):
+        # Skip "center" indices outside of feasible values.
+        if (center < 0) or (center >= len(x)): continue
+        lower = max(0,center-size//2)
+        upper = min(len(x), center+size//2+1)
+        # Get the local points and values (for the local linear fit).
+        ranges.append( list(range(lower,upper)) )
+        local_points = np.array(x[lower:upper], dtype=float)
+        local_values = np.array(y[lower:upper], dtype=float)
+        # The residuals for 0 points are infinity, so these will not be chosen.
+        if (len(local_points) == 0):
+            residuals.append( float('inf') )
+            functions.append( Polynomial() )
+            continue
+        # Fit a linear model.
+        lm.fit(local_points[:,None], local_values)
+        function = Polynomial(lm.model.flatten())
+        # Store the function and its "error" (2-norm of errors).
+        functions.append( function )
+        residuals.append( np.linalg.norm(function(local_points) - local_values) )
+    # Return the linear function that has the best local fit.
+    center = residuals.index(min(residuals))
+    local_indices += ranges[center]
+    return functions[center]
+
+
+# --------------------------------------------------------------------
+#                            TESTING CODE
 
 def _test_local_quadratic():
     # Minimize the error function to verify correctness of solution.
@@ -841,6 +769,7 @@ def _test_local_quadratic():
         i = random.randint(0,n-1)
         return (x,y,i)
 
+    from fraction import Fraction
     # Cycle through some randomly generated tests.
     for size in range(3, 34, 10):
         # print("size:", size)
@@ -872,34 +801,6 @@ def _test_local_quadratic():
             #     print("opt_f: ",opt_f)
 
 
-# Given a function, use the Newton method to find the nearest inverse
-# to a guess. If this method gets trapped, it will exit without having
-# computed an inverse.
-def inverse(f, y, x=0, accuracy=2**(-52), max_steps=100):
-    # Get the derivative of the function.
-    df = f.derivative()
-    # Convert 'x' and 'y' to Fractions.
-    x, y = Fraction(x), Fraction(y)
-    # Search for a solution iteratively.
-    for i in range(max_steps):
-        diff = f(x) - y
-        x -= diff / df(x)
-        x = Fraction(float(x)) # <- cap the accuracy to that of floats
-        # Stop the loop if we have gotten close to the correct answer.
-        if (abs(diff) <= accuracy): break
-    # Check for correctness, warn the user if result is bad.
-    if (abs(f(x) - y) > accuracy):
-        import warnings
-        warnings.warn(f"\n\n  The calculated inverse has high error ({float(abs(f(x)-y)):.2e}).\n"+
-                      "  Consider providing better initial position.\n"+
-                      "  This problem may also not be solvable.\n")
-    # Return the final value.
-    return Fraction(x)
-
-
-# --------------------------------------------------------------------
-#                            TESTING CODE
-
 # Test the Polynomial class for basic operation.
 def _test_Polynomial():
     f = Polynomial([3,0,1])
@@ -918,7 +819,7 @@ def _test_Polynomial():
     assert(str(f.derivative(3)) == "")
     assert(str(f.derivative(4)) == "")
     assert(f.derivative(3)(5) == 0)
-    f = Polynomial(to_polynomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1]))
+    f = Polynomial(NewtonPolynomial([-1,10,-16,24,32,-32], [1,1,1,-1,-1,-1]))
     assert(str(f) == "-1 x^5  +  9 x^4  +  6 x^3  +  -22 x^2  +  11 x  +  -3")
     assert(str(f.derivative()) == "-5 x^4  +  36 x^3  +  18 x^2  +  -44 x  +  11")
     # Check that integrals work too.
@@ -952,52 +853,10 @@ def _test_polynomial(plot=True):
             class FailedTest(Exception): pass
             raise(FailedTest(string))
 
-# Test the "polynomial_piece" interpolation routine.
-def _test_polynomial_piece(plot=False):
-    if plot:
-        from plot import Plot
-        p = Plot("Polynomial Pieces")
-    # Pick the (value, d1, ...) pairs for tests.
-    left_rights = [
-        ([0], [0]),
-        ([0], [1]),
-        ([0,1], [0,-1]),
-        ([0,2], [0,-2]),
-        ([0,1], [1,0]),
-        ([1,0], [0,-1]),
-        ([0,1], [0,1]),
-        ([0,1,0], [0,-1,1]),
-        ([0,1,10], [0,-1,-10]),
-        ([-2,2,10,6], [0,0,20,-6]),
-    ]
-    interval = (1,3)
-    # Plot a bunch of sample functions.
-    for (left, right) in left_rights:
-        name = f"{left}  {right}"
-        # Convert to exact for testing correctness.
-        left = list(map(Fraction, left))
-        right = list(map(Fraction, right))
-        interval = (Fraction(interval[0]), Fraction(interval[1]))
-        # Construct the polynomial piece.
-        f = polynomial_piece( left, right, interval=interval )
-        exact_coefs = list(map(round,f.coefs))[::-1]
-        left_evals = [f(interval[0])]
-        right_evals = [f(interval[1])]
-        for i in range(1,len(left)):
-            df = f.derivative(i)
-            left_evals.append( df(interval[0]) )
-            right_evals.append( df(interval[1]) )
-        # TODO: Print out an error if the assert statement fails.
-        assert(0 == sum(abs(true - app) for (true, app) in zip(left,left_evals)))
-        assert(0 == sum(abs(true - app) for (true, app) in zip(right,right_evals)))
-        # Create a plot of the functions if a demo is desired.
-        if plot: p.add_func(name, f, [interval[0]-.1, interval[1]+.1],
-                            )#mode="markers", marker_size=2)
-    if plot: p.show(file_name="piecewise_polynomial.html")
-
 
 # Test the Spline class for basic operation.
 def _test_Spline():
+    from fraction import Fraction
     knots = [0,1,2,3,4]
     values = [[0],[1,-1,0],[0,-1],[1,0,0],[0]]
     # Create the knots and values.
@@ -1051,8 +910,10 @@ def _test_Spline():
 # Test the "fit" function. (there is testing code built in, so this
 # test is strictly for generating a visual to verify).
 def _test_fit(plot=False):
+    from fraction import Fraction
     x_vals = list(map(Fraction, [0,.5,2,3.5,4,5.3,6]))
     y_vals = list(map(Fraction, [1,2,2.2,3,3.5,4,4]))
+    f = fit(x_vals, y_vals, continuity=2)
     # Execute with different operational modes, (tests happen internally).
     f = fit(x_vals, y_vals, continuity=2)
     for i in range(len(f._functions)):
@@ -1063,76 +924,21 @@ def _test_fit(plot=False):
         plot_range = [min(x_vals)-.1, max(x_vals)+.1]
         p = Plot()
         p.add("Points", list(map(float,x_vals)), list(map(float,y_vals)))
-        p.add_func("f (min_d1=0)", f, plot_range)
-        p.add_func("f' (min_d1=0)", f.derivative(1), plot_range, dash="dash")
-        p.add_func("f'' (min_d1=0)", f.derivative(2), plot_range, dash="dot")
-
-        def L2(f, low, upp):
-            f2 = f**2
-            p.add_func("f''<sup>2</sup>", f2, plot_range)
-            int_f2 = f2.integral()
-            return int_f2(upp) - int_f2(low)
-        print("L2(f''):", float(L2(f.derivative(2), x_vals[0], x_vals[-1])))
-
-        # Add local fits.
-        s = .2
-        for i in range(len(x_vals)):
-            f = Polynomial(local_polynomial(x_vals, y_vals, i, order=6))
-            p.add_func(f"{i}", f, [x_vals[i]-s, x_vals[i]+s],
-                       color=(0,0,0,.2), dash="dot")
-
+        p.add_func("f)", f, plot_range)
+        p.add_func("f'", f.derivative(1), plot_range, dash="dash")
+        p.add_func("f'')", f.derivative(2), plot_range, dash="dot")
+        # def L2(f, low, upp):
+        #     f2 = f**2
+        #     p.add_func("f''<sup>2</sup>", f2, plot_range)
+        #     int_f2 = f2.integral()
+        #     return int_f2(upp) - int_f2(low)
+        # print("L2(f''):", float(L2(f.derivative(2), x_vals[0], x_vals[-1])))
         p.show()
-        exit()
 
-
-# Test "fill_derivative" function.
-def _test_fill_derivative():
-    x = list(map(Fraction, [0,1,2,4,5,7]))
-    y = list(map(Fraction, [0,1,2,3,4,5]))
-    # Test "0" values.
-    d00 = [0, 0, 0, 0, 0, 0]
-    assert( d00 == fill_derivative(x, y, ends=0, mids=0) )
-    # Test "1" values (linear interpolation).
-    d11 = [1, 1, Fraction(2, 3), Fraction(2, 3), Fraction(2, 3), Fraction(1, 2)]
-    assert( d11 == fill_derivative(x, y, ends=1, mids=1) )
-    # Test "2" values (quadratic interpolation).
-    d22 = [1, 1, Fraction(5, 6), Fraction(5, 6), Fraction(5, 6), Fraction(1, 6)]
-    assert( d22 == fill_derivative(x, y, ends=2, mids=2) )
-
-# Test "solve_quadratic" function.
-def _test_solve_quadratic():
-    # Case 1
-    x = [-1, 0, 1]
-    y = [1, 0 , 1]
-    a,b,c = solve_quadratic(x,y)
-    assert(a == 1)
-    assert(b == 0)
-    assert(c == 0)
-    # Case 2
-    x = [-1, 0, 1]
-    y = [-1, 0 , -1]
-    a,b,c = solve_quadratic(x,y)
-    assert(a == -1)
-    assert(b == 0)
-    assert(c == 0)
-    # Case 3
-    x = [-1, 0, 1]
-    y = [0, 0 , 2]
-    a,b,c = solve_quadratic(x,y)
-    assert(a == 1)
-    assert(b == 1)
-    assert(c == 0)
-    # Case 4
-    x = [-1, 0, 1]
-    y = [1, 1 , 3]
-    a,b,c = solve_quadratic(x,y)
-    assert(a == 1)
-    assert(b == 1)
-    assert(c == 1)
 
 def _test_inverse(plot=False):
     # Construct a polynomial piece to test the inverse operation on.
-    f = polynomial_piece([0,1,10], [0,-1], (1,3))
+    f = polynomial([1, 3], [0, 0], dx0=1, ddx0=10, dx1=-1)
     i0 = inverse(f, 0, accuracy=2**(-26))
     assert(abs(f(i0)) < 2**(-2))
     i12 = inverse(f, 1/2, accuracy=2**(-2))
@@ -1156,16 +962,10 @@ if __name__ == "__main__":
     _test_NewtonPolynomial()
     print(" polynomial")
     _test_polynomial()
-    print(" polynomial_piece")
-    _test_polynomial_piece(plot=False)
     print(" Spline")
     _test_Spline()
     print(" fit")
-    _test_fit(plot=False)
-    print(" fill_derivative")
-    _test_fill_derivative()
-    print(" solve_quadratic")
-    _test_solve_quadratic()
+    _test_fit(plot=True)
     print(" local_quadratic")
     _test_local_quadratic()
     print(" inverse")

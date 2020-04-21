@@ -84,6 +84,12 @@ def visualize_one_method(x, y, append=False, title=None, show=False,
             if (title is not None): title += " quintic interpolants"
         elif ("r" == m):
             if (title is not None): title += " quadratic regressions"
+        elif (4 == m):
+            if (title is not None): title += " cubic regressions"
+        elif (3 == m):
+            if (title is not None): title += " quadratic regressions"
+        elif ('facet' in m):
+            if (title is not None): title += " local facets"
         else:
             raise(Exception(f"Unknown method '{method}'."))
 
@@ -121,138 +127,142 @@ def visualize_one_method(x, y, append=False, title=None, show=False,
 
 
 
-names = ["(1) quintic interpolants", "(2) quadratic regressions", "PCHIP"]
-# methods = [None]
-methods = [6,'r']
-# methods = [6,'r', None]
-colors = [1,3, (200,100,100,.3)]
-dashes = [None,"dot", "dash"]
-legend = False
-show = False
-test = -1
+if True:
 
-# --------------------------------------------------------------------
-# Watson test.
-y = [0,1,1,1,0,20,19,18,0,0,1,0,1]
-x = list(range(len(y)))
+    methods = ['facet', None]
+    names = ["facet", "PCHIP"]
+    colors = [1, 3]
+    dashes = [None, "dot"]
+    legend = False
+    show = True
 
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
+    test = -1
+    # --------------------------------------------------------------------
+    # Watson test.
+    y = [0,1,1,1,0,20,19,18,17,0,0,1,0,1]
+    x = list(range(len(y)))
 
-# --------------------------------------------------------------------
-# Absolute value function.
-x = np.linspace(-1,1,5)
-y = abs(x)
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
+    # --------------------------------------------------------------------
+    # Absolute value function.
+    x = np.linspace(-1,1,5)
+    y = abs(x)
 
-# --------------------------------------------------------------------
-# Absolute value function.
-x = np.linspace(-1,1,9)
-y = abs(x)
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
+    # --------------------------------------------------------------------
+    # Absolute value function.
+    x = np.linspace(-1,1,9)
+    y = abs(x)
 
-# --------------------------------------------------------------------
-# Abslute value on left, flat on right.
-f = lambda x: np.where(x <= 0, abs(x), 0)
-x = np.linspace(-1.1, 1, 10)
-y = f(x)
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
+    # --------------------------------------------------------------------
+    # Abslute value on left, flat on right.
+    f = lambda x: np.where(x <= 0, abs(x), 0)
+    x = np.linspace(-1.1, 1, 10)
+    y = f(x)
 
-# --------------------------------------------------------------------
-# Abslute value on left, flat on right.
-f = lambda x: np.where(x <= 0, abs(x), 0)
-x = np.linspace(-1.1, 1, 20)
-y = f(x)
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
+    # --------------------------------------------------------------------
+    # Abslute value on left, flat on right.
+    f = lambda x: np.where(x <= 0, abs(x), 0)
+    x = np.linspace(-1.1, 1, 20)
+    y = f(x)
 
-# --------------------------------------------------------------------
-# Linear function with a small plateau.
-small = 2**(-26)
-x = [-small, 0, 1, 1.9, 2, 2.1, 3, 4, 4+small]
-y = [-small, 0, 1, 1.99, 2, 2.01, 3, 4, 4+small]
-x = x[1:-1]
-y = y[1:-1]
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
+    # --------------------------------------------------------------------
+    # Linear function with a small plateau.
+    small = 2**(-26)
+    x = [-small, 0, 1, 1.9, 2, 2.1, 3, 4, 4+small]
+    y = [-small, 0, 1, 1.99, 2, 2.01, 3, 4, 4+small]
+    x = x[1:-1]
+    y = y[1:-1]
 
-# --------------------------------------------------------------------
-# Linear with one 0 at end.
-x = [0, 1, 2, 6, 7]
-y = [0, 1, 2, 0, -1/2]
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
+    # --------------------------------------------------------------------
+    # Linear with one 0 at end.
+    x = [0, 1, 2, 6, 7]
+    y = [0, 1, 2, 0, -1/2]
 
-
-# --------------------------------------------------------------------
-# Sin function.
-np.random.seed(1)
-x = np.random.random(size=(30,)) * 6*np.pi
-x.sort()
-y = np.sin(x)
-
-test += 1
-visualize_multiple_methods(x, y, name=names, method=methods,
-                           color=colors, dash=dashes,
-                           show_legend=legend, show=show,
-                           title=f"Test {test}",
-                           file_name=f"test_{test}.html")
-
-# --------------------------------------------------------------------
-# # Table top level sequence.
-# x = [0, 1, 2, 3, 4]
-# y = [0, 1, 1, 1, 0]
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
 
-# --------------------------------------------------------------------
-# Generate the first visuals explicitly requested by Dr. Watson.
+    # --------------------------------------------------------------------
+    # Sin function.
+    np.random.seed(1)
+    x = np.random.random(size=(30,)) * 6*np.pi
+    x.sort()
+    y = np.sin(x)
 
-# Watson test.
-y = [0,1,1,1,0,20,19,18,0,0,1,0,1]
-x = list(range(len(y)))
+    test += 1
+    visualize_multiple_methods(x, y, name=names, method=methods,
+                               color=colors, dash=dashes,
+                               show_legend=legend, show=show,
+                               title=f"Test {test}",
+                               file_name=f"test_{test}.html")
 
-# Generate a single example plot (with oversied markers).
-p = example_points(x,y, ms=10)
-p.plot(file_name="pmqsi_example.html", show=False)
+    # --------------------------------------------------------------------
+    # # Table top level sequence.
+    # x = [0, 1, 2, 3, 4]
+    # y = [0, 1, 1, 1, 0]
 
-# Generate individual application plots, with normal sized markers.
-visualize_one_method(x, y, method=None, cubic=True, show=False)
-visualize_one_method(x, y, method=6, show=False)
-visualize_one_method(x, y, method="r", show=False)
+
+
+if False:
+    # --------------------------------------------------------------------
+    # Generate the first visuals explicitly requested by Dr. Watson.
+
+    # Watson test.
+    y = [0,1,1,1,0,20,19,18,0,0,1,0,1]
+    x = list(range(len(y)))
+
+    if True:
+        # Generate a single example plot (with oversied markers).
+        p = example_points(x,y, ms=10)
+        p.plot(file_name="pmqsi_example.html", show=False)
+
+    # Generate individual application plots, with normal sized markers.
+    visualize_one_method(x, y, method=None, cubic=True, show=False)
+    visualize_one_method(x, y, method=3, show=False)
+    visualize_one_method(x, y, method='facet', show=False)
+    visualize_one_method(x, y, method="r", show=False)
