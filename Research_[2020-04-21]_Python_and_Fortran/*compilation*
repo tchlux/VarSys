@@ -1,0 +1,75 @@
+-*- mode: compilation; default-directory: "~/Desktop/diss_code/" -*-
+Compilation started at Tue Apr 21 12:57:05
+
+python3 test_python_code.py 
+Creating plot at file 'pmqsi_example.html'
+Creating plot at file 'pchip_example.html'
+i: 0
+  left:  0.00
+   l_w:  0.00
+  right: -0.00
+   r_w:  0.20
+  ddf:   -0.00
+i: 1
+  left:  -0.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.20
+  ddf:   -0.00
+i: 2
+  left:  0.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.20
+  ddf:   0.00
+i: 3
+  left:  0.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.20
+  ddf:   0.00
+i: 4
+  left:  0.00
+   l_w:  0.20
+  right: 5.00
+   r_w:  0.20
+  ddf:   5.00
+i: 5
+  left:  5.00
+   l_w:  0.20
+  right: 5.00
+   r_w:  0.20
+  ddf:   5.00
+i: 6
+  left:  5.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.20
+  ddf:   -0.00
+i: 7
+  left:  0.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.20
+  ddf:   0.00
+i: 8
+  left:  0.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.20
+  ddf:   0.00
+i: 9
+  left:  0.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.20
+  ddf:   0.00
+i: 10
+  left:  0.00
+   l_w:  0.20
+  right: 0.00
+   r_w:  0.00
+  ddf:   0.00
+Creating plot at file 'pmqsi_example.html'
+
+Compilation finished at Tue Apr 21 12:57:07
