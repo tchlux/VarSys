@@ -1,0 +1,154 @@
+    # --------------------------------------------------------------------
+    # Table top level sequence.
+    x = [0, 1, 2, 3, 4]
+    y = [0, 1, 1, 1, 0]
+
+
+
+    # --------------------------------------------------------------------
+    # Absolute value function.
+    x = np.linspace(-1,1,5)
+    y = abs(x)
+
+    test += 1
+    visualize_multiple(x, y, name=names, cubics=cubics,
+                       color=colors, dash=dashes,
+                       show_legend=legend, show=show,
+                       title=f"Test {test}",
+                       file_name=f"test_{test}.html")
+
+    # --------------------------------------------------------------------
+    # Absolute value function.
+    x = np.linspace(-1,1,9)
+    y = abs(x)
+
+    test += 1
+    visualize_multiple(x, y, name=names, cubics=cubics,
+                       color=colors, dash=dashes,
+                       show_legend=legend, show=show,
+                       title=f"Test {test}",
+                       file_name=f"test_{test}.html")
+
+    # --------------------------------------------------------------------
+    # Abslute value on left, flat on right.
+    f = lambda x: np.where(x <= 0, abs(x), 0)
+    x = np.linspace(-1.1, 1, 10)
+    y = f(x)
+
+    test += 1
+    visualize_multiple(x, y, name=names, cubics=cubics,
+                       color=colors, dash=dashes,
+                       show_legend=legend, show=show,
+                       title=f"Test {test}",
+                       file_name=f"test_{test}.html")
+
+    # --------------------------------------------------------------------
+    # Abslute value on left, flat on right.
+    f = lambda x: np.where(x <= 0, abs(x), 0)
+    x = np.linspace(-1.1, 1, 20)
+    y = f(x)
+
+    test += 1
+    visualize_multiple(x, y, name=names, cubics=cubics,
+                       color=colors, dash=dashes,
+                       show_legend=legend, show=show,
+                       title=f"Test {test}",
+                       file_name=f"test_{test}.html")
+
+    # --------------------------------------------------------------------
+    # Linear function with a small plateau.
+    small = 2**(-26)
+    x = [-small, 0, 1, 1.9, 2, 2.1, 3, 4, 4+small]
+    y = [-small, 0, 1, 1.99, 2, 2.01, 3, 4, 4+small]
+    x = x[1:-1]
+    y = y[1:-1]
+
+    test += 1
+    visualize_multiple(x, y, name=names, cubics=cubics,
+                       color=colors, dash=dashes,
+                       show_legend=legend, show=show,
+                       title=f"Test {test}",
+                       file_name=f"test_{test}.html")
+
+    # --------------------------------------------------------------------
+    # Linear with one 0 at end.
+    x = [0, 1, 2, 6, 7]
+    y = [0, 1, 2, 0, -1/2]
+
+    test += 1
+    visualize_multiple(x, y, name=names, cubics=cubics,
+                       color=colors, dash=dashes,
+                       show_legend=legend, show=show,
+                       title=f"Test {test}",
+                       file_name=f"test_{test}.html")
+
+
+
+
+# Given "i" the index at which the first derivative should be
+# estimated, construct local quadratic fits and pick the slope of the
+# one with the lowest curvature.
+def estimate_second_derivative(x, y, dxi, i):
+    # If this is a local flat, estimate 0.
+    if ((i > 0) and (y[i-1] == y[i])) or \
+       ((i+1 < len(y)) and (y[i] == y[i+1])): return 0
+    # Otherwise, use the minimum curvature quadratic.
+    functions = []
+    # Compute the left function.
+    if (i > 0): functions.append( polynomial(
+            [x[i-1], x[i]], [y[i-1],y[i]], dx1=dxi) )
+    # Compute the right function.
+    if (i < len(x)-1): functions.append( polynomial(
+            [x[i], x[i+1]], [y[i],y[i+1]], dx0=dxi) )
+    if (len(functions) == 0): return 0
+    # Pick the minimum curvature.
+    curvatures = [abs(f.derivative(2)(x[i])) for f in functions]
+    best_f = functions[ curvatures.index(min(curvatures)) ]
+    return best_f.derivative(2)(x[i])
+
+
+
+    # Check to make sure everything is monotone.
+    for i in range(len(x)-1):
+        if not is_monotone(x[i], x[i+1], *values[i], *values[i+1]):
+            print(f"WARNING: Interval ({x[i]:.2f}, {x[i+1]:.2f}) is not monotone.")
+            print(f"          {'Dfx0':5s}  {'DDfx0':5s}  {'Dfx1':5s}  {'DDfx1':5s}")
+            print(f"          {values[i][1]: .2f}  {values[i][2]: .2f}  {values[i+1][1]: .2f}  {values[i+1][2]: .2f}")
+            print(f"           {str(abs(values[i][1])>0):5s}  {str(abs(values[i][2])>0):5s}  {str(abs(values[i+1][1])>0):5s}  {str(abs(values[i+1][2])>0):5s}")
+            if (type(failed) == list): failed.append(True)
+
+
+        # Iterate over derivative values smoothing them out.
+        for u in range(3):
+            print("u: ",u)
+            new_slopes = [values[i][1] for i in range(len(x))]
+            for i in range(1,len(x)-1):
+                left_slope = (y[i] - y[i-1]) / (x[i] - x[i-1])
+                right_slope = (y[i+1] - y[i]) / (x[i+1] - x[i])
+                if (left_slope * right_slope == 0): continue
+                elif (left_slope * right_slope < 0) and (not free): continue
+                # Estimate slope from the left and right.
+                lf = polynomial([x[i-1],x[i]], [y[i-1],y[i]], dx0=values[i-1][1])
+                rf = polynomial([x[i],x[i+1]], [y[i],y[i+1]], dx1=values[i+1][1])
+                # Get the estimate for the derivative at this point from both neighbors.
+                lf = lf.derivative()(x[i])
+                rf = rf.derivative()(x[i])
+                # When the both neighbors agree on a better slope, average their guesses.
+                if ((values[i][1] - lf) * (values[i][1] - rf)) > 0:
+                    print(f" x[{i}]: ",float(x[i]), tuple(map(float,(values[i][1], lf, rf))))
+                    print(f"  updating derivative at {i}")
+                    guess = polynomial([x[i-1],x[i],x[i+1]],
+                                       [y[i-1],y[i],y[i+1]],
+                                       dx0=values[i-1][1],
+                                       dx2=values[i+1][1])
+                    new_slopes[i] = guess.derivative()(x[i])
+            # Copy in the updated slope estimates.
+            for i in range(len(x)):
+                values[i][1] = new_slopes[i]
+
+
+            # if (values[i][1] != 0):
+            #     values[i][2] = 0
+            #     continue
+
+

@@ -661,6 +661,11 @@ def local_quadratic(x, y, idx, **derivs):
 # Construct local linear fits, pick the one that has the lowest
 # residual and return it in a Polynomial form.
 def local_facet(x, y, idx, size=3, local_indices=None, **derivs):
+    # Check for correct usage.
+    assert(len(x) >= size)
+    assert(0 <= idx < len(x))
+    assert(len(x) == len(y))
+    # Initialize the "used indices".
     if (local_indices is None): local_indices = []
     # Look for this derivative being pre-defined, if so return the required function.
     key = f"dx{idx}"
@@ -695,6 +700,8 @@ def local_facet(x, y, idx, size=3, local_indices=None, **derivs):
         if (center < 0) or (center >= len(x)): continue
         lower = max(0,center-size//2)
         upper = min(len(x), center+size//2+1)
+        # Skip intervals with not enough points.
+        if (upper - lower) < size: continue
         # Get the local points and values (for the local linear fit).
         ranges.append( list(range(lower,upper)) )
         local_x = x[lower:upper]
@@ -709,9 +716,11 @@ def local_facet(x, y, idx, size=3, local_indices=None, **derivs):
         function = Polynomial((slope, intercept))
         # Store the function and its "error" (squared sum of errors).
         functions.append( function )
-        residual = sum((slope*local_x[i] + intercept - local_y[i])**2
-                       for i in range(len(local_x)))
-        residuals.append( residual )
+        # residual = sum((slope*lx + intercept - ly)**2
+        #                for (lx,ly) in zip(local_x, local_y))
+        # residuals.append( residual )
+        residuals.append( abs(slope*x[idx] + intercept - y[idx]) )
+
     # Return the linear function that has the best local fit.
     center = residuals.index(min(residuals))
     local_indices += ranges[center]

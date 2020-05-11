@@ -6,7 +6,22 @@ splines = fmodpy.fimport("splines.f90", verbose=True,
 
 
 TEST_B_SPLINE = False
-TEST_SPLINE = True
+TEST_SPLINE = False
+TEST_PMQSI = False
+TEST_MINIMIZATION = True
+
+
+if TEST_MINIMIZATION:
+    from util.optimize import minimize
+    # The objective is the geometric mean of the largest monotonicity
+    # violation times the L2 of the second derivative (minimize wiggle).
+    def objective(knots, coefs):
+        diffs = coefs[1:] - coefs[:-1]
+        return -min(1,1+min(diffs)) * splines.l2(knots, coefs, 2)
+    
+    x = None
+
+    
 
 
 # ==================================
@@ -33,6 +48,7 @@ if TEST_B_SPLINE:
         last = (d == (len(knots)-len(coefs)))
         p.show(append=True, show=first or last)
 
+   
 
 # ==================================
 #      Test the spline-fit code     
@@ -165,4 +181,54 @@ if TEST_SPLINE:
             p.add("Integral", x, y, mode="lines", color=p.color(0), group="i")
 
             p.show(file_name=f"spline_test-N{len(values)}-C{len(values[0])}.html")
+
+
+
+
+
+if TEST_PMQSI:
+    import numpy as np
+    VISUALIZE_TEST = True
+    np.random.seed(2)
+    num_knots = 10
+    # Generate some random knots and values.
+    knots = 10 * np.random.random(size=(num_knots))
+    knots.sort()
+    values = 10 * (2*(np.random.random(size=(num_knots,)) - 1/2))
+    print()
+    print("knots:")
+    print(knots)
+    print()
+    print("values:")
+    print(values)
+    print()
+    # Get the spline knots and spline coefficients.
+    values = np.asfortranarray(values)
+    sk, sc, info = splines.pmqsi(knots, values)
+    print("info: ",info)
+    print()
+    # print("order: ",len(sk) - len(sc) + 1)
+    # print()
+    # print("sk:")
+    # print(repr(sk))
+    print("sc:")
+    print(repr(sc))
+    print()
+
+    if VISUALIZE_TEST:
+        from util.plot import Plot
+        # Make a pretty picture of the B-spline and its derivatives.
+        padding = 0 #.1
+        x = np.linspace(min(knots)-padding,max(knots)+padding,max(1000,(len(knots)-1)*10+1))
+        y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
+        p = Plot("Polynomial Interpolant")
+        p.add("Spline", x, y, mode="lines", color=p.color(1))
+        # --------------------------------------------------------
+        from monotone import monotone_quintic_spline
+        truth = monotone_quintic_spline(knots, values, exact=True)
+        true_y = list(map(truth, x))
+        p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
+        # --------------------------------------------------------
+        p.add("Knots", knots, values, color=p.color(1))
+        p.show(file_name=f"spline_test-N{len(values)}-C{len(values)}.html")
 

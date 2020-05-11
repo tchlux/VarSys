@@ -22,15 +22,16 @@ def make_exact(value):
 
 # Given x and y values, construct a monotonic quintic spline fit.
 def monotone_quintic_spline(x, y=None, values=None, exact=True, 
-                            max_steps=1000, adaptive=1, verbose=False,
-                            local_fits=None, facet_size=3):
-    from polynomial import Spline, local_facet
+                            max_steps=100, adaptive=1, verbose=False,
+                            local_fits=None, free=False):
+    from polynomial import Spline, local_facet, local_polynomial, polynomial
     if local_fits is None: local_fits = dict()
     if verbose:
         from polynomial import Polynomial
         print()
     # Convert 'x' to exact values.
     if exact: x = make_exact(x)
+
     # Build a set of 'values' if they were not provided.
     if (y is not None):
         if exact: y = make_exact(y)
@@ -39,76 +40,98 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                        if ((y[i]-y[i-1]) * (y[i+1]-y[i]) < 0)]
         flats = [i for i in range(1, len(y)-1)
                  if ((y[i]-y[i-1]) * (y[i+1]-y[i]) == 0)]
-        d_pos = {i for i in range(1, len(y)-1)
-                 if ((y[i] > y[i-1]) and (y[i+1] > y[i]))}
-        d_neg = {i for i in range(1, len(y)-1)
-                 if ((y[i] < y[i-1]) and (y[i+1] < y[i]))}
-        if (len(y) > 2):
-            if     (y[0] < y[1]): d_pos = d_pos.union({0})
-            elif   (y[0] > y[1]): d_neg = d_neg.union({0})
-            if   (y[-2] < y[-1]): d_pos = d_pos.union({len(y)-1})
-            elif (y[-2] > y[-1]): d_neg = d_neg.union({len(y)-1})
-        # Establish all derivative conditions based on flats and transitions.
-        derivs = {f"ddx{j}":0 for j in flats}
-        derivs.update({f"dx{j}":0 for j in flats})
-        derivs.update({f"dx{j}":0 for j in transitions})
-        # Print out the derivative conditions.
-        if verbose and (len(derivs) > 0):
-            print()
-            print(f"Derivative conditions:")
-            for key in sorted(derivs, key=lambda k: (int(k.split('x')[1]),k.count('d'))):
-                print(f" {key} = {derivs[key]}")
-            print()
         # Build local quintic fits satisfying derivative constraints.
-        values = []
-        for i in range(len(x)):
-            # Fit appropriate local polynomial depending on how
-            # many derivative conditions will be matched.
-            constraints = derivs.copy()
-            # Loop until we match all necessary constraints.
-            while True:
-                used_indices = []
-                f = local_facet(x, y, i, size=facet_size,
-                                local_indices=used_indices, **constraints)
-                # ^^ This function is linear, need to add a second
-                #    derivative estimatae later.
-                df = f.derivative()
-                # Check the inequality constraints on derivatives.
-                if   ((df(x[i]) < -2**(-26)) and (i in d_pos)): constraints.update({f"dx{i}":0})
-                elif ((df(x[i]) > 2**(-26)) and (i in d_neg)): constraints.update({f"dx{i}":0})
-                # Otherwise, the inequality constraints match and we're good!
-                else: break
-            values.append( [y[i], df(x[i]), 0] )
-            # Store this fit information.
-            local_fits[i] = (f, [min(x[i] for i in used_indices),
-                                 max(x[i] for i in used_indices)])
+        values = [[y[i]] + [0]*2 for i in range(len(x))]
+        for i in range(1,len(x)-1):
+            left_slope = (y[i] - y[i-1]) / (x[i] - x[i-1])
+            right_slope = (y[i+1] - y[i]) / (x[i+1] - x[i])
+            if (left_slope * right_slope == 0): df = 0
+            elif (left_slope * right_slope < 0) and (not free): df = 0
+            else:
+                idx = i
+                if (i-1 in (flats + transitions)):
+                    local_x, local_y = x[i-1:], y[i-1:]
+                    idx = 1
+                elif (i+1 in flats + transitions):
+                    local_x, local_y = x[:i+2], y[:i+2]
+                else:
+                    local_x, local_y = x, y                    
+                # # Local facet model.
+                # f = local_facet(local_x, local_y, idx, size=3)
+
+                # # Local quadratic interpolant.
+                # f = local_polynomial(local_x, local_y, idx, order=3)
+
+                # Local quadratic facet (minimum curvature).
+                f1 = local_polynomial(local_x, local_y, idx-1, order=3)
+                f2 = local_polynomial(local_x, local_y, idx,   order=3)
+                f3 = local_polynomial(local_x, local_y, idx+1, order=3)
+                ddf1 = abs(f1.derivative(2)(x[i]))
+                ddf2 = abs(f2.derivative(2)(x[i]))
+                ddf3 = abs(f3.derivative(2)(x[i]))
+                if (ddf1 <= ddf2):
+                    if (ddf1 <= ddf3): f = f1
+                    else:              f = f3
+                else:
+                    if (ddf2 <= ddf3): f = f2
+                    else:              f = f3
+
+                # Compute the derivative.
+                df = f.derivative()(x[i])
+
+            # Store the derivative estimate.
+            values[i][1] = df
+
+        # Estimate the first derivative at the ends by using a local
+        # quadratic that interpolates the first derivative at its neighbor.
+        if (len(x) > 2):
+            # Compute the left side.
+            f = polynomial([x[0],x[1]], [y[0], y[1]], dx1=values[1][1])
+            df = f.derivative()
+            values[0][1:] = [df(x[0]), 0]
+            local_fits[0] = (f, [x[0], x[1]])
+            # Compute the right side.
+            f = polynomial([x[-2],x[-1]], [y[-2], y[-1]], dx0=values[-2][1])
+            df = f.derivative()
+            values[-1][1:] = [df(x[-1]), 0]
+            local_fits[len(x)-1] = (f, [x[-2], x[-1]])
+        # Use a straight line inteprolant for two points.
+        elif (len(x) == 2):
+            values[0][1] = (y[1] - y[0]) / (x[1] - x[0])
+            values[1][1] = values[0][1]
+        print()
+
+        # Estimate second derivatives.
+        for i in range(1,len(x)-1):
+            # Construct two quadratics that inteprolate this
+            # derivative value and a neighbor, pick the one with the
+            # minimum second derivative.
+            f1 = polynomial([x[i-1],x[i]], [y[i-1],y[i]], dx1=values[i][1])
+            f2 = polynomial([x[i],x[i+1]], [y[i],y[i+1]], dx0=values[i][1])
+            ddf1 = f1.derivative(2)
+            ddf2 = f2.derivative(2)
+            if (abs(ddf1(x[i])) <= abs(ddf2(x[i]))): f = f1
+            else:                                    f = f2
+            # Compute the derivatives.
+            ddf = f.derivative(2)
+            # Store the values.
+            values[i][2] = ddf(x[i])
             if verbose: print(f" estimate at {x[i]}: ", values[-1], Polynomial(f))
 
-        # # Update second derivative estimates based on first derivative.
-        # for i in range(len(values)):
-        #     # Skip places where DDf is zero.
-        #     if i in flats: continue
-        #     # Use a divided difference to estimate the second derivative.
-        #     else:
-        #         l_width = l_slope = r_width = r_slope = 0
-        #         if (i > 0):
-        #             l_width = (x[i] - x[i-1])
-        #             l_slope = (values[i][1] - values[i-1][1]) / l_width
-        #         if (i < len(values)-1):
-        #             r_width = (x[i+1] - x[i])
-        #             r_slope = (values[i+1][1] - values[i][1]) / r_width
-        #         if   (l_width == 0): ddf = r_slope
-        #         elif (r_width == 0): ddf = l_slope
-        #         else:
-        #             ddf = l_slope + l_width * (r_slope - l_slope) / ((l_width+r_width)/2)
-        #         print(f"i: {i}")
-        #         print(f"  left:  {l_slope:.2f}")
-        #         print(f"   l_w:  {l_width:.2f}")
-        #         print(f"  right: {r_slope:.2f}")
-        #         print(f"   r_w:  {r_width:.2f}")
-        #         print(f"  ddf:   {ddf:.2f}")
-        #     # Store the computed second derivative.
-        #     values[i][2] = ddf
+        print()
+
+        # Store local fit information.
+        print("Initial fits:")
+        for i in range(len(x)):
+            print("", i, "%.2f"%(x[i]),
+                  "(%.2f %.2f %.2f)"%(y[i], values[i][1], values[i][2]))
+            local_fits[i] = (polynomial([x[i]],[y[i]],
+                                        dx0=values[i][1],
+                                        ddx0=values[i][2]), 
+                             [x[max(0,i-1)], x[min(len(x)-1,i+1)]])
+
+        # Make all final values guesses exact.
+        values = make_exact(values)
 
         # Print out the final set of values to the user.
         if verbose:
@@ -145,6 +168,7 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
     # Cycle over all intervals that need to be checked for monotonicity.
     while (len(to_check) > 0):
         i = to_check.pop(0)
+        if (values[i][1] * values[i+1][1] < 0) and free: continue
         if verbose: print(f"\n  checking ({i+1}) ..")
         # Update this interval to make it monotone.
         initial_values = [values[i].copy(), values[i+1].copy()]
@@ -199,8 +223,36 @@ def monotone_quintic_spline(x, y=None, values=None, exact=True,
                 print( "     ", ' '.join([f"{float(v): .5e}" for v in values[i]]))
                 print( "     ", ' '.join([f"{float(v): .5e}" for v in values[i+1]]))
         
+    print()
+    print("Final fits:")
+    for i in range(len(x)):
+        print("", i, "%.2f"%(x[i]),
+              "(%.2f %.2f %.2f)"%(y[i], values[i][1], values[i][2]))
+
+    # Create "smooth estimates of all points"
+
+    # # Manually return the value to its original.
+    # values[4][2] = -.67
+
     # Construct a new spline over the (updated) values for derivatives.
     return Spline(x, values)
+
+
+# Generate a minimum curvature estimate of Df and DDf at x[i] by using
+# neighboring values and second derivatives.
+def minimum_curvature_estimate(x, fx, i, use=1):
+    if (len(x) == 3):
+    f1 = polynomial([x[i-1],x[i]], [y[i-1],y[i]], dx1=values[i][1])
+    f2 = polynomial([x[i],x[i+1]], [y[i],y[i+1]], dx0=values[i][1])
+    ddf1 = f1.derivative(2)
+    ddf2 = f2.derivative(2)
+    if (abs(ddf1(x[i])) <= abs(ddf2(x[i]))): f = f1
+    else:                                    f = f2
+    # Compute the derivatives.
+    ddf = f.derivative(2)
+
+    
+
 
 # Given a (x1, x2) and ([y1, d1y1, d2y1], [y2, d1y2, d2y2]), compute
 # the rescaled derivative values for a monotone quintic piece.
@@ -247,6 +299,7 @@ def monotone_quintic(x, y, accuracy=2**(-26)):
     # Only consider the coefficients less than the x^4, because that
     # term is strictly positive.
     if (A*B < accuracy):
+        # print("interval: (%.2f   %.2f)"%(U0,U1))
         # Compute a temporary variable that is useful in the algebra.
         w = U0 - U1
         # First, find a DX0 and DX1 that makes DDX0 have nonempty feasible region.
@@ -254,36 +307,88 @@ def monotone_quintic(x, y, accuracy=2**(-26)):
         if (DX_multiplier < 1):
             DX0 *= DX_multiplier
             DX1 *= DX_multiplier
-            y[0][1] = DX0*sign
-            y[1][1] = DX1*sign
-            changed = True
         # Second, cap DDX0 so that the DDX1 feasible region is nonempty.
         max_DDX0 = (4*(2*DX0 + DX1) - 20*(X0-X1)/w) / w
+        # print("   max_DDX0: %.2f"%(max_DDX0))
         if (DDX0 > max_DDX0):
             DDX0 = max_DDX0
-            y[0][2] = DDX0*sign
-            changed = True
         # Enforce \gamma >= \delta
         min_DDX0 = 3 * DX0 / w
+        # print("   min_DDX0: %.2f"%(min_DDX0))
         if (min_DDX0 > DDX0):
             DDX0 = min_DDX0
-            y[0][2] = DDX0*sign
-            changed = True
         # Enforce \alpha >= 0 
         max_DDX1 = -4*DX1 / w
+        # print("   max_DDX1: %.2f"%(max_DDX1))
         if (DDX1 > max_DDX1):
             DDX1 = max_DDX1
-            y[1][2] = DDX1*sign
-            changed = True
         # Enforce \beta >= \alpha
         min_DDX1 = (3*DDX0*w - (24*DX0 + 32*DX1) + 60*(X0-X1)/w) / (5*w)
+        # print("   min_DDX1: %.2f"%(min_DDX1))
         if (DDX1 < min_DDX1):
             DDX1 = min_DDX1
-            y[1][2] = DDX1*sign
-            changed = True
         # Check for contradictions, which should never happen!
         assert(min_DDX0 - max_DDX0 <= 2**(-26))
         assert(min_DDX1 - max_DDX1 <= 2**(-26))
+
+        # Function for telling if the given values are monotone.
+        def is_monotone():
+            alpha = (4*DX1 + DDX1*(U0-U1)) * (U0-U1) / (X0-X1)
+            beta = 30 + ((-24*(DX0+DX1) + 3*(DDX0-DDX1)*(U0-U1))*(U0-U1)) / (2 * (X0-X1))
+            gamma = ((U0-U1) * (4*DX0 + DDX0*(U1-U0))) / (X0-X1)
+            delta = DX0*(U0-U1) / (X0-X1)
+            return (alpha >= 0) and (delta >= 0) and \
+                (beta >= alpha - (4*alpha*delta)**(1/2)) and \
+                (gamma >= delta - (4*alpha*delta)**(1/2))
+
+        assert(is_monotone())
+        # Known monotone values for DDX0 and DDX1
+        target_DX0 = DX0
+        target_DX1 = DX1
+        target_DDX0 = DDX0
+        target_DDX1 = DDX1
+        # Reset to original values (sign adjusted).
+        DX0, DDX0 = y[0][1:]
+        DX1, DDX1 = y[1][1:]
+        DX0 *= sign
+        DX1 *= sign
+        DDX0 *= sign
+        DDX1 *= sign
+        # Do a binary search between known feasible values and current values.
+        if not (is_monotone()):
+            original_DX0, original_DDX0 = DX0, DDX0
+            original_DX1, original_DDX1 = DX1, DDX1
+            # If this function is not monotone, perform a binary
+            # search for the nearest-to-original monotone DDX values.
+            low_bound, upp_bound = 0, 1
+            # Continue dividing the interval in 2 to find the smallest
+            # "upper bound" (amount target) that satisfies monotonicity.
+            while ((upp_bound - low_bound) > accuracy):
+                to_target = upp_bound / 2  +  low_bound / 2
+                # If we found the limit of floating point numbers, break.
+                if ((to_target == upp_bound) or (to_target == low_bound)): break
+                # Recompute DDX0 and DDX1 based on the to_target.
+                DX0 = (1-to_target) * original_DX0 + to_target * target_DX0
+                DX1 = (1-to_target) * original_DX1 + to_target * target_DX1
+                DDX0 = (1-to_target) * original_DDX0 + to_target * target_DDX0
+                DDX1 = (1-to_target) * original_DDX1 + to_target * target_DDX1
+                # Otherwise, proceed with a binary seaarch.
+                if is_monotone(): upp_bound = to_target
+                else:             low_bound = to_target
+            # Store the smallest amount "target" for DDX0 and DDX1 that is monotone.
+            DX0 = (1-upp_bound) * original_DX0 + upp_bound * target_DX0
+            DX1 = (1-upp_bound) * original_DX1 + upp_bound * target_DX1
+            DDX0 = (1-upp_bound) * original_DDX0 + upp_bound * target_DDX0
+            DDX1 = (1-upp_bound) * original_DDX1 + upp_bound * target_DDX1
+            assert(is_monotone())
+
+        # If any values have changed, record that.
+        if not all(old==new for (old,new) in zip(
+                y[0][1:]+y[1][1:], [sign*DX0,sign*DDX0,sign*DX1,sign*DDX1])):
+            changed = True
+            y[0][1:] = sign*DX0, sign*DDX0
+            y[1][1:] = sign*DX1, sign*DDX1
+
         # Return whether or not the values were changed.
         return changed
 
