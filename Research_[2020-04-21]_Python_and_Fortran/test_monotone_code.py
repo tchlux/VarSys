@@ -45,7 +45,10 @@ def visualize_multiple(x, y, name=["Local quintic"], title="",
         else:
             from scipy.interpolate import PchipInterpolator
             f = PchipInterpolator(x, y)
-        p.add_func(n, f, [min(x), max(x)], color=c, dash=d)
+        x_locs = []
+        for i in range(len(x)-1): x_locs += list(np.linspace(x[i],x[i+1], 100))
+        fy = list(map(f, x_locs))
+        p.add(n, x_locs, fy, mode="lines", color=c, dash=d)
         # p.add_func("D "+n, f.derivative(), [min(x), max(x)], color=c, opacity=.2)
 
     # Add the points styled according to constraints (last to be on top).
@@ -116,7 +119,7 @@ def visualize_one(x, y, append=False, title=None, show=False,
 
 if True:
 
-    cubics = [False] #, True]
+    cubics = [False, True]
     names = ["Quintic Facet", "PCHIP"]
     # colors = [(200,20,80), 3]
     colors = [1, 3]

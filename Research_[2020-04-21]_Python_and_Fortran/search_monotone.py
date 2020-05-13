@@ -7,7 +7,7 @@ def make_exact(value):
     except: return Fraction(value)
 
 # Compute a monotone quintic spline that interpolates given data.
-def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-10),
+def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-26),
                             verbose=False, local_fits=None,
                             free=False):
     # Initialize dicationary of local fits.
@@ -32,19 +32,19 @@ def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-10),
     # Track which ones have been shrank.
     did_shrink = {}
     # Walk as close to the ideal values as possible.
-    M, step = 3, 0
-    step_size = (1 / (M*step+2))
+    step = 0
+    step_size = 1
     # Identify those intervals that need to be made monotone.
     if (not free): monotone_intervals = list(range(len(x)-1))
     else: monotone_intervals = [i for i in range(len(x)-1) if (
             (values[i][1] * (values[i+1][0] - values[i][0]) >= 0) and
             (values[i+1][1] * (values[i+1][0] - values[i][0]) >= 0))]
-    print("searching..")
+    # print("searching..")
     while (step_size > accuracy) or any(
             not is_monotone(x[i], x[i+1], *values[i], *values[i+1])
             for i in monotone_intervals):
         # Set the step size for this iteration.
-        step_size = (1 / (M*step+2))
+        step_size = max(step_size / 2, accuracy)
         step += 1
         # Find the values that need to be shrunk.
         to_shrink = {}
@@ -53,7 +53,7 @@ def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-10),
             if not is_monotone(x[i], x[i+1], *values[i], *values[i+1]):
                 to_shrink[i] = True
                 to_shrink[i+1] = True
-                print(" shrinking", i, float(step_size))
+                # print(" shrinking", i, float(step_size))
         # Shrink those values that need to be shrunk.
         for i in sorted(to_shrink):
             # Shrink the first derivative (bounded by 0).
@@ -67,8 +67,8 @@ def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-10),
         # Grow any values that were shrunk, but not in this iteration.
         for i in did_shrink:
             if i in to_shrink: continue
-            if (step_size < accuracy): continue
-            print(" growing", i, float(step_size))
+            if (step_size <= accuracy): continue
+            # print(" growing", i, float(step_size))
             # Shrink the first derivative (bounded by 0).
             values[i][1] = values[i][1] + step_size * best_values[i][1]
             sign = (-1) ** (best_values[i][1] < 0)
@@ -79,7 +79,7 @@ def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-10),
             sign = (-1) ** (best_values[i][2] < 0)
             if (sign * (best_values[i][2] - values[i][2]) < 0):
                 values[i][2] = best_values[i][2]
-    print(f" done in {step} setps.")
+    # print(f" done in {step} setps.")
     # Return the monotone quintic spline.
     return Spline(x, values)
     
