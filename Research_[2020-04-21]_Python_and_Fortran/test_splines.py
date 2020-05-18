@@ -1,5 +1,6 @@
 
-import fmodpy
+# import fmodpy
+import og_fmodpy as fmodpy
 splines = fmodpy.fimport("splines.f90", verbose=True,
                          autocompile_extra_files=True,
                          module_link_args=["-lblas", "-llapack"])
@@ -7,8 +8,8 @@ splines = fmodpy.fimport("splines.f90", verbose=True,
 
 TEST_B_SPLINE = False
 TEST_SPLINE = False
-TEST_PMQSI = False
-TEST_MINIMIZATION = True
+TEST_PMQSI = True
+TEST_MINIMIZATION = False
 
 
 if TEST_MINIMIZATION:
@@ -187,6 +188,7 @@ if TEST_SPLINE:
 
 
 if TEST_PMQSI:
+    from util.system import Timer
     import numpy as np
     VISUALIZE_TEST = True
     np.random.seed(2)
@@ -197,38 +199,47 @@ if TEST_PMQSI:
     values = 10 * (2*(np.random.random(size=(num_knots,)) - 1/2))
     print()
     print("knots:")
-    print(knots)
+    print(len(knots))
     print()
     print("values:")
-    print(values)
+    print(len(values))
     print()
     # Get the spline knots and spline coefficients.
     values = np.asfortranarray(values)
+    t = Timer(); t.start()
     sk, sc, info = splines.pmqsi(knots, values)
+    t.stop()
     print("info: ",info)
+    print(f"Fortran time: {t()}s")
     print()
     # print("order: ",len(sk) - len(sc) + 1)
     # print()
     # print("sk:")
     # print(repr(sk))
-    print("sc:")
-    print(repr(sc))
-    print()
+    # print("sc:")
+    # print(repr(sc))
+    # print()
 
-    if VISUALIZE_TEST:
+    # --------------------------------------------------------
+    from search_monotone import monotone_quintic_spline
+    t.start()
+    truth = monotone_quintic_spline(knots, values, exact=True)
+    t.stop() ; print(f"Python time: {t()}s")
+    # --------------------------------------------------------
+
+    if VISUALIZE_TEST and (num_knots <= 50):
         from util.plot import Plot
         # Make a pretty picture of the B-spline and its derivatives.
         padding = 0 #.1
-        x = np.linspace(min(knots)-padding,max(knots)+padding,max(1000,(len(knots)-1)*10+1))
+        x = [knots[0]]
+        for i in range(len(knots) -1):
+            x += list(np.linspace(knots[i], knots[i+1], 10))[1:]
+        x = np.array(x, dtype=float)
         y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
         p = Plot("Polynomial Interpolant")
         p.add("Spline", x, y, mode="lines", color=p.color(1))
-        # --------------------------------------------------------
-        from monotone import monotone_quintic_spline
-        truth = monotone_quintic_spline(knots, values, exact=True)
         true_y = list(map(truth, x))
         p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
-        # --------------------------------------------------------
         p.add("Knots", knots, values, color=p.color(1))
         p.show(file_name=f"spline_test-N{len(values)}-C{len(values)}.html")
 

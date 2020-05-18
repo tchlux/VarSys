@@ -1,3 +1,7 @@
+! KNOTS -> T
+! BREAKPOINTS -> XI
+! STATUS -> INFO
+
 
 MODULE REAL_PRECISION  ! module for 64-bit real arithmetic
   INTEGER, PARAMETER:: R8=SELECTED_REAL_KIND(13)
@@ -7,61 +11,13 @@ MODULE SPLINES
   USE REAL_PRECISION
   IMPLICIT NONE
 
-  PRIVATE :: MAKE_MONOTONE
+  ! PRIVATE :: EVAL_BSPLINE
   PUBLIC
 
 CONTAINS
 
-FUNCTION L2(KNOTS, COEFF, D)
-  REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: KNOTS, COEFF
-  INTEGER, INTENT(IN), OPTIONAL :: D
-  REAL(KIND=R8) :: L2
-  ! Local variables.
-  REAL(KIND=R8), DIMENSION(:), ALLOCATABLE :: Y, KS, CS, MIDS, AB
-  INTEGER :: DERIV, K, I, NB, NK, STATUS, NCC, NSPL
-  ! Set derivative.
-  set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
-  ELSE ; DERIV = 0
-  END IF set_derivative
-  ! Compute the order of the spline pieces for L2.
-  K = 1 + 2*(SIZE(KNOTS) - SIZE(COEFF) - DERIV - 1)
-  ! Determine the number of unique breakpoints.
-  NB = 1
-  DO I = 2, SIZE(KNOTS)
-     IF (KNOTS(I) .NE. KNOTS(I-1)) NB = NB + 1
-  END DO
-  ! Allocate the knots and coefficients of the intermediate spline.
-  !   NK = NB + (K-2) * (NB-1)
-  !      = NB + K*NB - K - 2*NB + 2
-  !      = NB*(1 - 2 + K) - K + 2
-  !      = NB*(K - 1) - K + 2
-  !      = NB*K - NB - K + 2
-  !      = K*(NB - 1) - NB + 2
-  NK = NB + (K-2)*(NB-1)
-  ALLOCATE(KS(1:NK))
-  ALLOCATE(CS(1:NK))
-  ALLOCATE(Y(1:NK))
-  ALLOCATE(MIDS(1:K-2))
-  ! Compute the spacing of the internal points on each interval.
-  DO I = 1, K-2
-     MIDS(I) = REAL(I,KIND=R8) / REAL(K-1, KIND=R8)
-  END DO
-  ! Compute all the new knots.
-  DO I = 1, NB-1
-     KS(I*())
-  END DO
-  ! Compute the values of the spline.
-  Y(:) = KS(:)
-  CALL EVAL_SPLINE(KNOTS, COEFF, Y, STATUS, D=DERIV)
-  Y(:) = Y(:)*Y(:)
-  ! Fit the coefficients for the spline that achieve these valeus.
-  
 
-  
-END FUNCTION L2
-
-
-SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, STATUS)
+SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
   ! Compute a piecewise monotone quintic spline interpolant for data
   ! in terms of a B-spline basis represented with knots and
   ! coefficients.
@@ -73,7 +29,7 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, STATUS)
   ! OUTPUT:
   !   KNOTS(1:Z+6) -- The knots for the PMQSI B-spline basis.
   !   COEFF(1:Z) -- The coefficients for the PMQSI B-spline basis.
-  !   STATUS -- Integer representing the subroutine execution status.
+  !   INFO -- Integer representing the subroutine execution status.
   !   
   REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X, Y
   ! 
@@ -82,358 +38,378 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, STATUS)
   REAL(KIND=R8), INTENT(OUT), DIMENSION(3*SIZE(X)) :: COEFF
   ! ^^^^ THESE ABOVE LINES ARE TEMPORARY, SHOULD NOT BE IN FINAL CODE.
   !      THEY ONLY EXIST TO MAKE AUTOMATIC WRAPPING EASIER.
-  INTEGER, INTENT(OUT) :: STATUS
-  INTEGER, PARAMETER :: MAX_STEPS=1000
+  INTEGER, INTENT(OUT) :: INFO
   ! 
   ! Local variables.
   REAL(KIND=R8), DIMENSION(SIZE(X),3) :: VALUES ! Spline derivative values.
-  REAL(KIND=R8), DIMENSION(3) :: SLOPES, RESIDUALS ! Linear fit information.
-  REAL(KIND=R8), DIMENSION(2) :: V1, V2 ! Violation amounts.
-  REAL(KIND=R8), DIMENSION(SIZE(X)) :: MIN_STEP
-  INTEGER :: I, Z, STEP
-  LOGICAL :: PREV_LINEAR, THIS_LINEAR
-  LOGICAL, DIMENSION(SIZE(X)) :: DD_CHANGED
-  LOGICAL, DIMENSION(SIZE(X)-1) :: TO_CHECK
+  REAL(KIND=R8), DIMENSION(SIZE(X),2) :: IDEAL_VALUES ! Estimated derivatives.
+  REAL(KIND=R8), DIMENSION(3) :: AS, BS
+  REAL(KIND=R8) :: ACCURACY, STEP_SIZE, A, B
+  LOGICAL, DIMENSION(SIZE(X)) :: FIXING, MODIFIED
+  LOGICAL :: SEARCHING
+  INTEGER :: I, J, Z
 
   Z = SIZE(X)
   ! Check the shape of incoming arrays.
-  IF      (Z .LT. 1)                 THEN ; STATUS = 1 ; RETURN
-  ELSE IF (SIZE(Y) .NE. Z)           THEN ; STATUS = 2 ; RETURN
-  ELSE IF (SIZE(KNOTS) .LT. 3*Z + 6) THEN ; STATUS = 4 ; RETURN
-  ELSE IF (SIZE(COEFF) .LT. 3*Z)     THEN ; STATUS = 5 ; RETURN
+  IF      (Z .LT. 3)                 THEN ; INFO = 1 ; RETURN
+  ELSE IF (SIZE(Y) .NE. Z)           THEN ; INFO = 2 ; RETURN
+  ELSE IF (SIZE(KNOTS) .LT. 3*Z + 6) THEN ; INFO = 4 ; RETURN
+  ELSE IF (SIZE(COEFF) .LT. 3*Z)     THEN ; INFO = 5 ; RETURN
   END IF
 
   ! Verify that X are increasing.
   DO I = 1, Z-1
-     IF (X(I) .GE. X(I+1)) THEN ; STATUS = 6 ; RETURN ; END IF
+     IF (X(I+1) - X(I) .LE. SQRT(EPSILON(1.0_R8))) THEN
+        INFO = 6 ; RETURN
+     END IF
   END DO
 
   ! Copy the "Y" values into the "VALUES" array, initialize others to zero.
   VALUES(:,1) = Y(:)
-  VALUES(:,2:3) = 0_R8
-  ! Initialize slopes, residuals, and "is linear" booleans.
-  SLOPES(:) = 0.0_R8
-  RESIDUALS(:) = HUGE(1.0_R8)
-  PREV_LINEAR = .FALSE.
-  THIS_LINEAR = .FALSE.
-
-  ! Construct local derivative and second derivative fits for each point.
+  FIXING(1) = .FALSE.
+  FIXING(Z) = .FALSE.
+  ! Store extreme points in the "FIXING" array.
   DO I = 2, Z-1
-     ! If this point has slope 0 between it and either neighbor..
-     IF ((Y(I-1) .EQ. Y(I)) .OR. (Y(I) .EQ. Y(I+1))) THEN ; CYCLE
-     ! Else if this is an extreme point (with different slopes on either side)..
-     ELSE IF ((Y(I)-Y(I-1)) * (Y(I+1)-Y(I)) .LT. 0.0_R8) THEN
-        ! Construct a local quadratic to determine the second
-        ! derivative value.
-        VALUES(I,3) = 0.0_R8
-     ! Else if this point is inside a monotone segment..
+     FIXING(I) = (((Y(I) - Y(I-1)) * (Y(I+1) - Y(I))) .LT. 0.0_R8)
+  END DO
+
+  ! Use local quadratic interpolants to estimate slopes and second
+  ! derivatives at all points. Use zero-slope quadratic interpolant
+  ! at extrema to estimate curvature.
+  !  - store outputs in "VALUES"
+  DO I = 1, Z
+     ! If this is an extreme point, construct quadratic interpolants
+     ! that have zero slope here and hit left/right neighbors.
+     IF (FIXING(I)) THEN
+        AS(1) = (Y(I-1) - Y(I)) / (X(I-1) - X(I))**2
+        BS(1) = - 2 * X(I) * AS(1)
+        AS(2) = (Y(I+1) - Y(I)) / (X(I+1) - X(I))**2
+        BS(2) = - 2 * X(I) * AS(2)
+        AS(3) = HUGE(1.0_R8)
+        BS(3) = 0.0_R8
      ELSE
-        ! Get local linear fit slope and residual information.
-        CALL LOCAL_LINEAR(I, SLOPES(3), RESIDUALS(3))
-        THIS_LINEAR = .TRUE.
+        ! If there are no left quadratics, then skip.
+        IF (I .LE. 2) THEN ; AS(1) = HUGE(1.0_R8) ; BS(1) = 0.0_R8
+        ! If there's an extreme point to the left, use it's right interpolant.
+        ELSE IF (FIXING(I-1)) THEN
+           AS(1) = (Y(I) - Y(I-1)) / (X(I) - X(I-1))**2
+           BS(1) = - 2 * X(I-1) * AS(1)
+        ! Otherwise use the standard quadratic on the left.
+        ELSE ; CALL QUADRATIC(I-1, AS(1), BS(1), INFO)
+        END IF
+        IF ((I .GT. 1) .AND. (I .LT. Z)) THEN
+           ! Construct the quadratic interpolant through this point and neighbors.
+           CALL QUADRATIC(I, AS(2), BS(2), INFO)
+        ELSE ; AS(2) = HUGE(1.0_R8) ; BS(2) = 0.0_R8
+        END IF
+        ! If there are no right quadratics, then skip.
+        IF (I .GE. Z-1) THEN ; AS(3) = HUGE(1.0_R8) ; BS(3) = 0.0_R8
+        ! If there's an extreme point to the right, use it's left interpolant.
+        ELSE IF (FIXING(I+1)) THEN
+           AS(3) = (Y(I) - Y(I+1)) / (X(I) - X(I+1))**2
+           BS(3) = - 2 * X(I+1) * AS(3)
+        ! Otherwise use the standard quadratic on the right.
+        ELSE ; CALL QUADRATIC(I+1, AS(3), BS(3), INFO)
+        END IF
      END IF
-     ! Use the slope of the best-fit linear model of the three for
-     ! the previous interval, if applicable.
-     IF (PREV_LINEAR) THEN
-        VALUES(I-1, 2) = SLOPES(MINLOC(RESIDUALS(:), 1))
+     ! Get the best quadratic for this index (uses AS and BS)
+     ! PRINT *, ''
+     ! PRINT *, '-------------------------------------------------------'
+     ! PRINT *, I
+     ! PRINT *, '  As:', AS(:)
+     ! PRINT *, '  Bs:', BS(:)
+     J = BEST_QUADRATIC(I)
+     ! PRINT *, '  Picked:', J
+     IF (J .GT. 0) THEN
+        ! Set the first and second derivatives.
+        VALUES(I,2) = 2 * AS(J) * X(I) + BS(J)
+        VALUES(I,3) = 2 * AS(J)
+        ! Make sure there are no "infinity" values.
+        IF (ABS(VALUES(I,2)) .GT. HUGE(1.0_R8)) THEN
+           IF (VALUES(I,2) .GT. 0.0_R8) THEN ; VALUES(I,2) = HUGE(1.0_R8)
+           ELSE ; VALUES(I,2) = -HUGE(1.0_R8)
+           END IF
+        END IF
+        IF (ABS(VALUES(I,3)) .GT. HUGE(1.0_R8)) THEN
+           IF (VALUES(I,3) .GT. 0.0_R8) THEN ; VALUES(I,3) = HUGE(1.0_R8)
+           ELSE ; VALUES(I,3) = -HUGE(1.0_R8)
+           END IF
+        END IF
+     ELSE
+        ! PRINT *, 'WARNING: Found no appropriate quadratic. Using 0s at ',I
+        VALUES(I,2) = 0.0_R8
+        VALUES(I,3) = 0.0_R8
      END IF
-     PREV_LINEAR = THIS_LINEAR
-     THIS_LINEAR = .FALSE.
-     ! Rotate existing slopes and residuals to free a space for the
-     ! slope of the next interval (provides a sliding window).
-     SLOPES(2) = SLOPES(3)
-     RESIDUALS(1) = RESIDUALS(2)
-     RESIDUALS(2) = RESIDUALS(3)
-     SLOPES(3) = 0.0_R8
-     RESIDUALS(3) = HUGE(1.0_R8)
-  END DO
-  ! Use the slope of the best-fit linear model of the three for
-  ! the previous interval, if applicable.
-  IF (PREV_LINEAR) THEN
-     VALUES(I-1, 2) = SLOPES(MINLOC(RESIDUALS(:), 1))
-  END IF
-  ! Estimate the first and second derivative at edges using a
-  ! quadratic interpolant over the neighboring slope and edge value.
-  IF (Z .GT. 2) THEN
-     VALUES(1,2) = (Y(2) - Y(1)) / (X(2) - X(1))
-     VALUES(Z,2) = (Y(Z) - Y(Z-1)) / (X(Z) - X(Z-1))
-  END IF
-
-  ! Cycle through and enforce monotonicity on the derivative and
-  ! second derivative values.
-  TO_CHECK(:) = .TRUE.
-  DD_CHANGED(:) = .FALSE.
-  FORALL (I=1:Z) MIN_STEP(I) = ABS(VALUES(I,2)) / REAL(MAX_STEPS,KIND=R8)
-  STEP = 1
-  DO WHILE (ANY(TO_CHECK(:)))
-     STEP = STEP + 1
-     IF (STEP .GT. 100) EXIT
-     ! Check all intervals.
-     interval_loop : DO I = 1, Z-1
-        monotone_check : IF (TO_CHECK(I)) THEN
-           TO_CHECK(I) = .FALSE.
-           CALL MAKE_MONOTONE(X(I), X(I+1), VALUES(I,:), VALUES(I+1,:), V1(:), V2(:))
-           ! Convert the "violation" amounts to strictly positive numbers.
-           V1(:) = ABS(V1(:))
-           V2(:) = ABS(V2(:))
-           print *, ''
-           print *, "checking interval ", I
-           print *, "   ", VALUES(I,2:)
-           print *, "   ", V1(:)
-           PRINT *, ''
-           print *, "   ", VALUES(I+1,2:)
-           print *, "   ", V2(:)
-           ! Check the left side.
-           check_left : IF (MAXVAL(V1(:)) .GT. 0.0_R8) THEN
-              ! Mark the previous and next interval as "need to be checked".
-              IF (I .GT. 1) TO_CHECK(I-1) = .TRUE.
-              ! If this value has not been changed before, then mark
-              ! it and move on.
-              IF (.NOT. DD_CHANGED(I)) THEN ; DD_CHANGED(I) = .TRUE.
-              ! The second derivative value was changed and this
-              ! breakpoint is being revisited, shrink first derivative
-              ! if it is greater than zero.
-              ELSE IF (ABS(VALUES(I,2)) .GT. 0.0_R8) THEN
-                 ! The first derivative was modified or will be,
-                 ! reset "DD changed" variable.
-                 DD_CHANGED(I) = .FALSE.
-                 ! If the first derivative was not changed, it needs to be.
-                 IF (V1(1) .EQ. 0.0_R8) THEN
-                    ! Compute the "multiplier" that determines the shrinkage.
-                    V1(1) = (1.0_R8 - 1.0_R8 / &
-                         (1.0_R8 + (V1(2) + 1.0_R8/ABS(VALUES(I,2)))))
-                    ! Make sure the shrinkage is at least MIN_STEP(I).
-                    V1(1) = MIN(V1(1), MIN_STEP(I) / ABS(VALUES(I,2)))
-                    ! Shrink the derivative value.
-                    VALUES(I,2) = V1(1) * VALUES(I,2)
-                 END IF
-              ! The first derivative is zero and the second derivative
-              ! has been changed twice, so there must be a first
-              ! derivative conflict with the neighboring interval.
-              ELSE IF (I .GT. 1) THEN
-                 DD_CHANGED(I-1) = .TRUE.
-              END IF
-           END IF check_left
-
-           ! Check the right side.
-           check_right : IF (MAXVAL(V2(:)) .GT. 0.0_R8) THEN
-              ! Mark the next interval as "need to be checked".
-              IF (I .LT. Z-1) TO_CHECK(I+1) = .TRUE.
-              ! If this value has not been changed before, then mark
-              ! it and move on.
-              IF (.NOT. DD_CHANGED(I+1)) THEN ; DD_CHANGED(I+1) = .TRUE.
-              ! The second derivative value was changed and this
-              ! breakpoint is being revisited, shrink first derivative
-              ! if it is greater than zero.
-              ELSE IF (ABS(VALUES(I+1,2)) .GT. 0.0_R8) THEN
-                 ! The first derivative was modified or will be,
-                 ! reset "DD changed" variable.
-                 DD_CHANGED(I+1) = .FALSE.
-                 ! If the first derivative was not changed, it needs to be.
-                 IF (V2(1) .EQ. 0.0_R8) THEN
-                    ! Compute the "multiplier" that determines the shrinkage.
-                    V2(1) = (1.0_R8 - 1.0_R8 / &
-                         (1.0_R8 + (V2(2) + 1.0_R8/ABS(VALUES(I+1,2)))))
-                    ! Make sure the shrinkage is at least MIN_STEP(I+1).
-                    V2(1) = MIN(V2(1), MIN_STEP(I) / ABS(VALUES(I+1,2)))
-                    ! Shrink the derivative value.
-                    VALUES(I+1,2) = V2(1) * VALUES(I+1,2)
-                 END IF
-              ! The first derivative is zero and the second derivative
-              ! has been changed twice, so there must be a first
-              ! derivative conflict with the neighboring interval.
-              ELSE IF (I .LT. Z-1) THEN
-                 DD_CHANGED(I+1) = .TRUE.
-              END IF
-           END IF check_right
-        END IF monotone_check
-     END DO interval_loop
   END DO
 
+  ! Store the initially estimated values as "ideal".
+  IDEAL_VALUES(:,1:2) = VALUES(:,2:3)
+
+  ! PRINT *, ''
+  ! print *, "IDEAL_VALUES(:,1): ",IDEAL_VALUES(:,1)
+  ! print *, "IDEAL_VALUES(:,2): ",IDEAL_VALUES(:,2)
+  ! PRINT *, ''
+
+  ! Identify which intervals are not monotone and need to be fixed.
+  FIXING(:) = .FALSE.
+  MODIFIED(:) = .FALSE.
+  DO I = 1, Z-1
+     IF (.NOT. IS_MONOTONE(I,I+1)) THEN
+        FIXING(I) = .TRUE.
+        FIXING(I+1) = .TRUE.
+     END IF
+  END DO
+  ! PRINT *, ''
+  ! PRINT *, 'VALUES:'
+  ! PRINT *, '  ', VALUES(:,1)
+  ! PRINT *, '  ', VALUES(:,2)
+  ! PRINT *, '  ', VALUES(:,3)
+  ! PRINT *, ''
+  ! PRINT *, 'FIXING:', FIXING
+  ! PRINT *, ''
+  ! Initialize step size to 1.0 (will be halved at beginning of loop.
+  STEP_SIZE = 1.0_R8
+  ! Define the accuracy of the solution (will be an optional parameter).
+  ACCURACY = SQRT(SQRT(EPSILON(1.0_R8)))
+  SEARCHING = .TRUE.
+  ! Loop until the accuracy is achieved and *all* intervals are monotone.
+  DO WHILE (SEARCHING .OR. ANY(FIXING(:)))
+     ! Compute the step size for this iteration.
+     IF (SEARCHING) THEN
+        STEP_SIZE = STEP_SIZE / 2.0_R8
+        IF (STEP_SIZE .LT. ACCURACY) THEN
+           SEARCHING = .FALSE.
+           STEP_SIZE = ACCURACY
+        END IF
+     END IF
+     ! PRINT *, 'step size', STEP_SIZE
+     ! Cycle through all intervals and make modifications where appropriate.
+     DO I = 1, Z
+        IF (FIXING(I)) THEN
+           ! PRINT *, '     fixing', I, VALUES(I,2:3)
+           FIXING(I) = .FALSE.
+           MODIFIED(I) = .TRUE.
+           ! Shrink those values that are causing nonmonotonicity.
+           VALUES(I,2) = VALUES(I,2) - STEP_SIZE * IDEAL_VALUES(I,1)
+           VALUES(I,3) = VALUES(I,3) - STEP_SIZE * IDEAL_VALUES(I,2)
+           ! Make sure the first derivative does not pass zero.
+           IF ((IDEAL_VALUES(I,1) .LT. 0.0_R8) .AND. &
+                (VALUES(I,2) .GT. 0.0_R8)) THEN
+              VALUES(I,2) = 0.0_R8
+           ELSE IF ((IDEAL_VALUES(I,1) .GT. 0.0_R8) .AND. &
+                (VALUES(I,2) .LT. 0.0_R8)) THEN
+              VALUES(I,2) = 0.0_R8
+           END IF
+           ! Make sure the second derivative does not pass zero.
+           IF ((IDEAL_VALUES(I,2) .LT. 0.0_R8) .AND. &
+                (VALUES(I,3) .GT. 0.0_R8)) THEN
+              VALUES(I,3) = 0.0_R8
+           ELSE IF ((IDEAL_VALUES(I,2) .GT. 0.0_R8) .AND. &
+                (VALUES(I,3) .LT. 0.0_R8)) THEN
+              VALUES(I,3) = 0.0_R8
+           END IF
+        ELSE IF (MODIFIED(I) .AND. SEARCHING) THEN
+           ! Grow those values that have been modified previously.
+           VALUES(I,2) = VALUES(I,2) + STEP_SIZE * IDEAL_VALUES(I,1)
+           VALUES(I,3) = VALUES(I,3) + STEP_SIZE * IDEAL_VALUES(I,2)
+           ! Make sure the first derivative does not pass original values.
+           IF ((IDEAL_VALUES(I,1) .LT. 0.0_R8) .AND. &
+                (VALUES(I,2) .LT. IDEAL_VALUES(I,1))) THEN
+              VALUES(I,2) = IDEAL_VALUES(I,1)
+           ELSE IF ((IDEAL_VALUES(I,1) .GT. 0.0_R8) .AND. &
+                (VALUES(I,2) .GT. IDEAL_VALUES(I,1))) THEN
+              VALUES(I,2) = IDEAL_VALUES(I,1)
+           END IF
+           ! Make sure the second derivative does not pass original values.
+           IF ((IDEAL_VALUES(I,2) .LT. 0.0_R8) .AND. &
+                (VALUES(I,3) .LT. IDEAL_VALUES(I,2))) THEN
+              VALUES(I,3) = IDEAL_VALUES(I,2)
+           ELSE IF ((IDEAL_VALUES(I,2) .GT. 0.0_R8) .AND. &
+                (VALUES(I,3) .GT. IDEAL_VALUES(I,2))) THEN
+              VALUES(I,3) = IDEAL_VALUES(I,2)
+           END IF
+        END IF
+     END DO
+     ! Go through and identify which values are associated with
+     ! nonmonotone intervals after all the updates.
+     DO I = 1, Z-1
+        IF (.NOT. IS_MONOTONE(I,I+1)) THEN
+           FIXING(I) = .TRUE.
+           FIXING(I+1) = .TRUE.
+        END IF
+     END DO
+  END DO
+  ! PRINT *, 'Fitting spline..'
   ! Use "FIT_SPLINE" to fit the final interpolating spline.
-  CALL FIT_SPLINE(X, VALUES, KNOTS, COEFF, STATUS)
+  CALL FIT_SPLINE(X, VALUES, KNOTS, COEFF, INFO)
 
 CONTAINS
-  SUBROUTINE LOCAL_LINEAR(I, A, R)
-    ! Given an index "I", compute the linear regression about the
-    ! points X(I-1:I+1), Y(I-1:I+1). Return the slope and the sum of
-    ! squared errors of the regression line.
+  FUNCTION BEST_QUADRATIC(I) RESULT(LOC)
     INTEGER, INTENT(IN) :: I
-    REAL(KIND=R8), INTENT(OUT) :: A, & ! Slope of the linear regression.
-         R ! Sum of squared errors of the linear regression.
+    INTEGER :: LOC, ORDER(3)
+    REAL(KIND=R8) :: SLOPE, DIRECTION
+    ! Construct the sorted-order of preference for chosen quadratics.
+    IF (ABS(AS(1)) .LE. ABS(AS(2))) THEN
+       IF (ABS(AS(2)) .LE. ABS(AS(3))) THEN
+          ORDER(:) = (/ 1, 2, 3 /)
+       ELSE IF (ABS(AS(1)) .LE. ABS(AS(3))) THEN
+          ORDER(:) = (/ 1, 3, 2 /)
+       ELSE
+          ORDER(:) = (/ 3, 1, 2 /)
+       END IF
+    ELSE
+       IF (ABS(AS(2)) .GT. ABS(AS(3))) THEN
+          ORDER(:) = (/ 3, 2, 1 /)
+       ELSE IF (ABS(AS(1)) .GT. ABS(AS(3))) THEN
+          ORDER(:) = (/ 2, 3, 1 /)
+       ELSE
+          ORDER(:) = (/ 2, 1, 3 /)
+       END IF
+    END IF
+    ! Determine the direction of change at the point "I".
+    IF (I .GE. Z) THEN
+       IF (I .LE. 1) THEN ; DIRECTION = 0.0_R8
+       ELSE IF (Y(I-1) .LE. Y(I)) THEN ; DIRECTION = 1.0_R8
+       ELSE ; DIRECTION = -1.0_R8
+       END IF
+    ELSE IF (Y(I) .LE. Y(I+1)) THEN
+       IF (I .LE. 1) THEN ; DIRECTION = 1.0_R8
+       ELSE IF (Y(I-1) .LE. Y(I)) THEN ; DIRECTION = 1.0_R8
+       ELSE ; DIRECTION = 0.0_R8
+       END IF
+    ELSE
+       IF (I .LE. 1) THEN ; DIRECTION = -1.0_R8
+       ELSE IF (Y(I-1) .GT. Y(I)) THEN ; DIRECTION = -1.0_R8
+       ELSE ; DIRECTION = 0.0_R8
+       END IF
+    END IF
+    ! PRINT *, '  DIRECTION:', DIRECTION
+    ! PRINT *, '  ORDER:    ', ORDER
+    ! Pick the quadratic that has the least curvature and an agreeing slope.
+    LOC = ORDER(1)
+    SLOPE = 2 * AS(LOC) * X(I) + BS(LOC)
+    ! PRINT *, '    SLOPE 1:', SLOPE
+    IF (SLOPE * DIRECTION .LT. 0.0_R8) THEN
+       LOC = ORDER(2)
+       SLOPE = 2 * AS(LOC) * X(I) + BS(LOC)
+       ! PRINT *, '    SLOPE 2:', SLOPE
+       IF (SLOPE * DIRECTION .LT. 0.0_R8) THEN
+          LOC = ORDER(3)
+          SLOPE = 2 * AS(LOC) * X(I) + BS(LOC)
+          ! PRINT *, '    SLOPE 3:', SLOPE
+          IF (SLOPE * DIRECTION .LT. 0.0_R8) THEN
+             LOC = -1
+          END IF
+       END IF
+    END IF
+  END FUNCTION BEST_QUADRATIC
+
+  SUBROUTINE QUADRATIC(I2, A, B, INFO)
+    ! Given an index "I", compute the quadratic interpolant of points
+    ! X(I-1:I+1), Y(I-1:I+1). Return the slope and curvature.
+    ! 
+    ! INPUT:
+    !   I2 -- Integer index of the middle point defining the quadratic.
+    ! 
+    ! OUTPUT:
+    !   A -- Real valued coefficient on x^2 for interpolating quadratic.
+    !   B -- Real valued coefficient on x for interpolating quadratic.
+    !   INFO -- Integer value denoting execution info, on exit:
+    !     0     Successful execution.
+    !     1     Points X(I2-1), X(I2), X(I2+1) are too close together
+    !           to compute good estimates of slope and curvature.
+    INTEGER, INTENT(IN) :: I2
+    REAL(KIND=R8), INTENT(OUT) :: A, & ! Curvature of the quadratic.
+         B ! Slope of the quadratic.
+    INTEGER, INTENT(OUT) :: INFO ! 
     ! Local variables.
-    REAL(KIND=R8) :: B, & ! Y-intercept of the linear regression.
-         AN, & ! Numerator for computing "A".
-         BN, & ! Numerator for computing "B".
-         D ! Denominator for computing "A" and "B".
-    
-    AN = 2*(X(I-1)*Y(I-1) + X(I)*Y(I) + X(I+1)*Y(I+1)) &
-         - X(I-1)*(Y(I)+Y(I+1)) &
-         - X(I)*(Y(I-1)+Y(I+1)) &
-         - X(I+1)*(Y(I-1)+Y(I))
-    BN = Y(I-1)*(X(I)**2 + X(I+1)**2 - X(I-1)*(X(I) + X(I+1))) &
-         + Y(I)*(X(I-1)**2 + X(I+1)**2 - X(I)*(X(I-1) + X(I+1))) &
-         + Y(I+1)*(X(I-1)**2 + X(I)**2 - X(I+1)*(X(I-1) + X(I)))
-    D = 2*(X(I-1)**2 + X(I)**2 + X(I+1)**2) &
-         - 2*(X(I)*X(I+1) + X(I-1)*(X(I)+X(I+1)))
-    ! Compute the regression coefficient and intercept.
-    A = AN / D
-    B = BN / D
-    ! Compute the sum of squared errors.
-    R = (A*X(I-1) + B - Y(I-1))**2 &
-         + (A*X(I) + B - Y(I))**2 &
-         + (A*X(I+1) + B - Y(I+1))**2
-    ! Compute the local slope, intercept
-  END SUBROUTINE LOCAL_LINEAR
+    REAL(KIND=R8) :: D, & ! Denominator for computing "A" and "B".
+         C1, C2, C3 ! Intermediate terms for computation.
+    INTEGER :: I1, I3
+    I1 = I2-1
+    I3 = I2+1
+    IF ((Y(I1) .EQ. Y(I2)) .OR. (Y(I2) .EQ. Y(I3))) THEN
+       A = 0.0_R8
+       B = 0.0_R8
+    END IF
+    ! Compute the shared denominator and check for numerical stability.
+    D = (X(I1) - X(I2)) * (X(I1) - X(I3)) * (X(I2) - X(I3))
+    IF (ABS(D) .LT. SQRT(EPSILON(1.0_R8))) THEN ; INFO = 1 ; RETURN ; END IF
+    ! Compute coefficients A and B in "Ax^2 + Bx + C" quadratic interpolant.
+    C1 = X(I1) * (Y(I3) - Y(I2))
+    C2 = X(I2) * (Y(I1) - Y(I3))
+    C3 = X(I3) * (Y(I2) - Y(I1))
+    A = (C1 + C2 + C3) / D
+    B = - (X(I1)*C1 + X(I2)*C2 + X(I3)*C3) / D
+  END SUBROUTINE QUADRATIC
+
+
+  FUNCTION IS_MONOTONE(I1, I2)
+    ! Given an interval and function values (value, first, and seocond
+    ! derivative), make the quintic over this interval monotone by
+    ! modifying the first and second derivatives according to quintic
+    ! monotonicity theory. Return the change applied to first and second
+    ! derivative values.
+    INTEGER, INTENT(IN) :: I1, I2
+    LOGICAL IS_MONOTONE
+    ! Local variables.
+    REAL(KIND=R8) :: A, A0, A1, B, BOUND, B0, B1, D, DDX0, DDX1, &
+         DX0, DX1, G, G0, G1, SIGN, TAU, U0, U1, X0, X1
+    U0 = X(I1)
+    U1 = X(I2)
+    X0 = VALUES(I1,1)
+    X1 = VALUES(I2,1)
+    DX0 = VALUES(I1,2)
+    DX1 = VALUES(I2,2)
+    DDX0 = VALUES(I1,3)
+    DDX1 = VALUES(I2,3)
+    ! Always consider the monotone increasing case.
+    IF (X1 .LT. X0) THEN
+       X0 = -X0     ; X1 = -X1
+       DX0 = -DX0   ; DX1 = -DX1
+       DDX0 = -DDX0 ; DDX1 = -DDX1
+    END IF
+    ! Make sure the slopes point in the correct direction.
+    IF (DX0 .LT. 0.0_R8) THEN ; IS_MONOTONE = .FALSE. ; RETURN ; END IF
+    IF (DX1 .LT. 0.0_R8) THEN ; IS_MONOTONE = .FALSE. ; RETURN ; END IF
+    ! Compute A and B.
+    A = (U1 - U0) * DX0 / (X1 - X0)
+    B = (U1 - U0) * DX1 / (X1 - X0)
+    ! Simplified cubic monotone case.
+    IF (A*B .LE. 0) THEN
+       A = (4*DX1 + DDX1*(U0-U1)) * (U0-U1) / (X0-X1)
+       B = 30 + ((-24*(DX0+DX1) + 3*(DDX0-DDX1)*(U0-U1))*(U0-U1)) / (2 * (X0-X1))
+       G = ((U0-U1) * (4*DX0 + DDX0*(U1-U0))) / (X0-X1)
+       D = DX0 * (U0-U1) / (X0-X1)
+       IS_MONOTONE = (A .GE. 0.0_R8) .AND. (D .GE. 0.0_R8) .AND. &
+            (B .GE. A - (4.0_R8 * A * D)**(0.5_R8)) .AND. &
+            (G .GE. D - (4.0_R8 * A * D)**(0.5_R8))
+       RETURN
+    END IF
+    ! Full quintic monotone case.
+    TAU = 24 + 2*(A*B)**(0.5_R8) - 3*(A+B)
+    IF (TAU .LT. 0.0_R8) THEN ; IS_MONOTONE = .FALSE. ; RETURN ; END IF
+    ! Compute alpha, gamma ,beta from theorems, determine monotonicity.
+    A0 = 4 * (B**(1/4) / A**(1/4))
+    A1 = ((U0-U1) / DX1) * B**(1/4) / A**(1/4)
+    G0 = 4 * (DX0 / DX1) * (B**(3/4) / A**(3/4))
+    G1 = ((U1-U0) / DX1) * (B**(3/4) / A**(3/4))
+    B0 = (12 * (DX0+DX1) * (U1-U0) + 30 * (X0-X1)) / ((X0-X1) * A**(1/2) * B**(1/2))
+    B1 = (3 * (U0-U1)**2) / (2 * (X0-X1) * A**(1/2) * B**(1/2))
+    ! Compute the monotonicity condition.
+    A = A0 + A1 * DDX1
+    G = G0 + G1 * DDX0
+    B = B0  + B1  * (DDX0 - DDX1)
+    IF (B .LE. 6.0_R8) THEN ; BOUND = - (B + 2) / 2
+    ELSE ;               BOUND = -2 * (B - 2)**(1/2)
+    END IF
+    IS_MONOTONE = (A > BOUND) .AND. (G > BOUND)
+  END FUNCTION IS_MONOTONE
+
 END SUBROUTINE PMQSI
 
 
-SUBROUTINE MAKE_MONOTONE(X1, X2, Y1, Y2, D1, D2)
-  ! Given an interval and function values (value, first, and seocond
-  ! derivative), make the quintic over this interval monotone by
-  ! modifying the first and second derivatives according to quintic
-  ! monotonicity theory. Return the change applied to first and second
-  ! derivative values.
-  REAL(KIND=R8), INTENT(IN) :: X1, X2
-  REAL(KIND=R8), INTENT(INOUT), DIMENSION(3) :: Y1, Y2
-  REAL(KIND=R8), INTENT(OUT), DIMENSION(2) :: D1, D2
-  ! Local variables.
-  REAL(KIND=R8) :: A, A0, A1, B, B0, B1, ETA1, ETA2, G0, G1, &
-       SIGN, SLOPE, TEMP, V, W
-
-  ! Compute useful variables, store original derivative values.
-  V = Y2(1) - Y1(1)
-  W = X2 - X1
-  SLOPE = V / W
-  D1(1:2) = Y1(2:3)
-  D2(1:2) = Y2(2:3)
-  ! Handle unchanging interval.
-  IF (SLOPE .EQ. 0.0_R8) THEN
-     ! Zero out the first and second derivative for flat intervals and return.
-     Y1(2:3) = 0.0_R8
-     Y2(2:3) = 0.0_R8
-     D1(1:2) = Y1(2:3) - D1(1:2)
-     D2(1:2) = Y2(2:3) - D2(1:2)
-     RETURN
-  ! This is not a flat interval, set the "SIGN" variable.
-  ELSE IF (SLOPE .GT. 0.0_R8) THEN ; SIGN =  1.0_R8
-  ELSE                             ; SIGN = -1.0_R8
-  END IF
-
-  ! Consider this interval to be monotone increasing.
-  V = V * SIGN
-  Y1(:) = Y1(:) * SIGN
-  Y2(:) = Y2(:) * SIGN
-  SLOPE = SLOPE * SIGN
-  ! Set derivative to be the median of {0, Y(2), 14*SLOPE}.
-  Y1(2) = MIN(14.0_R8*SLOPE, MAX(0.0_R8, Y1(2)))
-  Y2(2) = MIN(14.0_R8*SLOPE, MAX(0.0_R8, Y2(2)))
-  ! Compute "A" (left ratio) and "B" (right ratio).
-  A = Y1(2) / SLOPE
-  B = Y2(2) / SLOPE
-
-  ! Use a (simplified) monotone cubic over this region if AB = 0.
-  ! Only consider the coefficients less than the x^4, because that
-  ! term is strictly positive.
-  simplified_monotone : IF (A*B .LT. SQRT(EPSILON(0.0_R8))) THEN
-     ! Ensure that DDf(X1) has a nonempty feasible region (given Df).
-     TEMP = MAX(0.0_R8, (20.0_R8*V / W) / (5.0_R8*Y1(2) + 4.0_R8*Y2(2)))
-     IF (TEMP .LT. 1) THEN
-        Y1(2) = Y1(2) * TEMP
-        Y2(2) = Y2(2) * TEMP
-     END IF
-     ! Cap DDf(X2) so that DDf(X1) feasible region is nonempty.
-     Y1(3) = MIN(Y1(3), (4.0_R8*(2.0_R8*Y1(2) + Y2(2)) + 20.0_R8*V/W) / W)
-     ! Enforce gamma >= delta.
-     Y1(3) = MAX(Y1(3), 3.0_R8*Y1(2) / W)
-     ! Enforce \alpha >= 0.
-     Y2(3) = MIN(Y2(3), -4.0_R8*Y2(2) / W)
-     ! Enforce \beta >= \alpha.
-     Y2(3) = MAX(Y2(3), (3.0_R8*Y1(3)*W - &
-          (24.0_R8*Y1(2) + 32.0_R8*Y2(2)) - 60.0_R8*V / W) / (5.0_R8*W))
-     ! Undo the sign change, compute the derivative changes, and return.
-     Y1(:) = Y1(:) * SIGN
-     Y2(:) = Y2(:) * SIGN
-     D1(1:2) = Y1(2:3) - D1(1:2)
-     D2(1:2) = Y2(2:3) - D2(1:2)
-     RETURN
-  END IF simplified_monotone
-
-  ! Clip derivative values that are too large (to ensure that shrinking
-  ! the derivative vectors on either end will not break monotonicity).
-  !   (clipping at 6 box is enough, using 8 box requires more steps)
-  TEMP = 6.0_R8 / MAX(A,B)
-  IF (TEMP .LT. 1.0_R8) THEN
-     Y1(2) = Y1(2) * TEMP
-     Y2(2) = Y2(2) * TEMP     
-     A = A * TEMP
-     B = B * TEMP
-  END IF
-
-  IF (24.0_R8 + 2.0_R8*SQRT(A*B) - 3.0_R8*(A+B) .LT. 0.0_R8) THEN
-     PRINT *, "ERROR: Something went wrong, Tau_1 is negative."
-  END IF
-
-  ! Compute the terms needed to simplify the monotonicity check in
-  ! terms of the second derivative values.
-  TEMP = (B / A)**(0.75_R8) / Y2(2)
-  G0 = 4.0_R8 * Y1(2) * TEMP
-  G1 = W * TEMP
-  TEMP = (B / A) ** (0.25)
-  A0 = 4.0_R8 * TEMP
-  A1 = - W / Y2(2) * TEMP
-  TEMP = W / (V * SQRT(A) * SQRT(B))
-  B0 = 30.0_R8 - 12.0_R8 * (Y1(2) + Y2(2)) * TEMP
-  B1 = (-3.0_R8 * W / 2.0_R8) * TEMP
-
-  ! Perform a binary search for allowable DDf values.
-  A = SQRT(A) ; B = SQRT(B)
-  ETA1 = - A * (7.0_R8*A + 3.0_R8*B) * SLOPE / W
-  ETA2 =   B * (3.0_R8*A + 7.0_R8*B) * SLOPE / W
-  nonmonotone_DDf : IF (.NOT. IS_MONOTONE(Y1(3), Y2(3))) THEN
-     ! Reuse variables "A" and "B" as lower and upper bounds for
-     ! binary search.
-     A = 0.0_R8 ; B = 1.0_R8
-     binary_search : DO WHILE ((B - A) .GT. SQRT(EPSILON(0.0_R8)))
-        TEMP = (A + B) / 2.0_R8
-        ! Compute current DDf estimates.
-        Y1(3) = (1.0_R8 - TEMP) * D1(2)  +  TEMP * ETA1
-        Y2(3) = (1.0_R8 - TEMP) * D2(2)  +  TEMP * ETA2
-        ! Depending on the monotonicity, shrink search region.
-        IF (IS_MONOTONE(Y1(3), Y2(3))) THEN ; B = TEMP
-        ELSE                                ; A = TEMP
-        END IF
-     END DO binary_search
-     ! Compute the final (monotone) estimate.
-     Y1(3) = (1.0_R8 - B) * D1(2)  +  B * ETA1
-     Y2(3) = (1.0_R8 - B) * D2(2)  +  B * ETA2
-  END IF nonmonotone_DDf
-
-  ! Undo the sign change, compute the derivative changes, and return.
-  Y1(:) = Y1(:) * SIGN
-  Y2(:) = Y2(:) * SIGN
-  D1(1:2) = Y1(2:3) - D1(1:2)
-  D2(1:2) = Y2(2:3) - D2(1:2)
-  RETURN
-
-CONTAINS
-  FUNCTION IS_MONOTONE(DDY1, DDY2)
-    ! Compute the condition that determines if monotonicity is
-    ! achieved by current second derivative values.
-    REAL(KIND=R8), INTENT(IN) :: DDY1, DDY2
-    REAL(KIND=R8) :: G, A, B
-    LOGICAL :: IS_MONOTONE
-    G = G0 + G1*DDY1
-    A = A0 + A1*DDY2
-    B = B0 + B1*(DDY1 - DDY2)
-    IF (B .LT. 6.0_R8) THEN ; IS_MONOTONE = (A .GT. -(B+2)/2.0_R8)
-    ELSE                    ; IS_MONOTONE = (G .GT. -2.0_R8*SQRT(B-2.0_R8))
-    END IF
-  END FUNCTION IS_MONOTONE
-END SUBROUTINE MAKE_MONOTONE
-
-
-SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
+SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, INFO)
   ! Subroutine for computing a linear combination of B-splines that
   ! interpolates the given function value (and function derivatives)
   ! at the given breakpoints.
@@ -449,7 +425,7 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
   !                            of the knots for the B-spline basis.
   !   COEFF(1:NB*NCC) -- The coefficients for the B-splines
   !                      that define the interpolating spline.
-  !   STATUS -- Integer representing the subroutine execution status:
+  !   INFO -- Integer representing the subroutine execution status:
   !       0    Successful execution.
   !       1    SIZE(BREAKPOINTS) is less than 1.
   !       2    SIZE(VALUES) is less then 1.
@@ -480,7 +456,7 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
   !   on the spacing of the knots and the magnitudes of the values
   !   provided. When the condition number of the intermediate linear
   !   system grows prohibitively large, this routine may fail to
-  !   produce a correct set of coefficients and return STATUS code 7.
+  !   produce a correct set of coefficients and return INFO code 7.
   !   For very high levels of continuity, or when this routine fails,
   !   a Newton form of polynomial representation should be used
   !   instead.
@@ -494,7 +470,7 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
   ! ^^^^ THE ABOVE 2 LINES ARE TEMPORARY, SHOULD NOT BE IN FINAL CODE.
   !      THEY ONLY EXIST TO MAKE AUTOMATIC WRAPPING EASIER.
   ! 
-  INTEGER, INTENT(OUT) :: STATUS
+  INTEGER, INTENT(OUT) :: INFO
   ! Local variables.
   INTEGER, DIMENSION(SIZE(COEFF)) :: IPIV
   REAL(KIND=R8), DIMENSION(1 + 3*(2*SIZE(VALUES,2)-1), SIZE(VALUES)) :: AB
@@ -518,19 +494,19 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
   NK = NSPL + 2*NCC
   K = 2*NCC
   DEGREE = K - 1
-  STATUS = 0
+  INFO = 0
 
   ! Check the shape of incoming arrays.
-  IF      (NB .LT. 1)              THEN ; STATUS = 1 ; RETURN
-  ELSE IF (NSPL .LT. 1)            THEN ; STATUS = 2 ; RETURN
-  ELSE IF (SIZE(VALUES,1) .NE. NB) THEN ; STATUS = 3 ; RETURN
-  ELSE IF (SIZE(KNOTS) .LT. NK)    THEN ; STATUS = 4 ; RETURN
-  ELSE IF (SIZE(COEFF) .LT. NSPL)  THEN ; STATUS = 5 ; RETURN
+  IF      (NB .LT. 1)              THEN ; INFO = 1 ; RETURN
+  ELSE IF (NSPL .LT. 1)            THEN ; INFO = 2 ; RETURN
+  ELSE IF (SIZE(VALUES,1) .NE. NB) THEN ; INFO = 3 ; RETURN
+  ELSE IF (SIZE(KNOTS) .LT. NK)    THEN ; INFO = 4 ; RETURN
+  ELSE IF (SIZE(COEFF) .LT. NSPL)  THEN ; INFO = 5 ; RETURN
   END IF
   ! Verify that BREAKPOINTS are increasing.
   DO I = 1, NB - 1
      IF (BREAKPOINTS(I) .GE. BREAKPOINTS(I+1)) THEN
-        STATUS = 6 ; RETURN
+        INFO = 6 ; RETURN
      END IF
   END DO
 
@@ -608,9 +584,9 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
         ! according to which derivative is being evaluated and use a
         ! stride determined by the number of continuity conditions.
         AB(I1+DERIV:I2:NCC,I) = BREAKPOINTS(J1:J2)
-        CALL EVAL_BSPLINE(KNOTS(I:J), AB(I1+DERIV:I2:NCC,I), STATUS, D=DERIV)
+        CALL EVAL_BSPLINE(KNOTS(I:J), AB(I1+DERIV:I2:NCC,I), INFO, D=DERIV)
         ! ^ Correct usage is inherently enforced, only extrapolation
-        !   warnings will be produced by this call (STATUS=1). These
+        !   warnings will be produced by this call (INFO=1). These
         !   extrapolation warnings are expected because underlying
         !   B-splines may not support the full interval.
      END DO
@@ -621,9 +597,9 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
   END DO
   ! Call the LAPACK subroutine to solve the banded linear system.
   CALL DGBSV(NSPL, DEGREE, DEGREE, 1, AB, SIZE(AB,1), IPIV, &
-       COEFF, NSPL, STATUS)
+       COEFF, NSPL, INFO)
   ! Check for errors in the execution of DGBSV, (this should not happen).
-  IF (STATUS .NE. 0) THEN ; STATUS = STATUS + 10 ; RETURN ; END IF
+  IF (INFO .NE. 0) THEN ; INFO = INFO + 10 ; RETURN ; END IF
   ! Check to see if the linear system was correctly solved by looking at
   ! the difference between prouduced B-spline values and provided values.
   MAX_ERROR = SQRT(SQRT(EPSILON(1.0_R8)))
@@ -632,20 +608,20 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, STATUS)
      ! might not be large enough, but the first row certainly is).
      AB(1,1:NB) = BREAKPOINTS(:)
      ! Evaluate this spline at all breakpoints. Correct usage is
-     ! enforced here, so it is expected that STATUS=0 always.
-     CALL EVAL_SPLINE(KNOTS, COEFF, AB(1,1:NB), STATUS, D=DERIV)
+     ! enforced here, so it is expected that INFO=0 always.
+     CALL EVAL_SPLINE(KNOTS, COEFF, AB(1,1:NB), INFO, D=DERIV)
      ! Check the precision of the reproduced values.
      ! Return an error if the precision is too low.
      IF (MAXVAL(ABS((AB(1,1:NB) - VALUES(:,DERIV+1)) &
-          / (1.0_R8 + ABS(VALUES:,DERIV+1)))) .GT. MAX_ERROR) THEN
-        STATUS = 7
+          / (1.0_R8 + ABS(VALUES(:,DERIV+1))))) .GT. MAX_ERROR) THEN
+        INFO = 7
         RETURN
      END IF
   END DO
 END SUBROUTINE FIT_SPLINE
 
 
-SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, STATUS, D)
+SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, INFO, D)
   ! Evaluate a spline construced with FIT_SPLINE. Similar interface
   ! to EVAL_BSPLINE. Evaluate D derivative at all XY, result in XY.
   ! 
@@ -662,7 +638,7 @@ SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, STATUS, D)
   !              KNOTS and COEFF evaluated at the given locations.
   ! 
   ! OUTPUT:
-  !   STATUS -- Integer representing subroutine exeuction status.
+  !   INFO -- Integer representing subroutine exeuction status.
   !       0    Successful execution.
   !       1    Extrapolation warning, some X are outside of spline support.
   !       2    KNOTS contains at least one decreasing interval.
@@ -689,19 +665,19 @@ SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, STATUS, D)
   REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: KNOTS, COEFF
   REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
   INTEGER, INTENT(IN), OPTIONAL :: D
-  INTEGER, INTENT(OUT) :: STATUS
+  INTEGER, INTENT(OUT) :: INFO
   ! Local variables.
   INTEGER :: DERIV, I, ORDER
   REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(COEFF)) :: VALUES
 
   ! Check for size-related errors and for an empty knot interior.
-  IF (SIZE(KNOTS) .LE. 1)                    THEN ; STATUS = 3 ; RETURN
-  ELSE IF (KNOTS(1) .EQ. KNOTS(SIZE(KNOTS))) THEN ; STATUS = 4 ; RETURN
-  ELSE IF (SIZE(KNOTS) .LE. SIZE(COEFF))     THEN ; STATUS = 5 ; RETURN
+  IF (SIZE(KNOTS) .LE. 1)                    THEN ; INFO = 3 ; RETURN
+  ELSE IF (KNOTS(1) .EQ. KNOTS(SIZE(KNOTS))) THEN ; INFO = 4 ; RETURN
+  ELSE IF (SIZE(KNOTS) .LE. SIZE(COEFF))     THEN ; INFO = 5 ; RETURN
   END IF
   ! Check for valid (nondecreasing) knot sequence.
   DO I = 1, SIZE(KNOTS)-1
-     IF (KNOTS(I) .GT. KNOTS(I+1)) THEN ; STATUS = 2 ; RETURN ; END IF
+     IF (KNOTS(I) .GT. KNOTS(I+1)) THEN ; INFO = 2 ; RETURN ; END IF
   END DO
 
   ! Compute the ORDER (number of knots minus one) for each B-spline.
@@ -717,7 +693,7 @@ SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, STATUS, D)
      ! ^ If this constituent B-spline has no support, skip it.
      VALUES(:,I) = XY(:)
      CALL EVAL_BSPLINE(KNOTS(I:I+ORDER), VALUES(:,I), &
-          STATUS, D=DERIV)
+          INFO, D=DERIV)
      ! ^ Correct usage is inherently enforced, only extrapolation
      !   warnings will be produced by this call. These
      !   extrapolation warnings are expected because underlying
@@ -725,15 +701,15 @@ SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, STATUS, D)
   END DO
   ! Set the EXTRAPOLATION status flag.
   IF ((MINVAL(XY(:)) .LT. KNOTS(1)) .OR. &
-       (MAXVAL(XY(:)) .GE. KNOTS(SIZE(KNOTS)))) THEN ; STATUS = 1
-  ELSE ; STATUS = 0
+       (MAXVAL(XY(:)) .GE. KNOTS(SIZE(KNOTS)))) THEN ; INFO = 1
+  ELSE ; INFO = 0
   END IF
   ! Store the values into Y as the weighted sums of B-spline evaluations.
   XY(:) = MATMUL(VALUES(:,:), COEFF(:))
 END SUBROUTINE EVAL_SPLINE
 
 
-SUBROUTINE EVAL_BSPLINE(KNOTS, XY, STATUS, D)
+SUBROUTINE EVAL_BSPLINE(KNOTS, XY, INFO, D)
   ! Subroutine for evaluating a B-spline with provided knot sequence.
   ! 
   ! INPUT:
@@ -745,7 +721,7 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, STATUS, D)
   !              prescribed knots evaluated at the given X locations.
   ! 
   ! OUTPUT:
-  !   STATUS -- Execution status of this subroutine on exit.
+  !   INFO -- Execution status of this subroutine on exit.
   !       0    Successful execution.
   !       1    Extrapolation warning, some points were outside all knots.
   !       2    Invalid knot sequence (not entirely nondecreasing).
@@ -799,7 +775,7 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, STATUS, D)
   ! 
   REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: KNOTS
   REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
-  INTEGER, INTENT(OUT) :: STATUS
+  INTEGER, INTENT(OUT) :: INFO
   INTEGER, INTENT(IN), OPTIONAL :: D
   ! Local variables.
   REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(KNOTS)) :: VALUES
@@ -813,15 +789,15 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, STATUS, D)
   N = SIZE(KNOTS)
   ORDER = N - 1
   LAST_KNOT = KNOTS(N)
-  STATUS = 0
+  INFO = 0
   ! Check for valid knot sequence.
-  IF (N .LE. 1) THEN ; STATUS = 3 ; RETURN ; END IF
+  IF (N .LE. 1) THEN ; INFO = 3 ; RETURN ; END IF
   DO K = 1, N-1
-     IF (KNOTS(K) .GT. KNOTS(K+1)) THEN ; STATUS = 2 ; RETURN ; END IF
+     IF (KNOTS(K) .GT. KNOTS(K+1)) THEN ; INFO = 2 ; RETURN ; END IF
   END DO
   ! Check for extrapolation, set status if it is happening, but continue.
   IF ((MINVAL(XY(:)) .LT. KNOTS(1)) .OR. (MAXVAL(XY(:)) .GE. LAST_KNOT)) &
-       STATUS = 1
+       INFO = 1
   ! If this is a large enough derivative, we know it is zero everywhere.
   IF (DERIV+1 .GE. N) THEN ; XY(:) = 0.0_R8 ; RETURN
   ! ---------------- Performing standard evaluation ------------------

@@ -9,77 +9,78 @@ def make_exact(value):
 # Compute a monotone quintic spline that interpolates given data.
 def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-26),
                             verbose=False, local_fits=None,
-                            free=False):
+                            free=False, monotone=True):
     # Initialize dicationary of local fits.
     if local_fits is None: local_fits = {}
     # Make the values exact.
     if exact:
         x = make_exact(x)
         y = make_exact(y)
+    # Identify the local extreme points.
+    extreme_points = [i for i in range(1, len(x)-1)
+                      if ((y[i]-y[i-1]) * (y[i+1]-y[i]) < 0)]
     # Compute "ideal" values everywhere.
     values = [[yi] for yi in y]
     # Compute first and second derivatives.
-    for i in range(len(x)): values[i] += estimate_derivative(x, y, i, free=free)
+    for i in range(len(x)): values[i] += estimate_derivative(x, y, i, extreme_points, free=free)
     # Store local fits.
     for i in range(len(x)):
         local_fits[i] = (
             polynomial([x[i]], [y[i]], dx0=values[i][1], ddx0=values[i][2]),
             [x[max(0,i-1)], x[min(i+1,len(x)-1)]] )
-    # Store the current "step size" that was used for all values.
-    best_values = [vi.copy() for vi in values]
-    # Make step size and values exact.
-    if exact: best_values, values = make_exact(best_values), make_exact(values)
-    # Track which ones have been shrank.
-    did_shrink = {}
-    # Walk as close to the ideal values as possible.
-    step = 0
-    step_size = 1
-    # Identify those intervals that need to be made monotone.
-    if (not free): monotone_intervals = list(range(len(x)-1))
-    else: monotone_intervals = [i for i in range(len(x)-1) if (
-            (values[i][1] * (values[i+1][0] - values[i][0]) >= 0) and
-            (values[i+1][1] * (values[i+1][0] - values[i][0]) >= 0))]
-    # print("searching..")
-    while (step_size > accuracy) or any(
-            not is_monotone(x[i], x[i+1], *values[i], *values[i+1])
-            for i in monotone_intervals):
-        # Set the step size for this iteration.
-        step_size = max(step_size / 2, accuracy)
-        step += 1
-        # Find the values that need to be shrunk.
-        to_shrink = {}
-        # Step any intervals that are not monotone backwards by 'step size'.
-        for i in monotone_intervals:
-            if not is_monotone(x[i], x[i+1], *values[i], *values[i+1]):
-                to_shrink[i] = True
-                to_shrink[i+1] = True
-                # print(" shrinking", i, float(step_size))
-        # Shrink those values that need to be shrunk.
-        for i in sorted(to_shrink):
-            # Shrink the first derivative (bounded by 0).
-            values[i][1] = values[i][1] - step_size * best_values[i][1]
-            if (best_values[i][1] * values[i][1] < 0): values[i][1] = 0
-            # Shrink the second derivative (bounded by 0).
-            values[i][2] = values[i][2] - step_size * best_values[i][2]
-            if (best_values[i][2] * values[i][2] < 0): values[i][2] = 0
-            # Record that this value has been shrunk.
-            did_shrink[i] = True
-        # Grow any values that were shrunk, but not in this iteration.
-        for i in did_shrink:
-            if i in to_shrink: continue
-            if (step_size <= accuracy): continue
-            # print(" growing", i, float(step_size))
-            # Shrink the first derivative (bounded by 0).
-            values[i][1] = values[i][1] + step_size * best_values[i][1]
-            sign = (-1) ** (best_values[i][1] < 0)
-            if (sign * (best_values[i][1] - values[i][1]) < 0):
-                values[i][1] = best_values[i][1]
-            # Shrink the second derivative (bounded by 0).
-            values[i][2] = values[i][2] + step_size * best_values[i][2]
-            sign = (-1) ** (best_values[i][2] < 0)
-            if (sign * (best_values[i][2] - values[i][2]) < 0):
-                values[i][2] = best_values[i][2]
-    # print(f" done in {step} setps.")
+    # Find values nearest to the ideal values that are monotone.
+    if monotone:
+        # Store the current "step size" that was used for all values.
+        best_values = [vi.copy() for vi in values]
+        # Make step size and values exact.
+        if exact: best_values, values = make_exact(best_values), make_exact(values)
+        # Track which ones have been shrank.
+        did_shrink = {}
+        # Walk as close to the ideal values as possible.
+        step = 0
+        step_size = 1
+        # Identify those intervals that need to be made monotone.
+        if (not free): monotone_intervals = list(range(len(x)-1))
+        else: monotone_intervals = [i for i in range(len(x)-1) if (
+                (values[i][1] * (values[i+1][0] - values[i][0]) >= 0) and
+                (values[i+1][1] * (values[i+1][0] - values[i][0]) >= 0))]
+        while (step_size > accuracy) or any(
+                not is_monotone(x[i], x[i+1], *values[i], *values[i+1])
+                for i in monotone_intervals):
+            # Set the step size for this iteration.
+            step_size = max(step_size / 2, accuracy)
+            step += 1
+            # Find the values that need to be shrunk.
+            to_shrink = {}
+            # Step any intervals that are not monotone backwards by 'step size'.
+            for i in monotone_intervals:
+                if not is_monotone(x[i], x[i+1], *values[i], *values[i+1]):
+                    to_shrink[i] = True
+                    to_shrink[i+1] = True
+            # Shrink those values that need to be shrunk.
+            for i in sorted(to_shrink):
+                # Shrink the first derivative (bounded by 0).
+                values[i][1] = values[i][1] - step_size * best_values[i][1]
+                if (best_values[i][1] * values[i][1] < 0): values[i][1] = 0
+                # Shrink the second derivative (bounded by 0).
+                values[i][2] = values[i][2] - step_size * best_values[i][2]
+                if (best_values[i][2] * values[i][2] < 0): values[i][2] = 0
+                # Record that this value has been shrunk.
+                did_shrink[i] = True
+            # Grow any values that were shrunk, but not in this iteration.
+            for i in did_shrink:
+                if i in to_shrink: continue
+                if (step_size <= accuracy): continue
+                # Grow the first derivative (bounded by ideal value).
+                values[i][1] = values[i][1] + step_size * best_values[i][1]
+                sign = (-1) ** (best_values[i][1] < 0)
+                if (sign * (best_values[i][1] - values[i][1]) < 0):
+                    values[i][1] = best_values[i][1]
+                # Grow the second derivative (bounded by ideal value).
+                values[i][2] = values[i][2] + step_size * best_values[i][2]
+                sign = (-1) ** (best_values[i][2] < 0)
+                if (sign * (best_values[i][2] - values[i][2]) < 0):
+                    values[i][2] = best_values[i][2]
     # Return the monotone quintic spline.
     return Spline(x, values)
     
@@ -87,13 +88,13 @@ def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-26),
 # Given "i" the index at which the first derivative should be
 # estimated, construct local quadratic fits and pick the slope of the
 # one with the lowest curvature.
-def estimate_derivative(x, y, i, free=False):
+def estimate_derivative(x, y, i, extreme_points, free=False):
     # If this is a local flat, estimate 0.
     if ((i > 0) and (y[i-1] == y[i])) or \
        ((i+1 < len(y)) and (y[i] == y[i+1])): return [0, 0]
     # If this is a local maximum, force first derivative to zero.
-    elif ((not free) and (i > 0) and (i+1 < len(y)) and
-          ((y[i] - y[i-1]) * (y[i+1] - y[i]) < 0)):
+    elif (i in extreme_points):
+        direction = 0.0
         functions = []
         # Compute the left function (interpolates zero slope).
         if (i > 0): functions.append( polynomial(
@@ -104,33 +105,46 @@ def estimate_derivative(x, y, i, free=False):
     else:
         # Construct quadratic interpolants over a sliding window.
         functions = []
-        for j in range(max(0, i-1), min(i+2, len(x))):
-            xj = x[max(0,j-1):min(j+2, len(x))]
-            yj = y[max(0,j-1):min(j+2, len(y))]
-            if (len(xj) < 3): continue
-            f = polynomial(xj, yj)
-            # If the derivative is the same sign as the function change..
-            if free:
-                # If this is a local maximum in the data, make sure
-                # the predicted slope aligns with the source data.
-                # I.e. don't let increasing data predict a negative slope.
-                if ((i > 0) and (i+1 < len(y)) and
-                    ((y[i] - y[i-1]) * (y[i+1] - y[i]) < 0)):
-                    if (j != i) and (f.derivative()(x[i]) * (yj[2]-yj[0]) < 0): pass
-                    else: functions.append( f )
-                else: functions.append( f )
-            elif (f.derivative(1)(x[i]) * (yj[2]-yj[0]) >= 0):
-                functions.append( f )
-    # If there were no sets of three points, add a flat function.
-    if (len(functions) == 0): functions.append( polynomial([x[i]], [y[i]]) )
+        # Add the appropriate left interpolant (i-2, i-1, i).
+        if (i > 0):
+            if (i-1 in extreme_points):
+                f = polynomial([x[i-1],x[i]], [y[i-1],y[i]], dx0=0)
+                functions.append(f)
+            elif (i-2 >= 0):
+                f = polynomial(x[i-2:i+1], y[i-2:i+1])
+                functions.append(f)
+        # Add the appropriate center interpolant (i-1, i, i+1).
+        if ((len(x) >= 3) and (i > 0) and (i+1 < len(x))): # and
+#            (i-1 not in extreme_points) and (i+1 not in extreme_points)):
+            f = polynomial(x[i-1:i+2], y[i-1:i+2])
+            functions.append(f)
+        # Add the appropriate right interpolant (i, i+1, i+2).
+        if (i + 1 < len(x)):
+            if (i+1 in extreme_points):
+                f = polynomial([x[i],x[i+1]], [y[i],y[i+1]], dx1=0)
+                functions.append(f)
+            elif (i+2 < len(x)):
+                f = polynomial(x[i:i+3], y[i:i+3])
+                functions.append(f)
+        # Set the direction.
+        if (i > 0):
+            if (y[i-1] < y[i]): direction = 1.0
+            elif (y[i-1] > y[i]): direction = -1.0
+        elif (i+1 < len(x)):
+            if (y[i] < y[i+1]): direction = 1.0
+            elif (y[i] > y[i+1]): direction = -1.0
     # Sort the functions by their curvature.
     derivatives = []
     for f in functions:
         df = f.derivative()
         dxi = df(x[i])
+        # Skip estimates with derivatives that are pointing the wrong way.
+        if (dxi * direction < 0): continue
         ddf = df.derivative()
         ddxi = ddf(x[i])
         derivatives += [(dxi, ddxi)]
+    # If there were no viable options, return 0's.
+    if (len(derivatives) == 0): return [0, 0]
     # Sort the derivatives by magnitude of curvature, then by
     # magnitude of first derivative when curvatures are equal.
     derivatives.sort(key=lambda d: (abs(d[1]), abs(d[0])))

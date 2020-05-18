@@ -1,3 +1,243 @@
+  ! Initialize slopes, residuals, and "is linear" booleans.
+  SLOPES(:) = 0.0_R8
+  RESIDUALS(:) = HUGE(1.0_R8)
+  PREV_LINEAR = .FALSE.
+  THIS_LINEAR = .FALSE.
+
+  ! Construct local derivative and second derivative fits for each point.
+  DO I = 2, Z-1
+     ! If this point has slope 0 between it and either neighbor..
+     IF ((Y(I-1) .EQ. Y(I)) .OR. (Y(I) .EQ. Y(I+1))) THEN ; CYCLE
+     ! Else if this is an extreme point (with different slopes on either side)..
+     ELSE IF ((Y(I)-Y(I-1)) * (Y(I+1)-Y(I)) .LT. 0.0_R8) THEN
+        ! Construct a local quadratic to determine the second
+        ! derivative value.
+        VALUES(I,3) = 0.0_R8
+     ! Else if this point is inside a monotone segment..
+     ELSE
+        ! Get local linear fit slope and residual information.
+        CALL LOCAL_LINEAR(I, SLOPES(3), RESIDUALS(3))
+        THIS_LINEAR = .TRUE.
+     END IF
+     ! Use the slope of the best-fit linear model of the three for
+     ! the previous interval, if applicable.
+     IF (PREV_LINEAR) THEN
+        VALUES(I-1, 2) = SLOPES(MINLOC(RESIDUALS(:), 1))
+     END IF
+     PREV_LINEAR = THIS_LINEAR
+     THIS_LINEAR = .FALSE.
+     ! Rotate existing slopes and residuals to free a space for the
+     ! slope of the next interval (provides a sliding window).
+     SLOPES(2) = SLOPES(3)
+     RESIDUALS(1) = RESIDUALS(2)
+     RESIDUALS(2) = RESIDUALS(3)
+     SLOPES(3) = 0.0_R8
+     RESIDUALS(3) = HUGE(1.0_R8)
+  END DO
+  ! Use the slope of the best-fit linear model of the three for
+  ! the previous interval, if applicable.
+  IF (PREV_LINEAR) THEN
+     VALUES(I-1, 2) = SLOPES(MINLOC(RESIDUALS(:), 1))
+  END IF
+  ! Estimate the first and second derivative at edges using a
+  ! quadratic interpolant over the neighboring slope and edge value.
+  IF (Z .GT. 2) THEN
+     VALUES(1,2) = (Y(2) - Y(1)) / (X(2) - X(1))
+     VALUES(Z,2) = (Y(Z) - Y(Z-1)) / (X(Z) - X(Z-1))
+  END IF
+
+
+  REAL(KIND=R8), DIMENSION(3) :: SLOPES, RESIDUALS ! Linear fit information.
+  REAL(KIND=R8), DIMENSION(2) :: V1, V2 ! Violation amounts.
+  REAL(KIND=R8), DIMENSION(SIZE(X)) :: MIN_STEP
+  INTEGER :: I, Z, STEP
+  LOGICAL :: PREV_LINEAR, THIS_LINEAR
+  LOGICAL, DIMENSION(SIZE(X)) :: DD_CHANGED
+  LOGICAL, DIMENSION(SIZE(X)-1) :: TO_CHECK
+
+
+
+  ! Compute useful variables, store original derivative values.
+  V = Y2(1) - Y1(1)
+  W = X2 - X1
+  SLOPE = V / W
+  D1(1:2) = Y1(2:3)
+  D2(1:2) = Y2(2:3)
+  ! Handle unchanging interval.
+  IF (SLOPE .EQ. 0.0_R8) THEN
+     ! Zero out the first and second derivative for flat intervals and return.
+     Y1(2:3) = 0.0_R8
+     Y2(2:3) = 0.0_R8
+     D1(1:2) = Y1(2:3) - D1(1:2)
+     D2(1:2) = Y2(2:3) - D2(1:2)
+     RETURN
+  ! This is not a flat interval, set the "SIGN" variable.
+  ELSE IF (SLOPE .GT. 0.0_R8) THEN ; SIGN =  1.0_R8
+  ELSE                             ; SIGN = -1.0_R8
+  END IF
+
+  ! Consider this interval to be monotone increasing.
+  V = V * SIGN
+  Y1(:) = Y1(:) * SIGN
+  Y2(:) = Y2(:) * SIGN
+  SLOPE = SLOPE * SIGN
+  ! Set derivative to be the median of {0, Y(2), 14*SLOPE}.
+  Y1(2) = MIN(14.0_R8*SLOPE, MAX(0.0_R8, Y1(2)))
+  Y2(2) = MIN(14.0_R8*SLOPE, MAX(0.0_R8, Y2(2)))
+  ! Compute "A" (left ratio) and "B" (right ratio).
+  A = Y1(2) / SLOPE
+  B = Y2(2) / SLOPE
+
+  ! Use a (simplified) monotone cubic over this region if AB = 0.
+  ! Only consider the coefficients less than the x^4, because that
+  ! term is strictly positive.
+  simplified_monotone : IF (A*B .LT. SQRT(EPSILON(0.0_R8))) THEN
+     ! Ensure that DDf(X1) has a nonempty feasible region (given Df).
+     TEMP = MAX(0.0_R8, (20.0_R8*V / W) / (5.0_R8*Y1(2) + 4.0_R8*Y2(2)))
+     IF (TEMP .LT. 1) THEN
+        Y1(2) = Y1(2) * TEMP
+        Y2(2) = Y2(2) * TEMP
+     END IF
+     ! Cap DDf(X2) so that DDf(X1) feasible region is nonempty.
+     Y1(3) = MIN(Y1(3), (4.0_R8*(2.0_R8*Y1(2) + Y2(2)) + 20.0_R8*V/W) / W)
+     ! Enforce gamma >= delta.
+     Y1(3) = MAX(Y1(3), 3.0_R8*Y1(2) / W)
+     ! Enforce \alpha >= 0.
+     Y2(3) = MIN(Y2(3), -4.0_R8*Y2(2) / W)
+     ! Enforce \beta >= \alpha.
+     Y2(3) = MAX(Y2(3), (3.0_R8*Y1(3)*W - &
+          (24.0_R8*Y1(2) + 32.0_R8*Y2(2)) - 60.0_R8*V / W) / (5.0_R8*W))
+     ! Undo the sign change, compute the derivative changes, and return.
+     Y1(:) = Y1(:) * SIGN
+     Y2(:) = Y2(:) * SIGN
+     D1(1:2) = Y1(2:3) - D1(1:2)
+     D2(1:2) = Y2(2:3) - D2(1:2)
+     RETURN
+  END IF simplified_monotone
+
+  ! Clip derivative values that are too large (to ensure that shrinking
+  ! the derivative vectors on either end will not break monotonicity).
+  !   (clipping at 6 box is enough, using 8 box requires more steps)
+  TEMP = 6.0_R8 / MAX(A,B)
+  IF (TEMP .LT. 1.0_R8) THEN
+     Y1(2) = Y1(2) * TEMP
+     Y2(2) = Y2(2) * TEMP     
+     A = A * TEMP
+     B = B * TEMP
+  END IF
+
+  IF (24.0_R8 + 2.0_R8*SQRT(A*B) - 3.0_R8*(A+B) .LT. 0.0_R8) THEN
+     PRINT *, "ERROR: Something went wrong, Tau_1 is negative."
+  END IF
+
+  ! Compute the terms needed to simplify the monotonicity check in
+  ! terms of the second derivative values.
+  TEMP = (B / A)**(0.75_R8) / Y2(2)
+  G0 = 4.0_R8 * Y1(2) * TEMP
+  G1 = W * TEMP
+  TEMP = (B / A) ** (0.25)
+  A0 = 4.0_R8 * TEMP
+  A1 = - W / Y2(2) * TEMP
+  TEMP = W / (V * SQRT(A) * SQRT(B))
+  B0 = 30.0_R8 - 12.0_R8 * (Y1(2) + Y2(2)) * TEMP
+  B1 = (-3.0_R8 * W / 2.0_R8) * TEMP
+
+  ! Perform a binary search for allowable DDf values.
+  A = SQRT(A) ; B = SQRT(B)
+  ETA1 = - A * (7.0_R8*A + 3.0_R8*B) * SLOPE / W
+  ETA2 =   B * (3.0_R8*A + 7.0_R8*B) * SLOPE / W
+  nonmonotone_DDf : IF (.NOT. IS_MONOTONE(Y1(3), Y2(3))) THEN
+     ! Reuse variables "A" and "B" as lower and upper bounds for
+     ! binary search.
+     A = 0.0_R8 ; B = 1.0_R8
+     binary_search : DO WHILE ((B - A) .GT. SQRT(EPSILON(0.0_R8)))
+        TEMP = (A + B) / 2.0_R8
+        ! Compute current DDf estimates.
+        Y1(3) = (1.0_R8 - TEMP) * D1(2)  +  TEMP * ETA1
+        Y2(3) = (1.0_R8 - TEMP) * D2(2)  +  TEMP * ETA2
+        ! Depending on the monotonicity, shrink search region.
+        IF (IS_MONOTONE(Y1(3), Y2(3))) THEN ; B = TEMP
+        ELSE                                ; A = TEMP
+        END IF
+     END DO binary_search
+     ! Compute the final (monotone) estimate.
+     Y1(3) = (1.0_R8 - B) * D1(2)  +  B * ETA1
+     Y2(3) = (1.0_R8 - B) * D2(2)  +  B * ETA2
+  END IF nonmonotone_DDf
+
+  ! Undo the sign change, compute the derivative changes, and return.
+  Y1(:) = Y1(:) * SIGN
+  Y2(:) = Y2(:) * SIGN
+  D1(1:2) = Y1(2:3) - D1(1:2)
+  D2(1:2) = Y2(2:3) - D2(1:2)
+  RETURN
+
+CONTAINS
+  FUNCTION IS_MONOTONE(DDY1, DDY2)
+    ! Compute the condition that determines if monotonicity is
+    ! achieved by current second derivative values.
+    REAL(KIND=R8), INTENT(IN) :: DDY1, DDY2
+    REAL(KIND=R8) :: G, A, B
+    LOGICAL :: IS_MONOTONE
+    G = G0 + G1*DDY1
+    A = A0 + A1*DDY2
+    B = B0 + B1*(DDY1 - DDY2)
+    IF (B .LT. 6.0_R8) THEN ; IS_MONOTONE = (A .GT. -(B+2)/2.0_R8)
+    ELSE                    ; IS_MONOTONE = (G .GT. -2.0_R8*SQRT(B-2.0_R8))
+    END IF
+  END FUNCTION IS_MONOTONE
+END SUBROUTINE MAKE_MONOTONE
+
+
+FUNCTION L2(KNOTS, COEFF, D)
+  REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: KNOTS, COEFF
+  INTEGER, INTENT(IN), OPTIONAL :: D
+  REAL(KIND=R8) :: L2
+  ! Local variables.
+  REAL(KIND=R8), DIMENSION(:), ALLOCATABLE :: Y, KS, CS, MIDS, AB
+  INTEGER :: DERIV, K, I, NB, NK, STATUS, NCC, NSPL
+  ! Set derivative.
+  set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
+  ELSE ; DERIV = 0
+  END IF set_derivative
+  ! Compute the order of the spline pieces for L2.
+  K = 1 + 2*(SIZE(KNOTS) - SIZE(COEFF) - DERIV - 1)
+  ! Determine the number of unique breakpoints.
+  NB = 1
+  DO I = 2, SIZE(KNOTS)
+     IF (KNOTS(I) .NE. KNOTS(I-1)) NB = NB + 1
+  END DO
+  ! Allocate the knots and coefficients of the intermediate spline.
+  !   NK = NB + (K-2) * (NB-1)
+  !      = NB + K*NB - K - 2*NB + 2
+  !      = NB*(1 - 2 + K) - K + 2
+  !      = NB*(K - 1) - K + 2
+  !      = NB*K - NB - K + 2
+  !      = K*(NB - 1) - NB + 2
+  NK = NB + (K-2)*(NB-1)
+  ALLOCATE(KS(1:NK))
+  ALLOCATE(CS(1:NK))
+  ALLOCATE(Y(1:NK))
+  ALLOCATE(MIDS(1:K-2))
+  ! Compute the spacing of the internal points on each interval.
+  DO I = 1, K-2
+     MIDS(I) = REAL(I,KIND=R8) / REAL(K-1, KIND=R8)
+  END DO
+  ! Compute all the new knots.
+  DO I = 1, NB-1
+     KS(I*())
+  END DO
+  ! Compute the values of the spline.
+  Y(:) = KS(:)
+  CALL EVAL_SPLINE(KNOTS, COEFF, Y, STATUS, D=DERIV)
+  Y(:) = Y(:)*Y(:)
+  ! Fit the coefficients for the spline that achieve these valeus.
+  
+
+  
+END FUNCTION L2
+
+
     # --------------------------------------------------------------------
     # Table top level sequence.
     x = [0, 1, 2, 3, 4]
