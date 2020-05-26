@@ -1,0 +1,7 @@
+- remove error checking code from "eval B-spline"
+- reuse the computed quadratics when initializing
+- use Mathematica to simplify the check for monotonicity (fewest terms)
+- pre-compute differences between breakpoints for faster evaluation
+
+- write a separate fit routine that fits Bernstein polynomial coefficients
+- write a separate evaluation routine that evaluates Bernstein polynomial bases

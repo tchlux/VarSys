@@ -201,19 +201,22 @@ if TEST_PMQSI:
     from util.system import Timer
     import numpy as np
     VISUALIZE_TEST = True
+    RANDOM = False
+    NUM_KNOTS = 18
+    FUNC = TESTS[sorted(TESTS)[-1]]
 
-    # np.random.seed(2)
-    # # Generate some random knots and values.
-    # num_knots = 10
-    # knots = 10 * np.random.random(size=(num_knots))
-    # knots.sort()
-    # values = 10 * (2*(np.random.random(size=(num_knots,)) - 1/2))
+    # Generate some random knots and values.
+    if RANDOM:
+        np.random.seed(0)
+        knots = np.random.random(size=(NUM_KNOTS))
+        knots.sort()
+    else:
+        knots = np.linspace(0,1,NUM_KNOTS)
 
     # Get the knots and values for the test.
-    knots, values = TESTS[sorted(TESTS)[-3]]
+    values = list(map(FUNC, knots))
     knots = np.asfortranarray(knots, dtype=float)
     values = np.asfortranarray(values, dtype=float)
-    num_knots = len(knots)
 
     print()
     print(f"knots ({len(knots)}):\n  {knots}")
@@ -242,8 +245,11 @@ if TEST_PMQSI:
     truth = monotone_quintic_spline(knots, values, exact=True)
     t.stop() ; print(f"Python time: {t()}s")
     # --------------------------------------------------------
+    # for v in truth.values:
+    #     print("", [round(float(_),2) for _ in v])
 
-    if VISUALIZE_TEST and (num_knots <= 50):
+    if VISUALIZE_TEST and (len(knots) <= 100):
+        print()
         from util.plot import Plot
         # Make a pretty picture of the B-spline and its derivatives.
         padding = 0 #.1
@@ -252,7 +258,6 @@ if TEST_PMQSI:
             x += list(np.linspace(knots[i], knots[i+1], 10))[1:]
         x = np.array(x, dtype=float)
         y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
-        print("y: ",y)
         p = Plot("Polynomial Interpolant")
         p.add("Spline", x, y, mode="lines", color=p.color(1))
         true_y = list(map(truth, x))

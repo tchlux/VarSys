@@ -1,0 +1,92 @@
+exit()
+
+# # Get the knots and values for the test.
+# knots, values = TESTS[sorted(TESTS)[-1]]
+# knots = np.asfortranarray(knots, dtype=float)
+# values = np.asfortranarray(values, dtype=float)
+# num_knots = len(knots)
+
+print()
+print(f"knots ({len(knots)}):\n  {str(knots[:3])[:-1]} ... {str(knots[-3:])[1:]}")
+print()
+print(f"values ({len(values)}):\n  {str(values[:3])[:-1]} ... {str(values[-3:])[1:]}")
+print()
+
+# Compute the spline knots and spline coefficients.
+t.start()
+sk, sc, info = splines.pmqsi(knots, values)
+t.stop()
+print("info: ",info)
+print(f"Fortran time: {t()}s")
+print()
+
+# Construct the PCHIP approximation.
+t.start()
+f = PchipInterpolator(knots, values)
+t.stop()
+print(f"PCHIP time: {t()}s")
+print()
+
+
+
+# # --------------------------------------------------------
+# from search_monotone import monotone_quintic_spline
+# t.start()
+# truth = monotone_quintic_spline(knots, values, exact=True)
+# t.stop() ; print(f"Python time: {t()}s")
+# # --------------------------------------------------------
+
+# g = lambda x: splines.eval_spline(sk, sc, np.array([x], order='f', dtype=float), d=0)[0]
+# p = Plot()
+# p.add_func("PCHIP", f, [min(knots), knots[:10][-1]])
+# p.add_func("PMQSI", g, [min(knots), knots[:10][-1]])
+# p.show()
+
+# # Make a pretty picture of the B-spline and its derivatives.
+# padding = 0 #.1
+# x = [knots[0]]
+# for i in range(len(knots) -1):
+#     x += list(np.linspace(knots[i], knots[i+1], 10))[1:]
+# x = np.array(x, dtype=float)
+# y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
+# print("y: ",y)
+# p = Plot("Polynomial Interpolant")
+# p.add("Spline", x, y, mode="lines", color=p.color(1))
+# true_y = list(map(truth, x))
+# p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
+# p.add("Knots", knots, values, color=p.color(1))
+# p.show(file_name=f"spline_test-N{len(values)}-C{len(values)}.html")
+
+
+
+# p = Plot()
+# test_name = "watson_test"
+# N = 18
+# x = np.linspace(0, 1, N)
+# # Evaluate the "y" values at all points.
+# y = np.asfortranarray( TESTS[test_name](x), dtype=float )
+# p.add("Truth", x, y, mode="markers+lines")
+# # Fit the PMQSI.
+# t.start() ; sk, sc, info = splines.pmqsi(x, y) ; t.stop()
+# pmqsi_fit = t.total
+# # Eval the PMQSI.
+# eval_pts = np.asfortranarray( np.linspace(0, 1, trials), dtype=float )
+# t.start() ; splines.eval_spline(sk, sc, eval_pts, d=0) ; t.stop()
+# pmqsi_eval = t.total / trials
+# # Fit the PCHIP.
+# t.start() ; f = PchipInterpolator(x, y) ; t.stop()
+# pchip_fit = t.total
+# # Eval the PCHIP.
+# eval_pts = np.asfortranarray( np.linspace(0, 1, trials), dtype=float )
+# t.start() ; f(eval_pts) ; t.stop()
+# pchip_eval = t.total / trials
+
+
+# p.add("PMQSI", np.linspace(0, 1, 1000),
+#       splines.eval_spline(sk, sc, np.linspace(0, 1, 1000), d=0)[0], 
+#       mode="lines")
+# p.add_func("PCHIP", f, [0, 1])
+# p.show()
+# exit()
+
+

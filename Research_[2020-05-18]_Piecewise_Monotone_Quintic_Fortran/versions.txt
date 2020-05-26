@@ -1,0 +1,6 @@
+
+v0
+  All quadratics are recomputed at each step.
+  B-splines are evaluated with the simple logic (redundant differences).
+  Search shrinks step size, then re-increases step size at half the rate.
+  Is monotone check still uses the linear version, needs to be reduced.

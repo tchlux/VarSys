@@ -98,7 +98,6 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
         ! Otherwise use the standard quadratic on the left.
         ELSE ; CALL QUADRATIC(I-1, AS(1), BS(1))
         END IF
-        
         ! ------------------------
         ! Quadratic centered at I.
         IF ((I .GT. 1) .AND. (I .LT. Z)) THEN
@@ -138,7 +137,7 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
   MODIFIED(:) = .FALSE.
   DO I = 1, Z-1
      IF (.NOT. IS_MONOTONE(I,I+1)) THEN
-        FIXING(I) = .TRUE.
+         FIXING(I) = .TRUE.
         FIXING(I+1) = .TRUE.
      END IF
   END DO
@@ -148,6 +147,7 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
   ! Define the accuracy of the solution (will be an optional parameter).
   ACCURACY = SQRT(EPSILON(1.0_R8))
   SEARCHING = .TRUE.
+
   ! Loop until the accuracy is achieved and *all* intervals are monotone.
   DO WHILE (SEARCHING .OR. ANY(FIXING(:)))
      ! Compute the step size for this iteration.
@@ -157,6 +157,8 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
            SEARCHING = .FALSE.
            STEP_SIZE = ACCURACY
         END IF
+     ! Grow the step size back up if there are still intervals to fix.
+     ELSE ; STEP_SIZE = STEP_SIZE + STEP_SIZE / 2.0_R8
      END IF
      ! Cycle through all intervals and make modifications where appropriate.
      DO I = 1, Z
@@ -305,12 +307,6 @@ CONTAINS
     END IF
     ! Compute the shared denominator and check for numerical stability.
     D = (X(I1) - X(I2)) * (X(I1) - X(I3)) * (X(I2) - X(I3))
-    IF (ABS(D) .LT. SQRT(EPSILON(1.0_R8))) THEN
-       A = 0.0_R8
-       B = 0.0_R8
-       INFO = 8
-       RETURN
-    END IF
     ! Compute coefficients A and B in "Ax^2 + Bx + C" quadratic interpolant.
     C1 = X(I1) * (Y(I3) - Y(I2))
     C2 = X(I2) * (Y(I1) - Y(I3))
@@ -568,11 +564,7 @@ SUBROUTINE FIT_SPLINE(BREAKPOINTS, VALUES, KNOTS, COEFF, INFO)
         ! according to which derivative is being evaluated and use a
         ! stride determined by the number of continuity conditions.
         AB(I1+DERIV:I2:NCC,I) = BREAKPOINTS(J1:J2)
-        CALL EVAL_BSPLINE(KNOTS(I:J), AB(I1+DERIV:I2:NCC,I), INFO, D=DERIV)
-        ! ^ Correct usage is inherently enforced, only extrapolation
-        !   warnings will be produced by this call (INFO=1). These
-        !   extrapolation warnings are expected because underlying
-        !   B-splines may not support the full interval.
+        CALL EVAL_BSPLINE(KNOTS(I:J), AB(I1+DERIV:I2:NCC,I), D=DERIV)
      END DO
   END DO
   ! Copy the VALUES into the COEFF (output) variable.
@@ -676,12 +668,7 @@ SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, INFO, D)
      IF (KNOTS(I) .EQ. KNOTS(I+ORDER)) CYCLE
      ! ^ If this constituent B-spline has no support, skip it.
      VALUES(:,I) = XY(:)
-     CALL EVAL_BSPLINE(KNOTS(I:I+ORDER), VALUES(:,I), &
-          INFO, D=DERIV)
-     ! ^ Correct usage is inherently enforced, only extrapolation
-     !   warnings will be produced by this call. These
-     !   extrapolation warnings are expected because underlying
-     !   B-splines may not support the full interval.
+     CALL EVAL_BSPLINE(KNOTS(I:I+ORDER), VALUES(:,I), D=DERIV)
   END DO
   ! Set the EXTRAPOLATION status flag.
   IF ((MINVAL(XY(:)) .LT. KNOTS(1)) .OR. &
@@ -693,7 +680,7 @@ SUBROUTINE EVAL_SPLINE(KNOTS, COEFF, XY, INFO, D)
 END SUBROUTINE EVAL_SPLINE
 
 
-SUBROUTINE EVAL_BSPLINE(KNOTS, XY, INFO, D)
+SUBROUTINE EVAL_BSPLINE(KNOTS, XY, D)
   ! Subroutine for evaluating a B-spline with provided knot sequence.
   ! 
   ! INPUT:
@@ -703,13 +690,6 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, INFO, D)
   !   XY(1:Z) -- The locations at which the B-spline is evaluated on
   !              input, on output holds the value of the B-spline with
   !              prescribed knots evaluated at the given X locations.
-  ! 
-  ! OUTPUT:
-  !   INFO -- Execution status of this subroutine on exit.
-  !       0    Successful execution.
-  !       1    Extrapolation warning, some points were outside all knots.
-  !       2    Invalid knot sequence (not entirely nondecreasing).
-  !       3    Invalid size for KNOTS (less than or equal to 1).
   ! 
   ! OPTIONAL INPUT:
   !   D [= 0]  --  The derivative to take of the evaluated B-spline.
@@ -759,7 +739,6 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, INFO, D)
   ! 
   REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: KNOTS
   REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
-  INTEGER, INTENT(OUT) :: INFO
   INTEGER, INTENT(IN), OPTIONAL :: D
   ! Local variables.
   REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(KNOTS)) :: VALUES
@@ -773,15 +752,6 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, INFO, D)
   N = SIZE(KNOTS)
   ORDER = N - 1
   LAST_KNOT = KNOTS(N)
-  INFO = 0
-  ! Check for valid knot sequence.
-  IF (N .LE. 1) THEN ; INFO = 3 ; RETURN ; END IF
-  DO K = 1, N-1
-     IF (KNOTS(K) .GT. KNOTS(K+1)) THEN ; INFO = 2 ; RETURN ; END IF
-  END DO
-  ! Check for extrapolation, set status if it is happening, but continue.
-  IF ((MINVAL(XY(:)) .LT. KNOTS(1)) .OR. (MAXVAL(XY(:)) .GE. LAST_KNOT)) &
-       INFO = 1
   ! If this is a large enough derivative, we know it is zero everywhere.
   IF (DERIV+1 .GE. N) THEN ; XY(:) = 0.0_R8 ; RETURN
   ! ---------------- Performing standard evaluation ------------------
@@ -798,7 +768,6 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, INFO, D)
         END WHERE
      END DO first_b_spline
   END IF
-
   ! Compute the remainder of B-spline by building up from the first.
   ! Omit the final steps of this computation for derivatives.
   compute_spline : DO I = 2, N-1-MAX(DERIV,0)
