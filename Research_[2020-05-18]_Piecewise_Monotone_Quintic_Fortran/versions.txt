@@ -4,3 +4,11 @@ v0
   B-splines are evaluated with the simple logic (redundant differences).
   Search shrinks step size, then re-increases step size at half the rate.
   Is monotone check still uses the linear version, needs to be reduced.
+
+v1
+  Simplified the computation for monotonicity checks.
+  Added test for random monotone data, instead of purely random data.
+
+v2
+  Pre-computed "U1 - U0" as "WIDTH" to remove redundant computations.
+  Removed redundancy from quadratic computations, reuse old computed coefficients.

@@ -10,29 +10,82 @@ TEST_PMQSI = True
 TEST_SPLINE = False
 TEST_B_SPLINE = False
 
-# ==================================
-#      Test the B-spline code     
-# 
-if TEST_B_SPLINE:
+if TEST_PMQSI:
+    from test_points import TESTS
+    from util.system import Timer
     import numpy as np
-    from util.plot import Plot
-    left, right = 0.5488135, 0.71518937
-    knots = [left]*20 + [right]*20
-    coefs = [0.76604712, 0.76975691, 0.77350211, 0.7772835 , 0.78110183,
-             0.7849579 , 0.78885247, 0.79278634, 0.79676031, 0.80077518,
-             0.49655397, 0.50164066, 0.50679749, 0.51202474, 0.51732269,
-             0.52269164, 0.52813186, 0.53364366, 0.53922733, 0.54488318]
+    VISUALIZE_TEST = True
+    RANDOM = True
+    NUM_KNOTS = 15
+    NAME = sorted(TESTS)[1]
+    FUNC = TESTS[NAME]
+    print('-'*70)
+    print("Possible tests:")
+    print("",sorted(TESTS))
+    print()
+    print(NAME)
 
-    for d in range( (len(knots)-len(coefs))+1 ):
-        p = Plot(f"d{d}")
-        for i in range(len(coefs)):
-            k = np.array(knots[i:i+(len(knots)-len(coefs))+1], dtype=float)
-            x = np.linspace(knots[0], knots[-1], 1000)
-            y, status = splines.eval_bspline(k, x.copy(), d=d)
-            p.add(f"B{i+1}", x, y, mode="lines")
-        first = (d == 0)
-        last = (d == (len(knots)-len(coefs)))
-        p.show(append=True, show=first or last)
+    # Generate some random knots and values.
+    if RANDOM:
+        np.random.seed(0)
+        knots = np.random.random(size=(NUM_KNOTS))
+        knots.sort()
+    else:
+        knots = np.linspace(0,1,NUM_KNOTS)
+
+    knots = knots[:7]
+
+    # Get the knots and values for the test.
+    values = FUNC(knots)
+    knots = np.asfortranarray(knots, dtype=float)
+    values = np.asfortranarray(values, dtype=float)
+
+    print()
+    print(f"knots ({len(knots)}):\n  {knots}")
+    print()
+    print(f"values ({len(values)}):\n  {values}")
+    print("values:")
+    print()
+    # Compute the spline knots and spline coefficients.
+    t = Timer(); t.start()
+    sk, sc, info = splines.pmqsi(knots, values)
+    t.stop()
+    print("info: ",info)
+    print(f"Fortran time: {t()}s")
+    print()
+    # print("order: ",len(sk) - len(sc) + 1)
+    # print()
+    # print("sk:")
+    # print(repr(sk))
+    # print("sc:")
+    # print(repr(sc))
+    # print()
+
+    # --------------------------------------------------------
+    from search_monotone import monotone_quintic_spline
+    t.start()
+    truth = monotone_quintic_spline(knots, values, exact=True)
+    t.stop() ; print(f"Python time: {t()}s")
+    # --------------------------------------------------------
+    # for v in truth.values:
+    #     print("", [round(float(_),2) for _ in v])
+
+    if VISUALIZE_TEST and (len(knots) <= 100):
+        print()
+        from util.plot import Plot
+        # Make a pretty picture of the B-spline and its derivatives.
+        padding = 0 #.1
+        x = [knots[0]]
+        for i in range(len(knots) -1):
+            x += list(np.linspace(knots[i], knots[i+1], 20))[1:]
+        x = np.array(x, dtype=float)
+        y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
+        p = Plot(NAME)
+        p.add("Spline", x, y, mode="lines", color=p.color(1))
+        true_y = list(map(truth, x))
+        p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
+        p.add("Knots", knots, values, color=p.color(1))
+        p.show(file_name=f"spline_test-{NAME}.html")
 
    
 
@@ -171,97 +224,27 @@ if TEST_SPLINE:
 
 
 
-
- # IS MONOTONE CHECK (returns FALSE)
- #   A                       NaN
- #   B                       NaN
- #  full
- #   TAU                       NaN
- #   A                       NaN
- #   G                       NaN
- #   B                       NaN
- #   BOUND                       NaN
- #  simplified
- #  simplified
- #  simplified
- #  simplified
- #  simplified
- # step size   1.2207031250000000E-004
- #      fixing           2   0.0000000000000000        0.0000000000000000     
- #      fixing           3   0.0000000000000000        0.0000000000000000     
- #      fixing           4   0.0000000000000000        0.0000000000000000     
- #      fixing          10   0.0000000000000000        0.0000000000000000     
- #      fixing          11   0.0000000000000000        0.0000000000000000     
- #  simplified
-
-
-
-if TEST_PMQSI:
-    from test_points import TESTS
-    from util.system import Timer
+# ==================================
+#      Test the B-spline code     
+# 
+if TEST_B_SPLINE:
     import numpy as np
-    VISUALIZE_TEST = True
-    RANDOM = False
-    NUM_KNOTS = 18
-    FUNC = TESTS[sorted(TESTS)[-1]]
+    from util.plot import Plot
+    left, right = 0.5488135, 0.71518937
+    knots = [left]*20 + [right]*20
+    coefs = [0.76604712, 0.76975691, 0.77350211, 0.7772835 , 0.78110183,
+             0.7849579 , 0.78885247, 0.79278634, 0.79676031, 0.80077518,
+             0.49655397, 0.50164066, 0.50679749, 0.51202474, 0.51732269,
+             0.52269164, 0.52813186, 0.53364366, 0.53922733, 0.54488318]
 
-    # Generate some random knots and values.
-    if RANDOM:
-        np.random.seed(0)
-        knots = np.random.random(size=(NUM_KNOTS))
-        knots.sort()
-    else:
-        knots = np.linspace(0,1,NUM_KNOTS)
-
-    # Get the knots and values for the test.
-    values = list(map(FUNC, knots))
-    knots = np.asfortranarray(knots, dtype=float)
-    values = np.asfortranarray(values, dtype=float)
-
-    print()
-    print(f"knots ({len(knots)}):\n  {knots}")
-    print()
-    print(f"values ({len(values)}):\n  {values}")
-    print("values:")
-    print()
-    # Compute the spline knots and spline coefficients.
-    t = Timer(); t.start()
-    sk, sc, info = splines.pmqsi(knots, values)
-    t.stop()
-    print("info: ",info)
-    print(f"Fortran time: {t()}s")
-    print()
-    # print("order: ",len(sk) - len(sc) + 1)
-    # print()
-    # print("sk:")
-    # print(repr(sk))
-    # print("sc:")
-    # print(repr(sc))
-    # print()
-
-    # --------------------------------------------------------
-    from search_monotone import monotone_quintic_spline
-    t.start()
-    truth = monotone_quintic_spline(knots, values, exact=True)
-    t.stop() ; print(f"Python time: {t()}s")
-    # --------------------------------------------------------
-    # for v in truth.values:
-    #     print("", [round(float(_),2) for _ in v])
-
-    if VISUALIZE_TEST and (len(knots) <= 100):
-        print()
-        from util.plot import Plot
-        # Make a pretty picture of the B-spline and its derivatives.
-        padding = 0 #.1
-        x = [knots[0]]
-        for i in range(len(knots) -1):
-            x += list(np.linspace(knots[i], knots[i+1], 10))[1:]
-        x = np.array(x, dtype=float)
-        y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
-        p = Plot("Polynomial Interpolant")
-        p.add("Spline", x, y, mode="lines", color=p.color(1))
-        true_y = list(map(truth, x))
-        p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
-        p.add("Knots", knots, values, color=p.color(1))
-        p.show(file_name=f"spline_test-N{len(values)}-C{len(values)}.html")
+    for d in range( (len(knots)-len(coefs))+1 ):
+        p = Plot(f"d{d}")
+        for i in range(len(coefs)):
+            k = np.array(knots[i:i+(len(knots)-len(coefs))+1], dtype=float)
+            x = np.linspace(knots[0], knots[-1], 1000)
+            y, status = splines.eval_bspline(k, x.copy(), d=d)
+            p.add(f"B{i+1}", x, y, mode="lines")
+        first = (d == 0)
+        last = (d == (len(knots)-len(coefs)))
+        p.show(append=True, show=first or last)
 

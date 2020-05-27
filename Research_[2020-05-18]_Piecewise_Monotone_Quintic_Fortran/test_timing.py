@@ -9,7 +9,7 @@ from util.data import Data
 from util.plot import Plot
 
 SHOW_PCHIP = False
-VERSION = 0.5
+VERSION = 2.5
 TRIALS = 100
 
 # Import the splines Fortran code.
@@ -37,7 +37,7 @@ d = Data(names=["Test Name", "N", "Trial", "Equispaced", "PMQSI fit", "PCHIP fit
          types=[str,         int, int,     bool,         float,       float,       float,        float])
 t = Timer()
 
-file_name = f"v{version}.csv"
+file_name = f"v{VERSION}.csv"
 import os
 
 if not os.path.exists(file_name):
@@ -96,15 +96,15 @@ versions = sorted(versions, key=lambda v: float(v[1:-4]))
 # --------------------------------------------------------------------
 # Add PMQSI approximation.
 cdf = cdf_fit(d["PMQSI fit"])
-p.add_func(f"v{version} PMQSI fit", cdf, cdf(), color=1, group='current')
+p.add_func(f"v{VERSION} PMQSI fit", cdf, cdf(), color=1, group='current')
 cdf = cdf_fit(d["PMQSI eval"])
-p.add_func(f"  v{version} PMQSI eval", cdf, cdf(), color=1, group='current')
+p.add_func(f"  v{VERSION} PMQSI eval", cdf, cdf(), color=1, group='current')
 
 for step, v in reversed(list(enumerate(versions))):
     # Load old data.
     d2 = Data.load(v)
     # Only add *old* PMQSI information.
-    if (float(v[1:-4]) == version): continue
+    if (float(v[1:-4]) == VERSION): continue
     # Add old PMQSI information.
     cdf = cdf_fit(d2["PMQSI fit"])
     p.add_func(f"V{v[1:-4]} PMQSI fit", cdf, cdf(), color=1,

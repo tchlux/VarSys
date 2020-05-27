@@ -27,8 +27,13 @@ TESTS["signal"] = lambda x: sin(4 * (2*pi) * x) / (x**2 + .1)
 TESTS["large_tangent"] = lambda x: -(1.0 + ( 1.0 / (x-0.99) ))
 
 # --------------------------------------------------------------------
-# Random monotone data test.
+# Random data test.
 from numpy import random
 TESTS["random"] = lambda x: random.random(size=len(x)) if hasattr(x,"__len__") else random.random()
+
+# --------------------------------------------------------------------
+# Random monotone data test.
+from numpy import random
+TESTS["random_monotone"] = lambda x: sorted(random.random(size=len(x))) if hasattr(x,"__len__") else random.random()
 
 

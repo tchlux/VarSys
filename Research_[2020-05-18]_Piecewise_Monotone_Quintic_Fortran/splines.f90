@@ -2,10 +2,10 @@
 ! BREAKPOINTS -> XI
 ! STATUS -> INFO
 
-
 MODULE REAL_PRECISION  ! module for 64-bit real arithmetic
   INTEGER, PARAMETER:: R8=SELECTED_REAL_KIND(13)
 END MODULE REAL_PRECISION
+
 
 MODULE SPLINES
   USE REAL_PRECISION
@@ -15,7 +15,6 @@ MODULE SPLINES
   PUBLIC
 
 CONTAINS
-
 
 SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
   ! Compute a piecewise monotone quintic spline interpolant for data
@@ -44,7 +43,7 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
   REAL(KIND=R8), DIMENSION(SIZE(X),3) :: VALUES ! Spline derivative values.
   REAL(KIND=R8), DIMENSION(SIZE(X),2) :: IDEAL_VALUES ! Estimated derivatives.
   REAL(KIND=R8), DIMENSION(3) :: AS, BS
-  REAL(KIND=R8) :: ACCURACY, STEP_SIZE, MAX_REAL, SLOPE
+  REAL(KIND=R8) :: ACCURACY, STEP_SIZE, MAX_REAL
   LOGICAL, DIMENSION(SIZE(X)) :: FIXING, MODIFIED
   LOGICAL :: SEARCHING
   INTEGER :: I, J, Z
@@ -77,57 +76,56 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
   ! derivatives at all points. Use zero-slope quadratic interpolant
   ! of left/right neighbors at extrema to estimate curvature.
   MAX_REAL = HUGE(1.0_R8)
-  DO I = 1, Z
-     ! If this is an extreme point, construct quadratic interpolants
-     ! that have zero slope here and hit left/right neighbors.
-     IF (FIXING(I)) THEN
-        AS(1) = (Y(I-1) - Y(I)) / (X(I-1) - X(I))**2
-        BS(1) = - 2 * X(I) * AS(1)
-        AS(2) = (Y(I+1) - Y(I)) / (X(I+1) - X(I))**2
-        BS(2) = - 2 * X(I) * AS(2)
-        AS(3) = MAX_REAL
-        BS(3) = 0.0_R8
-     ELSE
-        ! --------------------
-        ! Quadratic left of I.
-        IF (I .LE. 2) THEN ; AS(1) = MAX_REAL ; BS(1) = 0.0_R8
-        ! If there's an extreme point to the left, use it's right interpolant.
-        ELSE IF (FIXING(I-1)) THEN
-           AS(1) = (Y(I) - Y(I-1)) / (X(I) - X(I-1))**2
-           BS(1) = - 2 * X(I-1) * AS(1)
-        ! Otherwise use the standard quadratic on the left.
-        ELSE ; CALL QUADRATIC(I-1, AS(1), BS(1))
-        END IF
-        ! ------------------------
-        ! Quadratic centered at I.
-        IF ((I .GT. 1) .AND. (I .LT. Z)) THEN
-           ! Construct the quadratic interpolant through this point and neighbors.
-           CALL QUADRATIC(I, AS(2), BS(2))
+  estimate_derivatives : DO I = 1, Z
+     ! Check for a case with a known answer.
+     IF ((I .GT. 1) .AND. (Y(I-1) .EQ. Y(I))) THEN
+        VALUES(I,2) = 0.0_R8
+        VALUES(I,3) = 0.0_R8
+        CYCLE estimate_derivatives
+     ELSE IF ((I .LT. Z) .AND. (Y(I) .EQ. Y(I+1))) THEN
+        VALUES(I,2) = 0.0_R8
+        VALUES(I,3) = 0.0_R8
+        CYCLE estimate_derivatives
+     END IF
+     ! Quadratic left of I.
+     IF (I .LE. 2) THEN ; AS(1) = MAX_REAL ; BS(1) = 0.0_R8
+     ELSE IF (FIXING(I-1)) THEN ; AS(1) = AS(3) ; BS(1) = BS(3)
+     ELSE ; AS(1) = AS(2) ; BS(1) = BS(2)
+     END IF
+     ! Quadratic centered at I.
+     IF (I .GT. 1) THEN
+        IF (I .LT. Z) THEN
+           IF (FIXING(I-1)) THEN ; CALL QUADRATIC(I, AS(2), BS(2))
+           ELSE ; AS(2) = AS(3) ; BS(2) = BS(3)
+           END IF
         ELSE ; AS(2) = MAX_REAL ; BS(2) = 0.0_R8
         END IF
-        ! ---------------------
-        ! Quadratic right of I.
-        IF (I .GE. Z-1) THEN ; AS(3) = MAX_REAL ; BS(3) = 0.0_R8
-        ! If there's an extreme point to the right, use it's left interpolant.
-        ELSE IF (FIXING(I+1)) THEN
-           AS(3) = (Y(I) - Y(I+1)) / (X(I) - X(I+1))**2
-           BS(3) = - 2 * X(I+1) * AS(3)
-        ! Otherwise use the standard quadratic on the right.
-        ELSE ; CALL QUADRATIC(I+1, AS(3), BS(3))
-        END IF
+     ELSE ; AS(2) = MAX_REAL ; BS(2) = 0.0_R8
+     END IF
+     ! Quadratic right of I.
+     IF (I .GE. Z-1) THEN ; AS(3) = MAX_REAL ; BS(3) = 0.0_R8
+     ELSE IF (FIXING(I)) THEN
+        ! Interpolate zero slope at I and point at I+1.
+        AS(3) = (Y(I+1) - Y(I)) / (X(I+1) - X(I))**2
+        BS(3) = - 2 * X(I) * AS(3)
+     ELSE IF (FIXING(I+1)) THEN
+        ! Interpolate zero slope at I+1 and point at I.
+        AS(3) = (Y(I) - Y(I+1)) / (X(I) - X(I+1))**2
+        BS(3) = - 2 * X(I+1) * AS(3)
+     ELSE ; CALL QUADRATIC(I+1, AS(3), BS(3))
      END IF
      ! Get the best quadratic for this index (uses AS and BS)
      J = BEST_QUADRATIC(I)
      IF (J .GT. 0) THEN
         ! Set the first and second derivatives, ensuring there are no "inf" values.
-        VALUES(I,2) = SLOPE
+        VALUES(I,2) = MAX(MIN(2 * AS(J) * X(I) + BS(J), MAX_REAL), -MAX_REAL)
         VALUES(I,3) = MAX(MIN(2 * AS(J), MAX_REAL), -MAX_REAL)
      ! Otherwise, "J = -1" and there is no "best quadratic", use zeros.
      ELSE
         VALUES(I,2) = 0.0_R8
         VALUES(I,3) = 0.0_R8
      END IF
-  END DO
+  END DO estimate_derivatives
 
   ! Store the initially estimated values as "ideal".
   IDEAL_VALUES(:,1:2) = VALUES(:,2:3)
@@ -147,6 +145,9 @@ SUBROUTINE PMQSI(X, Y, KNOTS, COEFF, INFO)
   ! Define the accuracy of the solution (will be an optional parameter).
   ACCURACY = SQRT(EPSILON(1.0_R8))
   SEARCHING = .TRUE.
+
+  SEARCHING = .FALSE.
+  FIXING(:) = .FALSE.
 
   ! Loop until the accuracy is achieved and *all* intervals are monotone.
   DO WHILE (SEARCHING .OR. ANY(FIXING(:)))
@@ -226,34 +227,21 @@ CONTAINS
     ! 
     INTEGER, INTENT(IN) :: I
     INTEGER :: LOC, ORDER(3)
+    REAL(KIND=R8) :: SLOPES(3)
     REAL(KIND=R8) :: DIRECTION
     ! Construct the sorted-order of preference for chosen quadratics.
-    IF (ABS(AS(1)) .LE. ABS(AS(2))) THEN
-       IF (ABS(AS(2)) .LE. ABS(AS(3))) THEN
-          ORDER(:) = (/ 1, 2, 3 /)
-       ELSE IF (ABS(AS(1)) .LE. ABS(AS(3))) THEN
-          ORDER(:) = (/ 1, 3, 2 /)
-       ELSE
-          ORDER(:) = (/ 3, 1, 2 /)
-       END IF
-    ELSE
-       IF (ABS(AS(2)) .GT. ABS(AS(3))) THEN
-          ORDER(:) = (/ 3, 2, 1 /)
-       ELSE IF (ABS(AS(1)) .GT. ABS(AS(3))) THEN
-          ORDER(:) = (/ 2, 3, 1 /)
-       ELSE
-          ORDER(:) = (/ 2, 1, 3 /)
-       END IF
-    END IF
+    SLOPES = MAX(MIN(2 * AS(:) * X(I) + BS(:), MAX_REAL), -MAX_REAL)
+    CALL ARGSORT(ABS(SLOPES), ORDER)
+    CALL ARGSORT(ABS(AS), ORDER)
     ! Determine the direction of change at the point "I".
     IF (I .EQ. Z) THEN
        IF (I .EQ. 1) THEN ;              DIRECTION =  0.0_R8
-       ELSE IF (Y(I-1) .LE. Y(I)) THEN ; DIRECTION =  1.0_R8
+       ELSE IF (Y(I-1) .LT. Y(I)) THEN ; DIRECTION =  1.0_R8
        ELSE ;                            DIRECTION = -1.0_R8
        END IF
-    ELSE IF (Y(I) .LE. Y(I+1)) THEN
+    ELSE IF (Y(I) .LT. Y(I+1)) THEN
        IF (I .EQ. 1) THEN ;              DIRECTION =  1.0_R8
-       ELSE IF (Y(I-1) .LE. Y(I)) THEN ; DIRECTION =  1.0_R8
+       ELSE IF (Y(I-1) .LT. Y(I)) THEN ; DIRECTION =  1.0_R8
        ELSE ;                            DIRECTION =  0.0_R8
        END IF
     ELSE
@@ -264,14 +252,11 @@ CONTAINS
     END IF
     ! Pick the quadratic that has the least curvature and an agreeing slope.
     LOC = ORDER(1)
-    SLOPE = MAX(MIN(2 * AS(LOC) * X(I) + BS(LOC), MAX_REAL), -MAX_REAL)
-    IF ((SLOPE * DIRECTION .LT. 0.0_R8) .OR. (AS(LOC) .GE. MAX_REAL)) THEN
+    IF ((SLOPES(LOC) * DIRECTION .LT. 0.0_R8) .OR. (AS(LOC) .GE. MAX_REAL)) THEN
        LOC = ORDER(2)
-       SLOPE = MAX(MIN(2 * AS(LOC) * X(I) + BS(LOC), MAX_REAL), -MAX_REAL)
-       IF ((SLOPE * DIRECTION .LT. 0.0_R8) .OR. (AS(LOC) .GE. MAX_REAL)) THEN
+       IF ((SLOPES(LOC) * DIRECTION .LT. 0.0_R8) .OR. (AS(LOC) .GE. MAX_REAL)) THEN
           LOC = ORDER(3)
-          SLOPE = MAX(MIN(2 * AS(LOC) * X(I) + BS(LOC), MAX_REAL), -MAX_REAL)
-          IF ((SLOPE * DIRECTION .LT. 0.0_R8) .OR. (AS(LOC) .GE. MAX_REAL)) THEN
+          IF ((SLOPES(LOC) * DIRECTION .LT. 0.0_R8) .OR. (AS(LOC) .GE. MAX_REAL)) THEN
              LOC = -1
           END IF
        END IF
@@ -325,8 +310,8 @@ CONTAINS
     INTEGER, INTENT(IN) :: I1, I2
     LOGICAL IS_MONOTONE
     ! Local variables.
-    REAL(KIND=R8) :: A, A0, A1, B, BOUND, B0, B1, D, DDX0, DDX1, &
-         DX0, DX1, G, G0, G1, SIGN, TAU, U0, U1, X0, X1
+    REAL(KIND=R8) :: A, AD, ALPHA, B, BETA, BOUND, DDX0, DDX1, &
+         DX0, DX1, GAMMA, SIGN, TAU, U0, U1, WIDTH, X0, X1, INV_SLOPE
     U0 = X(I1)
     U1 = X(I2)
     X0 = VALUES(I1,1)
@@ -335,6 +320,7 @@ CONTAINS
     DX1 = VALUES(I2,2)
     DDX0 = VALUES(I1,3)
     DDX1 = VALUES(I2,3)
+    WIDTH = U1 - U0
     ! Always consider the monotone increasing case.
     IF (X1 .LT. X0) THEN
        X0 = -X0     ; X1 = -X1
@@ -353,36 +339,46 @@ CONTAINS
     IF (DX0 .LT. 0.0_R8) THEN ; IS_MONOTONE = .FALSE. ; RETURN ; END IF
     IF (DX1 .LT. 0.0_R8) THEN ; IS_MONOTONE = .FALSE. ; RETURN ; END IF
     ! Compute A and B.
-    A = (U1 - U0) * DX0 / (X1 - X0)
-    B = (U1 - U0) * DX1 / (X1 - X0)
+    INV_SLOPE = WIDTH / (X1 - X0)
+    A = INV_SLOPE * DX0
+    B = INV_SLOPE * DX1
     ! Simplified cubic monotone case.
     IF (A*B .LE. 0.0_R8) THEN
-       A = (4.0_R8*DX1 + DDX1*(U0-U1)) * (U0-U1) / (X0-X1)
-       B = 30.0_R8 + ((-24.0_R8*(DX0+DX1) + 3.0_R8*(DDX0-DDX1)*(U0-U1))*(U0-U1)) / (2.0_R8 * (X0-X1))
-       G = ((U0-U1) * (4.0_R8*DX0 + DDX0*(U1-U0))) / (X0-X1)
-       D = DX0 * (U0-U1) / (X0-X1)
-       IS_MONOTONE = (A .GE. 0.0_R8) .AND. (D .GE. 0.0_R8) .AND. &
-            (B .GE. A - (4.0_R8 * A * D)**(0.5_R8)) .AND. &
-            (G .GE. D - (4.0_R8 * A * D)**(0.5_R8))
+       ! The check for delta >= 0 has already been performed above,
+       ! check next for alpha >= 0.
+       IF (DDX1 .GT. 4.0_R8 * DX1 / WIDTH) THEN
+          IS_MONOTONE = .FALSE.
+       ELSE
+          ! Now compute the value of 2 * \sqrt{ alpha delta }, store in "AD".
+          AD = 2.0_R8 * INV_SLOPE * (DX0 * (4*DX1 - DDX1*WIDTH))**(0.5_R8)
+          ! Check for gamma >= delta - 2 * \sqrt{ alpha delta }
+          IF (AD + INV_SLOPE*(3.0_R8*DX0 + DDX0*WIDTH) .LT. 0.0_R8) THEN
+             IS_MONOTONE = .FALSE.
+          ! Check for beta >= alpha - 2 * \sqrt{ alpha delta }
+          ELSE IF (60.0_R8 + 2.0_R8*AD + INV_SLOPE*((5.0_R8*DDX1 - 3.0_R8*DDX0) * &
+               WIDTH - 8.0_R8*(3.0_R8*DX0 + 4.0_R8*DX1)) .LT. 0.0_R8) THEN
+             IS_MONOTONE = .FALSE.
+          ELSE ; IS_MONOTONE = .TRUE.
+          END IF
+       END IF
     ELSE
        ! Full quintic monotone case.
        TAU = 24.0_R8 + 2.0_R8*(A*B)**(0.5_R8) - 3.0_R8*(A+B)
-       IF (TAU .LT. 0.0_R8) THEN ; IS_MONOTONE = .FALSE. ; RETURN ; END IF
-       ! Compute alpha, gamma ,beta from theorems, determine monotonicity.
-       A0 = 4.0_R8 * (B**(0.25_R8) / A**(0.25_R8))
-       A1 = ((U0-U1) / DX1) * B**(0.25_R8) / A**(0.25_R8)
-       G0 = 4.0_R8 * (DX0 / DX1) * (B**(0.75_R8) / A**(0.75_R8))
-       G1 = ((U1-U0) / DX1) * (B**(0.75_R8) / A**(0.75_R8))
-       B0 = (12.0_R8 * (DX0+DX1) * (U1-U0) + 30.0_R8 * (X0-X1)) / ((X0-X1) * A**(0.5_R8) * B**(0.5_R8))
-       B1 = (3.0_R8 * (U0-U1)**2) / (2.0_R8 * (X0-X1) * A**(0.5_R8) * B**(0.5_R8))
-       ! Compute the monotonicity condition.
-       A = A0 + A1 * DDX1
-       G = G0 + G1 * DDX0
-       B = B0 + B1 * (DDX0 - DDX1)
-       IF (B .LE. 6.0_R8) THEN ; BOUND = -(B + 2.0_R8) / 2.0_R8
-       ELSE ;                    BOUND = -2.0_R8 * (B - 2.0_R8)**(0.5_R8)
+       IF (TAU .LT. 0.0_R8) THEN
+          IS_MONOTONE = .FALSE.
+       ELSE
+          ! Compute alpha, gamma ,beta from theorems, determine monotonicity.
+          ! Compute the monotonicity condition.
+          AD = (A / B)**(0.75_R8)
+          ALPHA = AD * (4.0_R8*DX1 - DDX1*WIDTH) / DX0
+          GAMMA = (4.0_R8*DX0 + DDX0*WIDTH) / (AD * DX1)
+          AD = 2.0 * (A * B)**(0.5_R8)
+          BETA = (3.0_R8 * INV_SLOPE * ((DDX1-DDX0)*WIDTH - 8.0_R8*(DX0+DX1)) + 60.0_R8) / AD
+          IF (BETA .LE. 6.0_R8) THEN ; BOUND = -(BETA + 2.0_R8) / 2.0_R8
+          ELSE ;                       BOUND = -2.0_R8 * (BETA - 2.0_R8)**(0.5_R8)
+          END IF
+          IS_MONOTONE = (ALPHA .GT. BOUND) .AND. (GAMMA .GT. BOUND)
        END IF
-       IS_MONOTONE = (A > BOUND) .AND. (G > BOUND)
     END IF
   END FUNCTION IS_MONOTONE
 
@@ -888,5 +884,52 @@ SUBROUTINE EVAL_BSPLINE(KNOTS, XY, D)
   ! Assign the values into the "Y" output.
   XY(:) = VALUES(:,1)
 END SUBROUTINE EVAL_BSPLINE
+
+
+! ------------------------------------------------------------------
+!                        Sort routine
+! 
+! This routine uses Insertion sort to return the order of indices 
+! for which provided VALUES are sorted without affecting VALUES.
+! 
+! Arguments:
+! 
+!   VALUES   --  A 1D array of real numbers R8.
+!   INDICES  --  A 1D array of original indices for elements of VALUES.
+! 
+! Output:
+! 
+!   The elements of the array VALUES are unchanged while all
+!   elements of INDICES are sorted (given INDICES = 1, ...,
+!   SIZE(VALUES) beforehand, final INDICES will provide sorted order
+!   of VALUES).
+! 
+SUBROUTINE ARGSORT(VALUES, INDICES)
+  REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: VALUES
+  INTEGER, INTENT(OUT), DIMENSION(:) :: INDICES
+  ! Local variables.
+  INTEGER :: I, J, K
+  ! Initialize indices.
+  DO I = 1, SIZE(INDICES) ; INDICES(I) = I ; END DO
+  ! Put the smallest value at the front of the list.
+  I = MINLOC(VALUES,1)
+  K = INDICES(1)
+  INDICES(1) = INDICES(I)
+  INDICES(I) = K
+  ! Insertion sort the rest of the array.
+  DO I = 3, SIZE(INDICES)
+     K = INDICES(I)
+     ! Search backwards in the list, 
+     J = I - 1
+     DO WHILE (VALUES(K) .LT. VALUES(INDICES(J)))
+        INDICES(J+1) = INDICES(J)
+        J = J - 1
+     END DO
+     ! Put the value into its place (where it is greater than the
+     ! element before it, but less than all values after it).
+     INDICES(J+1) = K
+  END DO
+END SUBROUTINE ARGSORT
+
 
 END MODULE SPLINES
