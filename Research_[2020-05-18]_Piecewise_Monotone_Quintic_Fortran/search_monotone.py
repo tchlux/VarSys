@@ -111,8 +111,12 @@ def estimate_derivative(x, y, i, extreme_points, free=False):
                 f = polynomial([x[i-1],x[i]], [y[i-1],y[i]], dx0=0)
                 functions.append(f)
             elif (i-2 >= 0):
-                f = polynomial(x[i-2:i+1], y[i-2:i+1])
-                functions.append(f)
+                if (y[i-2] == y[i-1]):
+                    f = polynomial([x[i-1],x[i]], [y[i-1],y[i]], dx0=0)
+                    functions.append(f)
+                else:
+                    f = polynomial(x[i-2:i+1], y[i-2:i+1])
+                    functions.append(f)
         # Add the appropriate center interpolant (i-1, i, i+1).
         if ((len(x) >= 3) and (i > 0) and (i+1 < len(x))): # and
 #            (i-1 not in extreme_points) and (i+1 not in extreme_points)):

@@ -15,9 +15,9 @@ if TEST_PMQSI:
     from util.system import Timer
     import numpy as np
     VISUALIZE_TEST = True
-    RANDOM = True
-    NUM_KNOTS = 15
-    NAME = sorted(TESTS)[1]
+    RANDOM = False
+    NUM_KNOTS = 30
+    NAME = sorted(TESTS)[4]
     FUNC = TESTS[NAME]
     print('-'*70)
     print("Possible tests:")
@@ -33,7 +33,7 @@ if TEST_PMQSI:
     else:
         knots = np.linspace(0,1,NUM_KNOTS)
 
-    knots = knots[:7]
+    # knots = knots[13:-12]
 
     # Get the knots and values for the test.
     values = FUNC(knots)

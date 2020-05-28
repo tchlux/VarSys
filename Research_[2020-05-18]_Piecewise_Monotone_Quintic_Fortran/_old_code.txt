@@ -1,3 +1,38 @@
+     ! Fill the quadratics that are available for this location.
+     IF (FIXING(I)) THEN
+        ! If the right quadratic was computed before, reuse it.
+        IF (AS(3) .NE. MAX_REAL) THEN
+           AS(1) = AS(3) ; BS(1) = BS(3)
+        ELSE
+           ! Interpolate zero slope at I and point at I-1.
+           AS(1) = (Y(I-1) - Y(I)) / (X(I-1) - X(I))**2
+           BS(1) = - 2 * X(I) * AS(1)
+        END IF
+        ! Interpolate zero slope at I and point at I+1.
+        AS(2) = (Y(I+1) - Y(I)) / (X(I+1) - X(I))**2
+        BS(2) = - 2 * X(I) * AS(2)        
+        ! Disable the "rightmost" quadratic.
+        AS(3) = MAX_REAL ; BS(3) = 0.0_R8
+     ELSE
+        IF (MODIFIED(I) .AND. (I .LT. Z) .AND. (.NOT. (MODIFIED(I+1) .OR. FIXING(I+1)))) THEN
+           ! Interpolate zero slope at I and point at I+1.
+           AS(2) = MAX_REAL ; BS(2) = 0.0_R8
+           AS(3) = (Y(I+1) - Y(I)) / (X(I+1) - X(I))**2
+           BS(3) = - 2 * X(I) * AS(3)
+        END IF
+        ! Slide existing values left.
+        AS(1) = AS(2) ; BS(1) = BS(2)
+        AS(2) = AS(3) ; BS(2) = BS(3)
+        IF ((I .LT. Z) .AND. FIXING(I+1)) THEN
+           ! Interpolate zero slope at I+1 and point at I.
+           AS(3) = (Y(I) - Y(I+1)) / (X(I) - X(I+1))**2
+           BS(3) = - 2 * X(I+1) * AS(3)
+        ELSE IF (I+1 .LT. Z) THEN ; CALL QUADRATIC(I+1, AS(3), BS(3))
+        ELSE ; AS(3) = MAX_REAL ; BS(3) = 0.0_R8
+        END IF
+     END IF
+
+
 exit()
 
 # # Get the knots and values for the test.

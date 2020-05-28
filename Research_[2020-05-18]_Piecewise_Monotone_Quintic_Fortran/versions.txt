@@ -12,3 +12,8 @@ v1
 v2
   Pre-computed "U1 - U0" as "WIDTH" to remove redundant computations.
   Removed redundancy from quadratic computations, reuse old computed coefficients.
+
+v3
+  Removed "best quadratic" function and put it in line.
+  Fixed quadratic equations by reverting to v1.
+   ^^ This version is slower than v2, because of these bug fixes.

@@ -9,7 +9,7 @@ from util.data import Data
 from util.plot import Plot
 
 SHOW_PCHIP = False
-VERSION = 2.5
+VERSION = 3.1
 TRIALS = 100
 
 # Import the splines Fortran code.
