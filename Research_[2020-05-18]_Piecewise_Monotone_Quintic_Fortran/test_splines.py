@@ -5,7 +5,6 @@ splines = fmodpy.fimport("splines.f90", verbose=True,
                          autocompile_extra_files=True,
                          module_link_args=["-lblas", "-llapack"])
 
-
 TEST_PMQSI = True
 TEST_SPLINE = False
 TEST_B_SPLINE = False
@@ -14,9 +13,10 @@ if TEST_PMQSI:
     from test_points import TESTS
     from util.system import Timer
     import numpy as np
+    SHOW_DERIVATIVES = False
     VISUALIZE_TEST = True
     RANDOM = False
-    NUM_KNOTS = 30
+    NUM_KNOTS = 36 # 18
     NAME = sorted(TESTS)[4]
     FUNC = TESTS[NAME]
     print('-'*70)
@@ -78,13 +78,23 @@ if TEST_PMQSI:
         x = [knots[0]]
         for i in range(len(knots) -1):
             x += list(np.linspace(knots[i], knots[i+1], 20))[1:]
-        x = np.array(x, dtype=float)
-        y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
         p = Plot(NAME)
-        p.add("Spline", x, y, mode="lines", color=p.color(1))
+        x = np.array(x, dtype=float)
+        if SHOW_DERIVATIVES:
+            # Add derivatives.
+            y, info = splines.eval_spline(sk, sc, x.copy(), d=1)
+            p.add("Fort Deriv", x, y, mode="lines", color=0, opacity=0.5)
+            deriv = truth.derivative()
+            true_y = list(map(deriv, x))
+            p.add("True Deriv", x, true_y, mode="lines", color=1,
+                  opacity=0.5, dash="dot",fill="toprevy")
+        # Add the approximations.
+        y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
+        p.add("Spline", x, y, mode="lines", color=1)
         true_y = list(map(truth, x))
-        p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
-        p.add("Knots", knots, values, color=p.color(1))
+        p.add("Truth", x, true_y, mode="lines", color=1, dash="dot",fill="toprevy")
+        p.add("Knots", knots, values, color=1)
+        # Show the file.
         p.show(file_name=f"spline_test-{NAME}.html")
 
    
@@ -137,7 +147,7 @@ if TEST_SPLINE:
             x = np.linspace(min(knots)-padding,max(knots)+padding,max(1000,(len(knots)-1)*10+1))
             y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
             p = Plot("Polynomial Interpolant")
-            p.add("Spline", x, y, mode="lines", color=p.color(1))
+            p.add("Spline", x, y, mode="lines", color=1)
             # --------------------------------------------------------
             from polynomial import Spline
             from fraction import Fraction
@@ -146,9 +156,9 @@ if TEST_SPLINE:
                 except: return Fraction(v)
             truth = Spline(exact(knots), exact(values))
             true_y = list(map(truth, x))
-            p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
+            p.add("Truth", x, true_y, mode="lines", color=1, dash="dot",fill="toprevy")
             # --------------------------------------------------------
-            p.add("Knots", knots, values[:,0], color=p.color(1))
+            p.add("Knots", knots, values[:,0], color=1)
             p.show(file_name=f"spline_test-N{len(values)}-C{len(values[0])}.html")
 
     else:
@@ -193,7 +203,7 @@ if TEST_SPLINE:
             y, info = splines.eval_spline(sk, sc, x.copy(), d=0)
             # Make a pretty picture of the B-spline and its derivatives.
             p = Plot("Hermite Interpolant")
-            p.add("Spline", x, y, mode="lines", color=p.color(1), group="s")
+            p.add("Spline", x, y, mode="lines", color=1, group="s")
             # --------------------------------------------------------
             from polynomial import Spline
             from fraction import Fraction
@@ -202,13 +212,13 @@ if TEST_SPLINE:
                 except: return Fraction(v)
             truth = Spline(exact(knots), exact(values))
             true_y = list(map(truth, x))
-            p.add("Truth", x, true_y, mode="lines", color=p.color(1), dash="dot",fill="toprevy")
+            p.add("Truth", x, true_y, mode="lines", color=1, dash="dot",fill="toprevy")
             # --------------------------------------------------------
-            p.add("Knots", knots, values[:,0], color=p.color(1), group="s")
+            p.add("Knots", knots, values[:,0], color=1, group="s")
             # Add all interesting derivatives.
             styles = ["dot", "dash", "dashdot"]
             for d in range(1, values.shape[1]*2):
-                color = p.color(d-1) if d == 1 else p.color(d)
+                color = d-1 if d == 1 else d
                 dash = styles[(d-1)%len(styles)]
                 print()
                 print(f"{d} derivative evaluating..")
@@ -217,7 +227,7 @@ if TEST_SPLINE:
                 if (d < values.shape[1]):
                     p.add(f"k{d}", knots, values[d,:], color=color, group=d)
             y, info = splines.eval_spline(sk, sc, x.copy(), d=-1)
-            p.add("Integral", x, y, mode="lines", color=p.color(0), group="i")
+            p.add("Integral", x, y, mode="lines", color=0, group="i")
 
             p.show(file_name=f"spline_test-N{len(values)}-C{len(values[0])}.html")
 

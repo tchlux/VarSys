@@ -11,9 +11,24 @@ v1
 
 v2
   Pre-computed "U1 - U0" as "WIDTH" to remove redundant computations.
-  Removed redundancy from quadratic computations, reuse old computed coefficients.
+  Removed "best quadratic" function and put it in line.
+  record intervals that need to be checked more efficiently
 
 v3
-  Removed "best quadratic" function and put it in line.
-  Fixed quadratic equations by reverting to v1.
-   ^^ This version is slower than v2, because of these bug fixes.
+  Renamed variables according to Dr. Watson's suggestions.
+  Added short circuit code to prevent evaluation of B-splines that contain no points.
+  Slightly changed the logic for stepping towards monotonicity.
+
+v4
+  Changed order of operations in PMQSI.
+  Introduced custom ARGSORT3 function for faster sorting of 3 elements.
+  Moved computations in monotonicity check to allow slightly more efficient short circuiting.
+  
+v5
+  Removed all the quadratic storage, the "best" is computed on the fly,
+  No more "ARGSORT3" function.  
+
+v6
+  Changed accuracy to be a smaller number temporarily, but need to fix testing
+   code to ensure that points are not generated that are too close together.
+  Added the "A*B" computation back to the earlier IS_MONOTONE check for numerical stability.

@@ -9,7 +9,7 @@ from util.data import Data
 from util.plot import Plot
 
 SHOW_PCHIP = False
-VERSION = 3.1
+VERSION = 6.5
 TRIALS = 100
 
 # Import the splines Fortran code.
@@ -61,11 +61,33 @@ if not os.path.exists(file_name):
                     # Fit the PMQSI.
                     print(f"   {trial} {str(equispaced)[:1]} -- PMQSI fit", flush=True, end="\r")
                     t.start() ; sk, sc, info = splines.pmqsi(x, y) ; t.stop()
+                    if (info != 0):
+                        print()
+                        print()
+                        print("test_name:   ",test_name)
+                        print("N:           ",N)
+                        print("trial:       ",trial)
+                        print("equispaced:  ",equispaced)
+                        print("x =", repr(x))
+                        print("y =", repr(y))
+                        print()
+                        raise(Exception(f"PQMSI FIT ERROR: {info}"))
                     pmqsi_fit = t.total
                     # Eval the PMQSI.
                     print(f"   {trial} {str(equispaced)[:1]} -- PMQSI eval", flush=True, end="\r")
-                    eval_pts = np.asfortranarray( np.linspace(0, 1, TRIALS), dtype=float )
-                    t.start() ; splines.eval_spline(sk, sc, eval_pts, d=0) ; t.stop()
+                    eval_pts = np.asfortranarray(np.linspace(min(x), max(x), TRIALS), dtype=float)
+                    t.start() ; _, info = splines.eval_spline(sk, sc, eval_pts, d=0) ; t.stop()
+                    if (info != 0):
+                        print()
+                        print()
+                        print("test_name:   ",test_name)
+                        print("N:           ",N)
+                        print("trial:       ",trial)
+                        print("equispaced:  ",equispaced)
+                        print("x =", repr(x))
+                        print("y =", repr(y))
+                        print()
+                        raise(Exception(f"PQMSI EVAL ERROR: {info}"))
                     pmqsi_eval = t.total / TRIALS
                     # Fit the PCHIP.
                     print(f"   {trial} {str(equispaced)[:1]} -- PCHIP fit", flush=True, end="\r")
@@ -73,7 +95,7 @@ if not os.path.exists(file_name):
                     pchip_fit = t.total
                     # Eval the PCHIP.
                     print(f"   {trial} {str(equispaced)[:1]} -- PCHIP eval", flush=True, end="\r")
-                    eval_pts = np.asfortranarray( np.linspace(0, 1, TRIALS), dtype=float )
+                    eval_pts = np.asfortranarray(np.linspace(min(x), max(x), TRIALS), dtype=float)
                     t.start() ; f(eval_pts) ; t.stop()
                     pchip_eval = t.total / TRIALS
                     # Store these results.
@@ -105,14 +127,16 @@ for step, v in reversed(list(enumerate(versions))):
     d2 = Data.load(v)
     # Only add *old* PMQSI information.
     if (float(v[1:-4]) == VERSION): continue
+    if (int(float(v[1:-4])) == int(VERSION)): d = None
+    else:                                     d = "dot"
     # Add old PMQSI information.
     cdf = cdf_fit(d2["PMQSI fit"])
     p.add_func(f"V{v[1:-4]} PMQSI fit", cdf, cdf(), color=1,
-               opacity=(step+1) / (len(versions)+1), dash="dot",
+               opacity=(step+1) / (len(versions)+1), dash=d,
                group=v[1:-4].split('.')[0]+" fit")
     cdf = cdf_fit(d2["PMQSI eval"])
     p.add_func(f"V{v[1:-4]} PMQSI eval", cdf, cdf(), color=1,
-               opacity=(step+1) / (len(versions)+1), dash="dot",
+               opacity=(step+1) / (len(versions)+1), dash=d,
                group=v[1:-4].split('.')[0]+" eval")
 
 

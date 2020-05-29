@@ -1,0 +1,112 @@
+\documentclass[12pt,letterpaper]{article}
+\usepackage{fullpage}  % Make the margins smaller
+\usepackage{parskip}   % Don't use indents in front of paragraphs
+\usepackage{xcolor}    % Color package for coloring text.
+\usepackage{fontenc}   % Use a font package.
+\usepackage{libertine} % Pick the font.
+\usepackage{hyperref} % Links 
+\usepackage{amsfonts}  % Math font "mathbb"
+
+
+%% Use a custom `algorithm` command for this paper.
+\input{lux-algorithm}
+\renewcommand*{\ttdefault}{courier}
+
+\newcommand{\TODO}[1]{{\color{red} #1}}
+
+\medskip
+
+\title{Piecewise Monotone Quintic Spline Interpolants}
+\author{Thomas C. H. Lux}
+\date{}
+
+\begin{document}
+\thispagestyle{empty}
+\begin{center}
+    {\LARGE \textbf{Piecewise Monotone Quintic Spline Interpolants}} \hfill
+    %% \href{https://tchlux.info}{\textbf{tchlux.info}} \hfill
+    %% \textbf{804 317 8339} \hfill
+    %% \href{thomas.ch.lux@gmail.com}{\textbf{thomas.ch.lux@gmail.com}}
+    \\ \medskip\href{tchlux@vt.edu}{Thomas C.H. Lux}
+    %% \rule{\textwidth}{1.5pt}
+    \bigskip
+\end{center}
+
+
+
+%% \begin{tabular}{@{}l r@{}}
+%%     \begin{tabular}{@{}l@{}}
+%%       %% Hiring Committee \\
+%%       Business \\
+%%       City, State \\
+%%       \today
+%%     \end{tabular} &
+%%     %% \hfill IMAGE
+%% \end{tabular}
+
+\medskip
+
+
+\algorithm
+    {is\_monotone$\big(x_0, x_1, f \big)$}
+    {where $x_0$, $x_1 \in \mathbb{R}$, $x_0 < x_1$, and $f$ is an order six polynomial defined by $f(x_0)$, $Df(x_0)$, $D^2f(x_0)$, $f(x_1)$,
+  $Df(x_1)$, $D^2f(x_1)$. Returns \texttt{TRUE} if $f$ is monotone on $[x_0,x_1]$.}
+    {\label{alg:check-monotone}
+  \item if $\big(f(x_0) = f(x_1)\big)$ and not $\big( 0 = Df(x_0) = Df(x_1) = D^2f(x_0) = D^2f(x_1) \big)$
+    \indented{return FALSE}
+    else if $\big(f(x_0) < f(x_1)\big)$ ; $s = 1$
+    \\else ; $s = -1$
+    \\end if
+  \item if $\big(Df(x_0) < 0$ or $Df(x_1) < 0\big)$
+    \indented{return FALSE}
+    end if
+    \comment{The necessity of these first two steps follows directly from the fact that $f$ is $C^2$. The next case is in accordance with a simplified condition for quintic monotonicity that reduces to one of cubic positivity studied in \cite{schmidt1988positivity}, where $\alpha$, $\beta$, $\gamma$, and $\delta$ are defined in terms of values and derivatives of $f$ at $x_0$ and $x_1$. Step \ref{alg1-alpha} checks for the necessary condition that $\alpha \ge 0$, Step \ref{alg1-beta} checks $\beta \geq \alpha$, and Step \ref{alg1-gamma} checks $\gamma \geq \delta$, all from \cite{schmidt1988positivity}. If all necessary conditions are met, then the order six piece is monotone and Step \ref{alg1-simplified-true} concludes this check.}
+  \item if $\big(Df(x_0) = 0$ or $Df(x_1) = 0\big)$
+  \item \indented{$w := x_0 - x_1$\\$v := f(x_0) - f(x_1)$}
+  \item \indented{if $\big(D^2f(x_1) > {-4}Df(x_1) / w \big)$ return FALSE}
+    \label{alg1-alpha}
+  \item \indented{if $\big(D^2f(x_1) < (3w D^2f(x_0) - 24 Df(x_0) - 32
+    Df(x_1) + 60v/w) / (5w) \big)$ return FALSE} \label{alg1-beta}
+  \item \indented{if $\big(D^2f(x_0) < 3 Df(x_0) / w \big)$ return FALSE}
+    \label{alg1-gamma}
+  \item \indented{return TRUE} \label{alg1-simplified-true}
+    end if
+    \comment{The following code considers the remaining case where $Df(x_0) \neq 0$ and $Df(x_1) \neq 0$.}
+  \item $\displaystyle A := Df(x_0)\frac{x_1 - x_0}{f(x_1) - f(x_0)}$
+    \\ $\displaystyle B := Df(x_1) \frac{x_1 - x_0}{f(x_1) - f(x_0)}$
+    \comment{The variables $A$ and $B$ correspond directly to the theoretical foundation for positive quartic polynomials established in \cite{ulrich1994positivity}, first defined after Equation (18).}
+  \item $\displaystyle \gamma_0 := 4 \frac{Df(x_0)}{Df(x_1)} (B/A)^{3/4}$
+    \\ $\displaystyle \gamma_1 := \frac{x_1 - x_0}{Df(x_1)} (B/A)^{3/4}$
+    \\ $\alpha_0 := 4 (B/A)^{1/4}$
+    \\ $\displaystyle \alpha_1 := -\frac{x_1 - x_0}{Df(x_1)} (B/A)^{1/4}$
+    \\ $\displaystyle \beta_0 := 30 - \frac{12 \big(Df(x_0) + Df(x_1)\big) (x_1 - x_0)}{\big(f(x_1) - f(x_0)\big) \sqrt{A}\sqrt{B}}$
+    \\ $\displaystyle \beta_1 := \frac{-3 (x_1 - x_0)^2}{2 \big(f(x_1) - f(x_0)\big) \sqrt{A} \sqrt{B}} $ \label{alg1-linearized-abg}
+    \comment{The $\gamma$, $\alpha$, and $\beta$ terms with subscripts $0$ and $1$ are algebraic reductions of the simplified conditions for satisfying Theorem 2 in Equation (16) of \cite{ulrich1994positivity}. These terms with subscripts $0$ and $1$ make the computation of $\alpha$, $\beta$, and $\gamma$ functions of the second derivative terms, as seen in Step \ref{alg1-abg} below.}
+  \item $\gamma := \gamma_0 + \gamma_1 D^2f(x_0)$
+    \\ $\alpha := \alpha_0 + \alpha_1 D^2f(x_1)$
+    \\ $\beta := \beta_0 + \beta_1 \big(D^2f(x_0) - D^2f(x_1)\big)$
+    \label{alg1-abg}
+  \item if $(\beta \leq 6)$ return $\big(\alpha > - (\beta + 2) / 2\big)$
+    \\ else $\qquad$ return $\big(\gamma > -2 \sqrt{\beta - 2}\big)$
+    \\ end if \label{alg1-last}
+}
+
+
+\medskip
+
+\section*{Comments}
+
+This is a final section discussing some of the finer points.
+
+%% \medskip
+
+%% With respect,\\
+%% \bigskip\\
+%% \bigskip\\
+%% Thomas Lux
+%% \vfill
+
+\bibliographystyle{unsrt}
+\bibliography{pmqsi}
+
+\end{document}

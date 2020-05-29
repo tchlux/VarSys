@@ -17,12 +17,15 @@ def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-26),
         x = make_exact(x)
         y = make_exact(y)
     # Identify the local extreme points.
-    extreme_points = [i for i in range(1, len(x)-1)
-                      if ((y[i]-y[i-1]) * (y[i+1]-y[i]) < 0)]
+    extremes = {i for i in range(1, len(x)-1)
+                      if ((y[i]-y[i-1]) * (y[i+1]-y[i]) < 0)}
+    flats = {i for i in range(1, len(x)-1)
+                   if ((y[i]-y[i-1]) * (y[i+1]-y[i]) == 0)}
     # Compute "ideal" values everywhere.
     values = [[yi] for yi in y]
     # Compute first and second derivatives.
-    for i in range(len(x)): values[i] += estimate_derivative(x, y, i, extreme_points, free=free)
+    for i in range(len(x)): values[i] += estimate_derivative(
+            x, y, i, extremes, flats, free=free)
     # Store local fits.
     for i in range(len(x)):
         local_fits[i] = (
@@ -88,12 +91,11 @@ def monotone_quintic_spline(x, y, exact=True, accuracy=2**(-26),
 # Given "i" the index at which the first derivative should be
 # estimated, construct local quadratic fits and pick the slope of the
 # one with the lowest curvature.
-def estimate_derivative(x, y, i, extreme_points, free=False):
+def estimate_derivative(x, y, i, extremes, flats, free=False):
     # If this is a local flat, estimate 0.
-    if ((i > 0) and (y[i-1] == y[i])) or \
-       ((i+1 < len(y)) and (y[i] == y[i+1])): return [0, 0]
+    if (i in flats): return [0, 0]
     # If this is a local maximum, force first derivative to zero.
-    elif (i in extreme_points):
+    elif (i in extremes):
         direction = 0.0
         functions = []
         # Compute the left function (interpolates zero slope).
@@ -107,7 +109,7 @@ def estimate_derivative(x, y, i, extreme_points, free=False):
         functions = []
         # Add the appropriate left interpolant (i-2, i-1, i).
         if (i > 0):
-            if (i-1 in extreme_points):
+            if (i-1 in extremes) or (i-1 in flats):
                 f = polynomial([x[i-1],x[i]], [y[i-1],y[i]], dx0=0)
                 functions.append(f)
             elif (i-2 >= 0):
@@ -118,13 +120,14 @@ def estimate_derivative(x, y, i, extreme_points, free=False):
                     f = polynomial(x[i-2:i+1], y[i-2:i+1])
                     functions.append(f)
         # Add the appropriate center interpolant (i-1, i, i+1).
-        if ((len(x) >= 3) and (i > 0) and (i+1 < len(x))): # and
-#            (i-1 not in extreme_points) and (i+1 not in extreme_points)):
+        if ((i-1 >= 0) and (i+1 < len(x)) and not
+            (((i-1 in flats) or (i-1 in extremes)) and
+             ((i+1 in flats) or (i+1 in extremes)))):
             f = polynomial(x[i-1:i+2], y[i-1:i+2])
             functions.append(f)
         # Add the appropriate right interpolant (i, i+1, i+2).
         if (i + 1 < len(x)):
-            if (i+1 in extreme_points):
+            if (i+1 in extremes) or (i+1 in flats):
                 f = polynomial([x[i],x[i+1]], [y[i],y[i+1]], dx1=0)
                 functions.append(f)
             elif (i+2 < len(x)):
@@ -151,7 +154,7 @@ def estimate_derivative(x, y, i, extreme_points, free=False):
     if (len(derivatives) == 0): return [0, 0]
     # Sort the derivatives by magnitude of curvature, then by
     # magnitude of first derivative when curvatures are equal.
-    derivatives.sort(key=lambda d: (abs(d[1]), abs(d[0])))
+    derivatives.sort(key=lambda d: abs(d[1]))
     return derivatives[0]
 
 

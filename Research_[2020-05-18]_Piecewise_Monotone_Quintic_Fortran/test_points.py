@@ -24,7 +24,7 @@ TESTS["signal"] = lambda x: sin(4 * (2*pi) * x) / (x**2 + .1)
 
 # --------------------------------------------------------------------
 # Large tangent test.
-TESTS["large_tangent"] = lambda x: -(1.0 + ( 1.0 / (x-0.99) ))
+TESTS["large_tangent"] = lambda x: -(1.0 + ( 1.0 / (x-1.01) ))
 
 # --------------------------------------------------------------------
 # Random data test.
