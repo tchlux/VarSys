@@ -138,17 +138,18 @@ class Spline:
         return self._functions[i]
 
     # Compute the integral of this Spline.
-    def integral(self, i=1): return self.derivative(-i)
+    def integral(self, i=1, c=None): return self.derivative(-i, c)
 
     # Compute the first derivative of this Spline.
-    def derivative(self, d=1):
+    def derivative(self, d=1, c=None):
         # For integration, adjust the additive term to reflect the
         # expected lefthand side value of each function.
         if (d < 0):
             deriv_funcs = self._functions
             for i in range(-d):
                 deriv_funcs = [f.integral(1) for f in deriv_funcs]
-                total = self(self.knots[0])
+                if (c is None): total = self(self.knots[0])
+                else:           total = c
                 for i in range(len(deriv_funcs)):
                     deriv_funcs[i].coefficients[-1] = (
                         total - deriv_funcs[i](self.knots[i]))
@@ -310,6 +311,8 @@ class Polynomial:
 
     # Evaluate this Polynomial at a point "x" in a numerically stable way.
     def __call__(self, x):
+        try: return [self(v) for v in x]
+        except TypeError: pass # <- don't worry if it is not iterable
         if (len(self._coefficients) == 0): return 0
         total = self._coefficients[0]
         for d in range(1,len(self._coefficients)):

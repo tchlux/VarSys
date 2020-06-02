@@ -5,8 +5,8 @@ splines = fmodpy.fimport("splines.f90", verbose=True,
                          autocompile_extra_files=True,
                          module_link_args=["-lblas", "-llapack"])
 
-TEST_PMQSI = True
-TEST_SPLINE = False
+TEST_PMQSI = False
+TEST_SPLINE = True
 TEST_B_SPLINE = False
 
 if TEST_PMQSI:
@@ -104,7 +104,7 @@ if TEST_PMQSI:
 # 
 if TEST_SPLINE:
     import numpy as np
-    RANDOMIZE_TEST = True
+    RANDOMIZE_TEST = False
     VISUALIZE_TEST = True
     if RANDOMIZE_TEST:
         np.random.seed(1)
@@ -123,7 +123,11 @@ if TEST_SPLINE:
         print()
         # Get the spline knots and spline coefficients.
         values = np.asfortranarray(values)
-        sk, sc, info = splines.fit_spline(knots, values)
+        nb = len(values)
+        ncc = len(values[0])
+        sk = np.ones(nb*ncc + 2*ncc)
+        sc = np.ones(nb*ncc)
+        sk, sc, info = splines.fit_spline(knots, values, sk, sc)
         print("info: ",info)
         print()
         # print("order: ",len(sk) - len(sc) + 1)
@@ -177,7 +181,11 @@ if TEST_SPLINE:
         print(values)
         # Get the spline knots and spline coefficients.
         values = np.asfortranarray(values)
-        sk, sc, info = splines.fit_spline(knots, values)
+        nb = len(values)
+        ncc = len(values[0])
+        sk = np.ones(nb*ncc + 2*ncc)
+        sc = np.ones(nb*ncc)
+        sk, sc, info = splines.fit_spline(knots, values, sk, sc)
 
         # sc *= -1
         for d in range(continuity):
@@ -228,7 +236,9 @@ if TEST_SPLINE:
                     p.add(f"k{d}", knots, values[d,:], color=color, group=d)
             y, info = splines.eval_spline(sk, sc, x.copy(), d=-1)
             p.add("Integral", x, y, mode="lines", color=0, group="i")
-
+            true_integral = truth.integral()
+            true_y = np.array(true_integral(x)) - 1
+            p.add("True integral", x, true_y, mode="lines", color=0, dash="dot",fill="toprevy")
             p.show(file_name=f"spline_test-N{len(values)}-C{len(values[0])}.html")
 
 
