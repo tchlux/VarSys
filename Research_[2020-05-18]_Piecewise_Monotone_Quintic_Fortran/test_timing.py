@@ -9,15 +9,22 @@ from util.data import Data
 from util.plot import Plot
 
 SHOW_PCHIP = False
-VERSION = 6.5
+VERSION = 8.1
 TRIALS = 100
 
 # Import the splines Fortran code.
-import og_fmodpy as fmodpy
-splines = fmodpy.fimport("splines.f90", verbose=True,
-                         autocompile_extra_files=True,
-                         module_link_args=["-lblas", "-llapack"])
+import fmodpy
 
+bspline = fmodpy.fimport("pmqsi/EVAL_BSPLINE.f90", output_dir="pmqsi")
+spline = fmodpy.fimport("pmqsi/SPLINE.f90", output_dir="pmqsi")
+pmqsi = fmodpy.fimport("pmqsi/PMQSI.f90", output_dir="pmqsi")
+
+# Define an object that has all of the expected functions.
+class splines:
+    pmqsi = pmqsi.pmqsi
+    fit_spline = spline.fit_spline
+    eval_spline = spline.eval_spline
+    eval_bspline = bspline.eval_bspline
 
 # Get the distribution of times required for doing PMQSI fits on all
 # test problems, and random problems of a few different sizes.
@@ -60,7 +67,10 @@ if not os.path.exists(file_name):
                     y = np.asfortranarray( TESTS[test_name](x), dtype=float )
                     # Fit the PMQSI.
                     print(f"   {trial} {str(equispaced)[:1]} -- PMQSI fit", flush=True, end="\r")
-                    t.start() ; sk, sc, info = splines.pmqsi(x, y) ; t.stop()
+                    nd = len(x)
+                    sk = np.ones(3*nd + 6)
+                    sc = np.ones(3*nd)
+                    t.start() ; sk, sc, info = splines.pmqsi(x, y, sk, sc) ; t.stop()
                     if (info != 0):
                         print()
                         print()

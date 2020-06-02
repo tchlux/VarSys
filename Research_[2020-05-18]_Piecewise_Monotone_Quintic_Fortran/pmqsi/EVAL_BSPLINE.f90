@@ -48,6 +48,8 @@ SUBROUTINE EVAL_BSPLINE(T, XY, D)
 !   The final B-spline is right continuous and has support over the
 !   interval [T(1), T(N)).
 ! 
+USE REAL_PRECISION, ONLY: R8
+IMPLICIT NONE
 REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: T
 REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
 INTEGER, INTENT(IN), OPTIONAL :: D
@@ -56,9 +58,7 @@ INTEGER :: DERIV, I, J, K, L, N
 REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(T)) :: BIATX
 REAL(KIND=R8) :: LEFT, RIGHT, TN
 ! Assign the local value of the optional derivative "D" argument.
-set_derivative : IF (PRESENT(D)) THEN ; DERIV = D
-ELSE ; DERIV = 0
-END IF set_derivative
+IF (PRESENT(D)) THEN; DERIV = D; ELSE; DERIV = 0; END IF
 ! Collect local variables for notational convenience.
 N = SIZE(T) ! Number of knots
 K = N - 1 ! Order of B-spline
@@ -66,7 +66,7 @@ L = K - 1 ! One less than the order of the B-spline.
 TN = T(N) ! Value of the last knot, T(N).
 
 ! If this is a large enough derivative, we know it is zero everywhere.
-IF (DERIV+1 .GE. N) THEN ; XY(:) = 0.0_R8 ; RETURN
+IF (DERIV+1 .GE. N) THEN; XY(:) = 0.0_R8; RETURN
 
 ! ---------------- Performing standard evaluation ------------------
 ! This is a standard B-spline with multiple unique knots, right continuous.
@@ -82,7 +82,7 @@ ELSE
       END WHERE
    END DO first_b_spline
 END IF
-! Compute the remainder of B-spline by building up from the first.
+! Compute the remainder of B-spline by building up from the step function.
 ! Omit the final steps of this computation for derivatives.
 compute_spline : DO I = 2, K-MAX(DERIV,0)
    ! Cycle over each knot accumulating the values for the recurrence.
@@ -109,7 +109,7 @@ END DO compute_spline
 
 ! -------------------- Performing integration ----------------------
 int_or_diff : IF (DERIV .LT. 0) THEN
-! Integrals will be nonzero for TN <= X(J) < \infty).
+! Integrals will be 1 for TN <= X(J) < \infty.
 WHERE (TN .LE. XY(:))
    BIATX(:,N) = 1.0_R8
 END WHERE
@@ -136,32 +136,32 @@ raise_order : DO I = 1, L
 END DO raise_order
 
 ! Compute the integral of the B-spline.
-   ! Do a forward evaluation of all constituents.
-   DO J = 1, K
-      LEFT = (TN - T(J))
-      RIGHT = (TN - T(J+1))
-      IF (LEFT .GT. 0) THEN
-         IF (RIGHT .GT. 0) THEN
-            BIATX(:,J) = &
-                 ((XY(:) - T(J)) / LEFT) * BIATX(:,J) + &
-                 ((TN - XY(:)) / RIGHT) * BIATX(:,J+1)
-         ELSE
-            BIATX(:,J) = ((XY(:) - T(J)) / LEFT) * BIATX(:,J)
-         END IF
+! Do a forward evaluation of all constituents.
+DO J = 1, K
+   LEFT = (TN - T(J))
+   RIGHT = (TN - T(J+1))
+   IF (LEFT .GT. 0) THEN
+      IF (RIGHT .GT. 0) THEN
+         BIATX(:,J) = &
+              ((XY(:) - T(J)) / LEFT) * BIATX(:,J) + &
+              ((TN - XY(:)) / RIGHT) * BIATX(:,J+1)
       ELSE
-         IF (RIGHT .GT. 0) THEN
-            BIATX(:,J) = ((TN - XY(:)) / RIGHT) * BIATX(:,J+1)
-         END IF
+         BIATX(:,J) = ((XY(:) - T(J)) / LEFT) * BIATX(:,J)
       END IF
-   END DO
-   ! Sum the constituent functions at each knot (from the back).
-   DO J = K, 1, -1
-      BIATX(:,J) = (BIATX(:,J) + BIATX(:,J+1))
-   END DO
-   ! Divide by the degree plus one.
-   BIATX(:,1) = BIATX(:,1) / REAL(L+1,R8)
-   ! Rescale the integral by its width.
-   BIATX(:,1) = BIATX(:,1) * (TN - T(1))
+   ELSE
+      IF (RIGHT .GT. 0) THEN
+         BIATX(:,J) = ((TN - XY(:)) / RIGHT) * BIATX(:,J+1)
+      END IF
+   END IF
+END DO
+! Sum the constituent functions at each knot (from the back).
+DO J = K, 1, -1
+   BIATX(:,J) = (BIATX(:,J) + BIATX(:,J+1))
+END DO
+! Divide by the degree plus one.
+BIATX(:,1) = BIATX(:,1) / REAL(L+1,R8)
+! Rescale the integral by its width.
+BIATX(:,1) = BIATX(:,1) * (TN - T(1))
 
 ! ------------------ Performing differentiation --------------------
 ELSE IF (DERIV .GT. 0) THEN

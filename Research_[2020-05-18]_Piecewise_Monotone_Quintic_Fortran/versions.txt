@@ -32,3 +32,11 @@ v6
   Changed accuracy to be a smaller number temporarily, but need to fix testing
    code to ensure that points are not generated that are too close together.
   Added the "A*B" computation back to the earlier IS_MONOTONE check for numerical stability.
+
+v7
+  Broke up the module into independent subroutines.
+  Removed redundant "IF" logic in PMQSI on the number of points.
+  Use "SPREAD" on "BIATX" in "FIT_SPLINE" for faster fit.
+
+v8
+  Included the source LAPACK code and compiled it with the PMQSI routine.

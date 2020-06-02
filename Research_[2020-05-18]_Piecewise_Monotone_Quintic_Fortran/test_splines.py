@@ -1,12 +1,24 @@
 
-# import fmodpy
-import og_fmodpy as fmodpy
-splines = fmodpy.fimport("splines.f90", verbose=True,
-                         autocompile_extra_files=True,
-                         module_link_args=["-lblas", "-llapack"])
+import fmodpy
 
-TEST_PMQSI = False
-TEST_SPLINE = True
+# import og_fmodpy as fmodpy
+# splines = fmodpy.fimport("splines.f90", verbose=True,
+#                          autocompile_extra_files=True,
+#                          module_link_args=["-lblas", "-llapack"])
+
+bspline = fmodpy.fimport("pmqsi/EVAL_BSPLINE.f90", output_dir="pmqsi", lapack=True)
+spline = fmodpy.fimport("pmqsi/SPLINE.f90", output_dir="pmqsi", lapack=True)
+pmqsi = fmodpy.fimport("pmqsi/PMQSI.f90", output_dir="pmqsi", lapack=True)
+
+# Define an object that has all of the expected functions.
+class splines:
+    pmqsi = pmqsi.pmqsi
+    fit_spline = spline.fit_spline
+    eval_spline = spline.eval_spline
+    eval_bspline = bspline.eval_bspline
+
+TEST_PMQSI = True
+TEST_SPLINE = False
 TEST_B_SPLINE = False
 
 if TEST_PMQSI:
@@ -16,8 +28,10 @@ if TEST_PMQSI:
     SHOW_DERIVATIVES = False
     VISUALIZE_TEST = True
     RANDOM = False
-    NUM_KNOTS = 36 # 18
-    NAME = sorted(TESTS)[4]
+    NUM_KNOTS = 30
+    # NUM_KNOTS *= 2
+    np.random.seed(0)
+    NAME = sorted(TESTS)[3]
     FUNC = TESTS[NAME]
     print('-'*70)
     print("Possible tests:")
@@ -48,7 +62,10 @@ if TEST_PMQSI:
     print()
     # Compute the spline knots and spline coefficients.
     t = Timer(); t.start()
-    sk, sc, info = splines.pmqsi(knots, values)
+    nd = len(knots)
+    sk = np.ones(3*nd + 6)
+    sc = np.ones(3*nd)
+    sk, sc, info = splines.pmqsi(knots, values, sk, sc)
     t.stop()
     print("info: ",info)
     print(f"Fortran time: {t()}s")
@@ -262,7 +279,7 @@ if TEST_B_SPLINE:
         for i in range(len(coefs)):
             k = np.array(knots[i:i+(len(knots)-len(coefs))+1], dtype=float)
             x = np.linspace(knots[0], knots[-1], 1000)
-            y, status = splines.eval_bspline(k, x.copy(), d=d)
+            y = splines.eval_bspline(k, x.copy(), d=d)
             p.add(f"B{i+1}", x, y, mode="lines")
         first = (d == 0)
         last = (d == (len(knots)-len(coefs)))
