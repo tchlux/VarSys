@@ -90,15 +90,14 @@ estimate_derivatives : DO I = 1, ND
    J = I+1
    K = I-1
    ! Determine the direction of change at the point I.
-   IF (I .EQ. 1) THEN
+   IF (GROWING(I) .OR. SHRINKING(I)) THEN ; DIRECTION = 0.0_R8
+   ELSE IF (I .EQ. 1) THEN
       IF      (Y(I) .LT. Y(J)) THEN; DIRECTION =  1.0_R8
       ELSE IF (Y(I) .GT. Y(J)) THEN; DIRECTION = -1.0_R8
-      ELSE;                          DIRECTION =  0.0_R8
       END IF
    ELSE
       IF      (Y(K) .LT. Y(I)) THEN; DIRECTION =  1.0_R8
       ELSE IF (Y(K) .GT. Y(I)) THEN; DIRECTION = -1.0_R8
-      ELSE;                          DIRECTION =  0.0_R8
       END IF
    END IF
    ! Initialize the curvature to be maximally large.
@@ -291,10 +290,8 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
    NC = 0
 END DO
 ! ------------------------------------------------------------------
-
 ! Use FIT_SPLINE to fit the final PMQSI.
 CALL FIT_SPLINE(X, FX, T, BCOEF, INFO)
-
 
 CONTAINS
 FUNCTION IS_MONOTONE(U0, U1, X0, X1, DX0, DX1, DDX0, DDX1)

@@ -1,0 +1,57 @@
+    PMQSI: Piecewise monotone quintic spline interpolation
+
+The package  PMQSI  is a collection of Fortran 95 routines for the
+construction of piecewise monotone quintic spline interpolants. All
+contained routines use the module  REAL_PRECISION  from HOMPACK90 (ACM
+TOMS Algorithm 777) for specifying the real data type.
+
+The physical organization into files is as follows.
+
+ * The file 'REAL_PRECISION.f90' contains the module  REAL_PRECISION.
+ * The file 'PMQSI.f90' contains the subroutine  PMQSI, which computes
+   a piecewise monotone quintic spline interpolant of data in terms
+   of a B-spline basis.
+ * The file 'SPLINE.f90' contains the subroutines  FIT_SPLINE  for
+   constructing a B-spline basis representation of a spline that
+   interpolates given function and derivative values at data, and
+   EVAL_SPLINE  for computing the value, derivatives, and integral of
+   a spline in terms of its B-spline basis.
+ * The file 'EVAL_BSPLINE.f90' contains the subroutine  EVAL_BSPLINE
+   a Fortran 95 implementation of the B-spline recurrence relation
+   evaluation code first introduced by C. de Boor, which computes the
+   B-spline defined by a knot sequence, derivatives of that B-spline,
+   and the integral of that B-spline.
+ * The files 'blas.f' and 'lapack.f' contain just the necessary BLAS and
+   LAPACK routines, in case the complete BLAS and LAPACK libraries are not
+   available.
+
+To compile and link, use the command:
+
+ $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 PMQSI.f90 \
+    $MAIN -o $EXEC_NAME $LIB
+
+where '$F95' is the name of the Fortran 95 compiler, '$OPTS' are
+compiler options such as '-c' and '-O3', '$MAIN' is the name of the
+main program, '$EXEC_NAME' is the name of the executable, and '$LIB'
+provides a flag to link BLAS and LAPACK. If the BLAS and LAPACK
+libraries are not available on your system, then replace $LIB with the
+filenames 'blas.f lapack.f'; these provided files contain just the
+necessary routines from the BLAS and LAPACK libraries.
+
+This package includes a test suite in the file 'test.f90' which can be
+compiled and linked with the command:
+
+ $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 PMQSI.f90 \
+    test.f90 -o test $LIB
+
+then run with the command:
+
+ ./test
+
+--------------------------------------------------------------------------
+
+Inquiries should be directed to Layne Watson,
+Departments of Computer Science, Mathematics, and Aerospace & Ocean
+Engineering, Mail Code 0106, VPI & SU, Blacksburg, VA 24061; 540-231-7540;
+ltw@cs.vt.edu, ltw@ieee.org.
+

@@ -31,7 +31,7 @@ if TEST_PMQSI:
     NUM_KNOTS = 30
     # NUM_KNOTS *= 2
     np.random.seed(0)
-    NAME = sorted(TESTS)[3]
+    NAME = sorted(TESTS)[4]
     FUNC = TESTS[NAME]
     print('-'*70)
     print("Possible tests:")
