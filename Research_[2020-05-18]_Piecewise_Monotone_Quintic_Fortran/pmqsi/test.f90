@@ -1,119 +1,119 @@
 ! This file contains code relevant to testing a local installation of
 ! the PMQSI package. Example command to compile and run all tests:
 ! 
-!    $f95 $flags REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 PMQSI.f90 test.f90 -o test lapack.f blas.f && ./test
+!  $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 PMQSI.f90 \
+!    test.f90 -o test lapack.f blas.f && ./test
 ! 
-! where "gfortran -O3" should be substituted with the local Fortran 95
-! compiler and any desired compilation flags.
+! where '$F95' is the name of the Fortran 95 compiler, '$OPTS' are
+! compiler options such as '-c' and '-O3'.
 ! 
 ! All tests will be run and an error message will be printed for any
 ! failed test cases. Otherwise a message saying tests have passed will
-! be directed to standard output.
+! be directed to standard output. A small timing test will also be
+! run to display the expected time required to fit and evaluate a
+! PMQSI to data of a given size.
 ! 
 ! 
 ! ====================================================================
 !                 Test program for PMQSI package.
 ! 
 PROGRAM TEST_ALL
-  ! Different functions that test potentially common usage scenarios.
-  USE REAL_PRECISION, ONLY: R8
-  IMPLICIT NONE
-  ! ------------------------------------------------------------------
-  !                         Testing parameters
-  ! 
-  INTEGER, PARAMETER :: TRIALS = 100
-  REAL(KIND=R8), PARAMETER :: ERROR_TOLERANCE = SQRT(EPSILON(1.0_R8))
-  INTEGER, PARAMETER :: NS(5) = (/ 2**3, 2**4, 2**5, 2**6, 2**7 /)
-  LOGICAL, PARAMETER :: EQ_SPACED(2) = (/ .TRUE., .FALSE. /)
-  CHARACTER(LEN=20), PARAMETER :: &
-       TEST_FUNC_NAMES(5) = (/ "Large tangent       ", "Piecewise polynomial", &
-       "Random              ", "Random monotone     ", "Decay signal        " /)
-  INTEGER, PARAMETER :: TIME_SIZE = 30
-  ! ------------------------------------------------------------------
-  ! Iteration indices.
-  INTEGER :: I, J, K, N
-  LOGICAL :: ALL_PASSED
-  ! Time recording variables.
-  REAL :: EVAL_TIMES(5,5,2), FIT_TIMES(5,5,2)
-  ALL_PASSED = .TRUE.
-  ! Run all tests.
+USE REAL_PRECISION, ONLY: R8
+IMPLICIT NONE
+! ------------------------------------------------------------------
+!                         Testing parameters
+! 
+INTEGER, PARAMETER :: TRIALS = 100
+REAL(KIND=R8), PARAMETER :: ERROR_TOLERANCE = SQRT(EPSILON(1.0_R8))
+INTEGER, PARAMETER :: NS(5) = (/ 2**3, 2**4, 2**5, 2**6, 2**7 /)
+LOGICAL, PARAMETER :: EQ_SPACED(2) = (/ .TRUE., .FALSE. /)
+CHARACTER(LEN=20), PARAMETER :: &
+     TEST_FUNC_NAMES(5) = (/ "Large tangent       ", "Piecewise polynomial", &
+     "Random              ", "Random monotone     ", "Decay signal        " /)
+INTEGER, PARAMETER :: TIME_SIZE = 30
+! ------------------------------------------------------------------
+! Iteration indices.
+INTEGER :: I, J, K, N
+LOGICAL :: ALL_PASSED
+! Time recording variables.
+REAL :: EVAL_TIMES(5,5,2), FIT_TIMES(5,5,2)
+ALL_PASSED = .TRUE.
+! Run all tests.
+PRINT "('')"
+PRINT "('-------------------------------')"
+PRINT "('Running tests, 'I3' trials each.')", TRIALS
+main_loop : DO I = 1, SIZE(NS)
+  N = NS(I)
   PRINT "('')"
-  PRINT "('-------------------------------')"
-  PRINT "('Running tests, 'I3' trials each.')", TRIALS
-  main_loop : DO I = 1, SIZE(NS)
-     N = NS(I)
-     PRINT "('')"
-     PRINT "('N: 'I5)", N
-     DO J = 1, SIZE(TEST_FUNC_NAMES)
-        PRINT "('  'A)", TEST_FUNC_NAMES(J)
-        DO K = 1, SIZE(EQ_SPACED)
-           IF (.NOT. PASSES_TEST()) THEN
-              ! Describe the test that failed and exit.
-              PRINT "('')"
-              PRINT "('Test configuration:')"
-              PRINT "('  function:   'A)", TEST_FUNC_NAMES(J)
-              IF (EQ_SPACED(K)) THEN ; PRINT "('  spacing:    equally spaced')"
-              ELSE ;                   PRINT "('  spacing:    randomly spaced')"
-              END IF
-              PRINT "('  data size: '1I5)", N
-              PRINT "('  num trials:'1I5)", TRIALS
-              PRINT "('__________________________________')"
-              PRINT "('')"
-              ALL_PASSED = .FALSE.
-              EXIT main_loop
-           END IF
-        END DO
-     END DO
-  END DO main_loop
-  IF (ALL_PASSED) THEN ; PRINT "('')" ; PRINT "('All tests PASSED.')" ; END IF
-
-
-  PRINT "('')"
-  PRINT "('--------------------------------------------------------------')"
-  N = TIME_SIZE
-  PRINT "('Computing timing data for size 'I5'.')", N
+  PRINT "('N: 'I5)", N
   DO J = 1, SIZE(TEST_FUNC_NAMES)
-     DO K = 1, SIZE(EQ_SPACED)
-        CALL RUN_TIME_TEST(EVAL_TIMES(:,J,K), FIT_TIMES(:,J,K))
-     END DO
+    PRINT "('  'A)", TEST_FUNC_NAMES(J)
+    DO K = 1, SIZE(EQ_SPACED)
+      IF (.NOT. PASSES_TEST()) THEN
+        ! Describe the test that failed and exit.
+        PRINT "('')"
+        PRINT "('Test configuration:')"
+        PRINT "('  function:   'A)", TEST_FUNC_NAMES(J)
+        IF (EQ_SPACED(K)) THEN ; PRINT "('  spacing:    equally spaced')"
+        ELSE ;                   PRINT "('  spacing:    randomly spaced')"
+        END IF
+        PRINT "('  data size: '1I5)", N
+        PRINT "('  num trials:'1I5)", TRIALS
+        PRINT "('__________________________________')"
+        PRINT "('')"
+        ALL_PASSED = .FALSE.
+        EXIT main_loop
+      END IF
+    END DO
   END DO
-  ! Average the percentiles over all executed tests.
-  EVAL_TIMES(:,1,1) = SUM(SUM(EVAL_TIMES(:,:,:), DIM=3), DIM=2) / &
-       REAL(SIZE(EVAL_TIMES,2) * SIZE(EVAL_TIMES,3))
-  FIT_TIMES(:,1,1) = SUM(SUM(FIT_TIMES(:,:,:), DIM=3), DIM=2) / &
-       REAL(SIZE(FIT_TIMES,2) * SIZE(FIT_TIMES,3))
-  ! Print out the results.
-  PRINT "('')"
-  PRINT "(' Fit time for PMQSI of 'I5' points:')", N
-  J = SIZE(EVAL_TIMES,1)
-  DO I = 1, J
-     IF (I .EQ. 1) THEN
-        PRINT "('      min  'F8.6' seconds')", FIT_TIMES(I,1,1)
-     ELSE IF ((I-1 .EQ. (J-1)/2) .AND. (MOD(I,2) .EQ. 1)) THEN
-        PRINT "('   median  'F8.6' seconds')", FIT_TIMES(I,1,1)
-     ELSE IF (I .EQ. J) THEN
-        PRINT "('      max  'F8.6' seconds')", FIT_TIMES(I,1,1)
-     ELSE
-        K = INT(1.0 + REAL((99)*(I-1))/REAL(J-1))
-        PRINT "('      'I3'  'F8.6' seconds')", K, FIT_TIMES(I,1,1)
-     END IF
-  END DO
-  PRINT "('')"
-  PRINT "(' Evaluation time per point for PMQSI built from 'I5' points:')", N
-  J = SIZE(EVAL_TIMES,1)
-  DO I = 1, J
-     IF (I .EQ. 1) THEN
-        PRINT "('      min  'F8.6' seconds')", EVAL_TIMES(I,1,1)
-     ELSE IF ((I-1 .EQ. (J-1)/2) .AND. (MOD(I,2) .EQ. 1)) THEN
-        PRINT "('   median  'F8.6' seconds')", EVAL_TIMES(I,1,1)
-     ELSE IF (I .EQ. J) THEN
-        PRINT "('      max  'F8.6' seconds')", EVAL_TIMES(I,1,1)
-     ELSE
-        K = INT(1.0 + REAL((99)*(I-1))/REAL(J-1))
-        PRINT "('      'I3'  'F8.6' seconds')", K, EVAL_TIMES(I,1,1)
-     END IF
-  END DO
-
+END DO main_loop
+IF (ALL_PASSED) THEN ; PRINT "('')" ; PRINT "('All tests PASSED.')" ; END IF
+! End of testing code, beginning of timing code.
+PRINT "('')"
+PRINT "('--------------------------------------------------------------')"
+N = TIME_SIZE
+PRINT "('Computing timing data for size 'I5'.')", N
+DO J = 1, SIZE(TEST_FUNC_NAMES)
+   DO K = 1, SIZE(EQ_SPACED)
+      CALL RUN_TIME_TEST(EVAL_TIMES(:,J,K), FIT_TIMES(:,J,K))
+   END DO
+END DO
+! Average the percentiles over all executed tests.
+EVAL_TIMES(:,1,1) = SUM(SUM(EVAL_TIMES(:,:,:), DIM=3), DIM=2) / &
+     REAL(SIZE(EVAL_TIMES,2) * SIZE(EVAL_TIMES,3))
+FIT_TIMES(:,1,1) = SUM(SUM(FIT_TIMES(:,:,:), DIM=3), DIM=2) / &
+     REAL(SIZE(FIT_TIMES,2) * SIZE(FIT_TIMES,3))
+! Print out the results.
+PRINT "('')"
+PRINT "(' Fit time for PMQSI of 'I5' points:')", N
+J = SIZE(EVAL_TIMES,1)
+DO I = 1, J
+  IF (I .EQ. 1) THEN
+    PRINT "('      min  'F8.6' seconds')", FIT_TIMES(I,1,1)
+  ELSE IF ((I-1 .EQ. (J-1)/2) .AND. (MOD(I,2) .EQ. 1)) THEN
+    PRINT "('   median  'F8.6' seconds')", FIT_TIMES(I,1,1)
+  ELSE IF (I .EQ. J) THEN
+    PRINT "('      max  'F8.6' seconds')", FIT_TIMES(I,1,1)
+  ELSE
+    K = INT(1.0 + REAL((99)*(I-1))/REAL(J-1))
+    PRINT "('      'I3'  'F8.6' seconds')", K, FIT_TIMES(I,1,1)
+  END IF
+END DO
+PRINT "('')"
+PRINT "(' Evaluation time per point for PMQSI built from 'I5' points:')", N
+J = SIZE(EVAL_TIMES,1)
+DO I = 1, J
+  IF (I .EQ. 1) THEN
+    PRINT "('      min  'F8.6' seconds')", EVAL_TIMES(I,1,1)
+  ELSE IF ((I-1 .EQ. (J-1)/2) .AND. (MOD(I,2) .EQ. 1)) THEN
+    PRINT "('   median  'F8.6' seconds')", EVAL_TIMES(I,1,1)
+  ELSE IF (I .EQ. J) THEN
+    PRINT "('      max  'F8.6' seconds')", EVAL_TIMES(I,1,1)
+  ELSE
+    K = INT(1.0 + REAL((99)*(I-1))/REAL(J-1))
+    PRINT "('      'I3'  'F8.6' seconds')", K, EVAL_TIMES(I,1,1)
+  END IF
+END DO
 
 
 CONTAINS
@@ -180,7 +180,7 @@ SUBROUTINE RUN_TIME_TEST(EVAL_TIME, FIT_TIME)
 END SUBROUTINE RUN_TIME_TEST
 
 ! ====================================================================
-!                       Test execution routine.
+!                       Test execution routines.
 ! 
 SUBROUTINE RUN_TEST(ND, EQUALLY_SPACED_X, F, F_NAME, PASSES)
 ! Runs a batch of tests and prints information to standard output
@@ -229,7 +229,7 @@ IF (EQUALLY_SPACED_X) THEN
 ELSE
    CALL RANDOM_NUMBER(X)
    CALL SORT(X)
-   ! Make sure the random points have enough spacing.
+   ! Make sure the random points have ample spacing.
    DO I = 1, ND-1
       X(I+1) = MAX(X(I+1), X(I)+ERROR_TOLERANCE*REAL(2**8,KIND=R8))
    END DO
@@ -328,7 +328,7 @@ IF (EQUALLY_SPACED_X) THEN
 ELSE
    CALL RANDOM_NUMBER(X)
    CALL SORT(X)
-   ! Make sure the random points have enough spacing.
+   ! Make sure the random points have ample spacing.
    DO I = 1, ND-1
       X(I+1) = MAX(X(I+1), X(I)+ERROR_TOLERANCE*REAL(2**8,KIND=R8))
    END DO
