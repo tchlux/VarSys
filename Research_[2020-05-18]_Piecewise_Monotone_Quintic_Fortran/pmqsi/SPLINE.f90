@@ -31,23 +31,20 @@ SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
 ! 
 !   
 ! DESCRIPTION:
-!   This subroutine uses a B-spline basis to interpolate given
-!   function values (and derivative values) at unique breakpoints.
-!   The interpolating spline is returned in terms of knots T and
-!   BCOEF that define the underlying B-splines and the
-!   corresponding linear combination that interpolates given data
-!   respectively. This function uses the subroutine EVAL_BSPLINE to
-!   evaluate the B-splines at all knots and the LAPACK routine DGBSV
-!   to compute the coefficients of all component B-splines. The
-!   difference between the provided function (and derivative) values
-!   and the actual values produced by this code can vary depending
-!   on the spacing of the knots and the magnitudes of the values
-!   provided. When the condition number of the intermediate linear
-!   system grows prohibitively large, this routine may fail to
-!   produce a correct set of coefficients and return INFO code 7.
-!   For very high levels of continuity, or when this routine fails,
-!   a Newton form of polynomial representation should be used
-!   instead.
+!   This subroutine computes the B-spline basis representation of the
+!   spline interpolant to given function values (and derivative values)
+!   at unique breakpoints.  The osculatory interpolating spline of order
+!   2*NCC is returned in terms of knots T and coefficients BCOEF, defining
+!   the underlying B-splines and their linear combination that interpolates
+!   the given data.  This function uses the subroutine EVAL_BSPLINE to
+!   evaluate the B-splines at all knots and the LAPACK routine DGBSV to
+!   compute the B-spline coefficients. The difference between the provided
+!   function (and derivative) values and the actual values produced by the
+!   computed interpolant can vary depending on the spacing of the knots
+!   and the magnitudes of the values provided. When the condition number
+!   of the linear system defining BCOEF is large, the computed interpolant
+!   may fail to accurately reproduce the data, indicated by INFO = 7.
+!   
 ! 
 USE REAL_PRECISION, ONLY: R8
 IMPLICIT NONE
@@ -117,7 +114,8 @@ END DO
 ! Assign the last knot to exist a small step outside the supported
 ! interval to ensure the B-spline basis functions are nonzero at the
 ! rightmost breakpoint.
-T(NK-DEGREE:NK) = XI(NB) * (1.0_R8 + SQRT(EPSILON(XI(NB))))
+T(NK-DEGREE:NK) = MAX( XI(NB) + ABS(XI(NB))*SQRT(EPSILON(XI(1))),  &
+                       XI(NB) + SQRT(EPSILON(XI(1))) )
 
 ! The next block of code evaluates each B-spline and it's
 ! derivatives at all breakpoints. The first and last elements of
@@ -223,7 +221,7 @@ SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
 !      defining this interpolating spline.
 ! 
 ! INPUT/OUTPUT:
-!   XY(1:Z) -- On input, the locations at which the spline is to be
+!   XY(1:M) -- On input, the locations at which the spline is to be
 !      evaluated; on output, holds the value of the spline with knots T and
 !      coefficients BCOEF evaluated at the given locations.
 ! 
@@ -243,7 +241,7 @@ SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
 !   This subroutine serves as a convenient wrapper to the underlying calls
 !   to EVAL_BSPLINE to evaluate the full spline.  Internally this uses a
 !   matrix-vector multiplication of the B-spline evaluations (Gram matrix)
-!   with the assigned coefficients. This requires O(Z*NSPL) memory, so
+!   with the assigned coefficients. This requires O(M*NSPL) memory, so
 !   evaluating single points might be more efficient in some situations.
 ! 
 USE REAL_PRECISION, ONLY: R8

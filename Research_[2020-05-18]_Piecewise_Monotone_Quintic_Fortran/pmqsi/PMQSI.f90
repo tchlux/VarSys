@@ -17,7 +17,7 @@ SUBROUTINE PMQSI(X, Y, T, BCOEF, INFO)
 !    1  There are fewer than three data points, so there is nothing to do.
 !    2  X(:) and Y(:) have different sizes.
 !    3  The values in X(:) are not increasing or not separated by at least
-!       the machine precision.
+!       their size times the square root of machine precision.
 !    4  The size of T(:) must be at least the number of knots 3*ND+6.
 !    5  The size of BCOEF(:) must be at least the spline space dimension 3*ND.
 !    7  The computed spline does not match the provided data in Y(:) and
@@ -51,6 +51,27 @@ INTERFACE
      INTEGER, INTENT(OUT) :: INFO
    END SUBROUTINE FIT_SPLINE
 END INTERFACE
+INTERFACE OPERATOR (.EQA.)
+   FUNCTION EQAPPROX(A,B)
+     USE REAL_PRECISION, ONLY: R8
+     REAL(KIND=R8) :: A, B
+     LOGICAL :: EQAPPROX
+   END FUNCTION EQAPPROX
+END INTERFACE
+INTERFACE OPERATOR (.LTA.)
+   FUNCTION LTAPPROX(A,B)
+     USE REAL_PRECISION, ONLY: R8
+     REAL(KIND=R8) :: A, B
+     LOGICAL :: LTAPPROX
+   END FUNCTION LTAPPROX
+END INTERFACE
+INTERFACE OPERATOR (.GTA.)
+   FUNCTION GTAPPROX(A,B)
+     USE REAL_PRECISION, ONLY: R8
+     REAL(KIND=R8) :: A, B
+     LOGICAL :: GTAPPROX
+   END FUNCTION GTAPPROX
+END INTERFACE
 ! Declare constants for computation.
 ND = SIZE(X)
 REAL_MAX = HUGE(1.0_R8)
@@ -63,7 +84,8 @@ ELSE IF (SIZE(BCOEF) .LT. 3*ND) THEN; INFO = 5; RETURN
 END IF
 ! Verify that X values are increasing and appropriately spaced.
 DO I = 1, ND-1
-   IF (X(I+1) - X(I) .LE. ACCURACY) THEN; INFO = 3; RETURN; END IF
+   IF (X(I+1) - X(I) .LE. ACCURACY*(1.0_R8 + ABS(X(I+1)) + ABS(X(I))) THEN; &
+   INFO = 3; RETURN; END IF
 END DO
 ! ==================================================================
 !            Estimate initial derivatives by using a
@@ -73,14 +95,14 @@ END DO
 FX(:,1) = Y(:)
 ! Identify local extreme points and flat points. Denote location
 ! of flats in GROWING and extrema in SHRINKING.
-GROWING(1) = Y(1) .EQ. Y(2)
-GROWING(ND) = Y(ND-1) .EQ. Y(ND)
+GROWING(1) = Y(1) .EQA. Y(2)
+GROWING(ND) = Y(ND-1) .EQA. Y(ND)
 SHRINKING(1) = .FALSE.
 SHRINKING(ND) = .FALSE.
 DO I = 2, ND-1
    DIRECTION = (Y(I) - Y(I-1)) * (Y(I+1) - Y(I))
-   GROWING(I) = DIRECTION .EQ. 0.0_R8
-   SHRINKING(I) = DIRECTION .LT. 0.0_R8
+   GROWING(I) = (Y(I) .EQA. Y(I-1)) .OR. (Y(I+1) .EQA. Y(I))
+   SHRINKING(I) = (.NOT. GROWING(I)) .AND. (DIRECTION .LT. 0.0_R8)
 END DO
 ! Use local quadratic interpolants to estimate slopes and second
 ! derivatives at all points. Use zero-sloped quadratic interpolants
@@ -98,13 +120,13 @@ estimate_derivatives : DO I = 1, ND
    ELSE IF (SHRINKING(I)) THEN
       ! Set the first derivative to zero.
       FX(I,2) = 0.0_R8
-      ! Compute the coefficient A in  Ax^2 + Bx + C  that interpolates X(I-1).
+      ! Compute the coefficient A in  Ax^2+Bx+C  that interpolates at X(I-1).
       FX(I,3) = (Y(K) - Y(I)) / (X(K) - X(I))**2
-      ! Compute the coefficient A in  Ax^2 + Bx + C  that interpolates X(I+1).
+      ! Compute the coefficient A in  Ax^2+Bx+C  that interpolates at X(I+1).
       A = (Y(J) - Y(I)) / (X(J) - X(I))**2
       IF (ABS(A) .LT. ABS(FX(I,3))) THEN; FX(I,3) = A; END IF
       ! Compute the actual second derivative (instead of coefficient A).
-      FX(I,3) = MAX(MIN(2.0_R8 * FX(I,3), REAL_MAX), -REAL_MAX)
+      FX(I,3) = 2.0_R8 * FX(I,3)
    ELSE
       ! Determine the direction of change at the point I.
       IF (I .EQ. 1) THEN
@@ -119,14 +141,14 @@ estimate_derivatives : DO I = 1, ND
       ! --------------------
       ! Quadratic left of I.
       IF (K .GT. 1) THEN
-         ! If there's a zero-derivative to the left, use it's right interpolant.
+         ! If a zero derivative at left point, use its right interpolant.
          IF (SHRINKING(K) .OR. GROWING(K)) THEN
             A = (Y(I) - Y(K)) / (X(I) - X(K))**2
             B = -2.0_R8 * X(K) * A
          ! Otherwise use the standard quadratic on the left.
          ELSE; CALL QUADRATIC(K)
          END IF
-         DX = MAX(MIN(2.0_R8*A*X(I) + B, REAL_MAX), -REAL_MAX)
+         DX = 2.0_R8*A*X(I) + B
          IF (DX*DIRECTION .GE. 0.0_R8) THEN
             FX(I,2) = DX
             FX(I,3) = A
@@ -138,9 +160,9 @@ estimate_derivatives : DO I = 1, ND
       IF ((I .GT. 1) .AND. (I .LT. ND) .AND. .NOT. &
            ((SHRINKING(K) .OR. GROWING(K)) .AND. &
            (SHRINKING(J) .OR. GROWING(J)))) THEN
-         ! Construct the quadratic interpolant through this point and neighbors.
+         ! Construct quadratic interpolant through this point and neighbors.
          CALL QUADRATIC(I)
-         DX = MAX(MIN(2.0_R8*A*X(I) + B, REAL_MAX), -REAL_MAX)
+         DX = 2.0_R8*A*X(I) + B
          ! Keep this new quadratic if it has less curvature.
          IF ((DX*DIRECTION .GE. 0.0_R8) .AND. (ABS(A) .LT. ABS(FX(I,3)))) THEN
             FX(I,2) = DX
@@ -150,14 +172,14 @@ estimate_derivatives : DO I = 1, ND
       ! ---------------------
       ! Quadratic right of I.
       IF (J .LT. ND) THEN
-         ! If there's an extreme point to the right, use it's left interpolant.
+         ! If a zero derivative at right point, use its left interpolant.
          IF (SHRINKING(J) .OR. GROWING(J)) THEN
             A = (Y(I) - Y(J)) / (X(I) - X(J))**2
             B = -2.0_R8 * X(J) * A
          ! Otherwise use the standard quadratic on the right.
          ELSE; CALL QUADRATIC(J)
          END IF
-         DX = MAX(MIN(2.0_R8*A*X(I) + B, REAL_MAX), -REAL_MAX)
+         DX = 2.0_R8*A*X(I) + B
          ! Keep this new quadratic if it has less curvature.
          IF ((DX*DIRECTION .GE. 0.0_R8) .AND. (ABS(A) .LT. ABS(FX(I,3)))) THEN
             FX(I,2) = DX
@@ -166,8 +188,8 @@ estimate_derivatives : DO I = 1, ND
       END IF
       ! Set the final quadratic.
       IF (FX(I,3) .EQ. REAL_MAX) THEN; FX(I,2:3) = 0.0_R8
-      ! Compute the actual curvature of the quadratic, instead of coefficient on x^2.        
-      ELSE; FX(I,3) = MAX(MIN(2.0_R8 * FX(I,3), REAL_MAX), -REAL_MAX)
+      ! Compute curvature of quadratic from coefficient of x^2.        
+      ELSE; FX(I,3) = 2.0_R8 * FX(I,3)
       END IF
    END IF pick_quadratic
 END DO estimate_derivatives
@@ -179,7 +201,7 @@ END DO estimate_derivatives
 ! 
 ! Store the initially estimated values.
 FHATX(:,1:2) = FX(:,2:3)
-! Identify which intervals are not monotone and need to be fixed.
+! Identify which spline segments are not monotone and need to be fixed.
 CHECKING(:) = .FALSE.
 GROWING(:) = .FALSE.
 SHRINKING(:) = .FALSE.
@@ -211,10 +233,11 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
    ELSE; STEP_SIZE = STEP_SIZE + STEP_SIZE / 2.0_R8
    END IF
    ! Grow all those first and second derivatives that were previously 
-   ! shrunk, but are currently monotone.
+   ! shrunk, and correspond to currently monotone spline pieces.
    grow_values : DO J = 1, NG
       I = TO_GROW(J)
-      ! Do not grow values that are actively related to a nonmonotone segment.
+      ! Do not grow values that are actively related to a nonmonotone
+      ! spline segment.
       IF (SHRINKING(I)) CYCLE grow_values
       ! Otherwise, grow those values that have been modified previously.
       FX(I,2) = FX(I,2) + STEP_SIZE * FHATX(I,1)
@@ -231,7 +254,8 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
       ELSE IF ((FHATX(I,2) .GT. 0.0_R8) .AND. (FX(I,3) .GT. FHATX(I,2))) THEN
          FX(I,3) = FHATX(I,2)
       END IF
-      ! Set this value and its neighbors to be checked for monotonicity.
+      ! Set this point and its neighboring intervals to be checked for
+      ! monotonicity.
       IF ((I .GT. 1) .AND. (.NOT. CHECKING(I-1))) THEN
          CHECKING(I-1) = .TRUE.; NC = NC+1; TO_CHECK(NC) = I-1
       END IF
@@ -261,7 +285,8 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
       ELSE IF ((FHATX(I,2) .GT. 0.0_R8) .AND. (FX(I,3) .LT. 0.0_R8)) THEN
          FX(I,3) = 0.0_R8
       END IF
-      ! Set this point and its neighbors to be checked.
+      ! Set this point and its neighboring intervals to be checked for
+      ! monotonicity.
       IF ((I .GT. 1) .AND. (.NOT. CHECKING(I-1))) THEN
          CHECKING(I-1) = .TRUE.; NC = NC+1; TO_CHECK(NC) = I-1
       END IF
@@ -269,8 +294,7 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
          CHECKING(I) = .TRUE.; NC = NC+1; TO_CHECK(NC) = I
       END IF
    END DO shrink_values
-   ! Go through and identify which values are associated with
-   ! nonmonotone intervals after the updates.
+   ! Identify which spline segments are nonmonotone after the updates.
    NS = 0
    check_monotonicity : DO K = 1, NC
       I = TO_CHECK(K)
@@ -293,85 +317,115 @@ END DO
 CALL FIT_SPLINE(X, FX, T, BCOEF, INFO)
 
 CONTAINS
-FUNCTION IS_MONOTONE(U0, U1, X0, X1, DX0, DX1, DDX0, DDX1)
-  ! Given an interval and function values (value, first, and seocond derivative),
-  ! return TRUE if the quintic piece is monotone, FALSE if it is nonmonotone.
-  REAL(KIND=R8), INTENT(IN) :: U0, U1, X0, X1, DX0, DX1, DDX0, DDX1
-  LOGICAL :: IS_MONOTONE
-  ! Local variables.
-  REAL(KIND=R8) :: A, ALPHA, B, BETA, GAMMA, INV_SLOPE, SIGN, TAU, TEMP, W
-  ! Identify the direction of change of the function (increasing or decreasing).
-  IF      (X1 .GT. X0) THEN; SIGN =  1.0_R8
-  ELSE IF (X1 .LT. X0) THEN; SIGN = -1.0_R8
-  ! When the function values are flat, everything *must* be 0.
-  ELSE
-     IS_MONOTONE = (DX0  .EQ. 0.0_R8) .AND. (DX1  .EQ. 0.0_R8) .AND. &
-                   (DDX0 .EQ. 0.0_R8) .AND. (DDX1 .EQ. 0.0_R8)
-     RETURN
-  END IF
-  ! Make sure the slopes point in the correct direction.
-  IF (SIGN*DX0 .LT. 0.0_R8) THEN; IS_MONOTONE = .FALSE.; RETURN; END IF
-  IF (SIGN*DX1 .LT. 0.0_R8) THEN; IS_MONOTONE = .FALSE.; RETURN; END IF
-  ! Compute some useful constants related to the theory.
-  W = U1 - U0
-  INV_SLOPE = W / (X1 - X0)
-  A = INV_SLOPE * DX0
-  B = INV_SLOPE * DX1
-  ! Simplified cubic monotone case.
-  IF (A*B .LE. 0.0_R8) THEN
-     ! The check for delta >= 0 has already been performed above,
-     ! next check for alpha >= 0.
-     IF (SIGN*DDX1 .GT. SIGN*4.0_R8 * DX1 / W) THEN; IS_MONOTONE = .FALSE.
-     ELSE
-        ! Now compute the value of 2 * \sqrt{ alpha delta }, store in TEMP.
-        TEMP = SIGN * 2.0_R8 * INV_SLOPE * SQRT(DX0 * (4*DX1 - DDX1*W))
-        ! Check for gamma >= delta - 2 * \sqrt{ alpha delta }
-        IF (TEMP + INV_SLOPE*(3.0_R8*DX0 + DDX0*W) .LT. 0.0_R8) THEN
-           IS_MONOTONE = .FALSE.
-        ! Check for beta >= alpha - 2 * \sqrt{ alpha delta }
-        ELSE IF (60.0_R8 + 2.0_R8*TEMP + INV_SLOPE*((5.0_R8*DDX1 - 3.0_R8*DDX0) * &
-             W - 8.0_R8*(3.0_R8*DX0 + 4.0_R8*DX1)) .LT. 0.0_R8) THEN
-           IS_MONOTONE = .FALSE.
-        ELSE; IS_MONOTONE = .TRUE.
-        END IF
-     END IF
-  ELSE
-     ! Full quintic monotone case.
-     TAU = 24.0_R8 + 2.0_R8*SQRT(A*B) - 3.0_R8*(A+B)
-     IF (TAU .LT. 0.0_R8) THEN; IS_MONOTONE = .FALSE.
-     ELSE
-        ! Compute alpha, gamma, beta from theorems to determine monotonicity.
-        TEMP = (A / B)**(0.75_R8)
-        ALPHA = TEMP * (4.0_R8*DX1 - DDX1*W) / DX0
-        GAMMA = (4.0_R8*DX0 + DDX0*W) / (TEMP * DX1)
-        BETA = (3.0_R8 * INV_SLOPE * ((DDX1-DDX0)*W - 8.0_R8*(DX0+DX1)) + 60.0_R8) &
-             / (2.0 * SQRT(A*B))
-        IF (BETA .LE. 6.0_R8) THEN; TEMP = -(BETA + 2.0_R8) / 2.0_R8
-        ELSE;                       TEMP = -2.0_R8 * SQRT(BETA - 2.0_R8)
-        END IF
-        IS_MONOTONE = (ALPHA .GT. TEMP) .AND. (GAMMA .GT. TEMP)
-     END IF
-  END IF
+
+FUNCTION EQAPPROX(A,B) ! Approximate version of .EQ. operator.
+  USE REAL_PRECISION, ONLY: R8
+  REAL(KIND=R8) :: A, B
+  LOGICAL :: EQAPPROX
+  EQAPPROX = ABS(A-B)/(1.0_R8 + ABS(A) + ABS(B)) .LE. ACCURACY
+END FUNCTION EQAPPROX
+
+FUNCTION LTAPPROX(A,B) ! Approximate version of .LT. operator.
+  USE REAL_PRECISION, ONLY: R8
+  REAL(KIND=R8) :: A, B
+  LOGICAL :: LTAPPROX
+  LTAPPROX = A .LT. B - ACCURACY*(1.0_R8 + ABS(B))
+END FUNCTION LTAPPROX
+
+FUNCTION GTAPPROX(A,B) ! Approximate version of .GT. operator.
+  USE REAL_PRECISION, ONLY: R8
+  REAL(KIND=R8) :: A, B
+  LOGICAL :: GTAPPROX
+  GTAPPROX = A .GT. B + ACCURACY*(1.0_R8 + ABS(B))
+END FUNCTION GTAPPROX
+
+FUNCTION IS_MONOTONE(U0, U1, F0, F1, DF0, DF1, DDF0, DDF1)
+! Given an interval [U0, U1] and function values F0, F1, first derivatives
+! DF0, DF1, and second derivatives DDF0, DDF1 at U0, U1, respectively,
+! return TRUE if the quintic polynomial matching these values is monotone
+! over [U0, U1], and FALSE otherwise.
+!
+REAL(KIND=R8), INTENT(IN) :: U0, U1, F0, F1, DF0, DF1, DDF0, DDF1
+LOGICAL :: IS_MONOTONE
+! Local variables.
+REAL(KIND=R8) :: A, ALPHA, B, BETA, GAMMA, INV_SLOPE, SIGN, TAU, TEMP, W
+! Identify the direction of change of the function (increasing or decreasing).
+IF      (F1 .GT. F0) THEN; SIGN =  1.0_R8
+ELSE IF (F1 .LT. F0) THEN; SIGN = -1.0_R8
+! When the function values are flat, everything *must* be 0.
+ELSE
+   IS_MONOTONE = (DF0  .EQ. 0.0_R8) .AND. (DF1  .EQ. 0.0_R8) .AND. &
+                 (DDF0 .EQ. 0.0_R8) .AND. (DDF1 .EQ. 0.0_R8)
+   RETURN
+END IF
+! Make sure the slopes point in the correct direction.
+IF (SIGN*DF0 .LT. 0.0_R8) THEN; IS_MONOTONE = .FALSE.; RETURN; END IF
+IF (SIGN*DF1 .LT. 0.0_R8) THEN; IS_MONOTONE = .FALSE.; RETURN; END IF
+! Compute some useful constants related to the theory and notation in
+!
+! G. Ulrich and L. T. Watson, ``Positivity conditions for quartic
+! polynomials'', {\sl SIAM J. Sci. Comput.}, 15 (1994) 528--544.
+
+W = U1 - U0
+INV_SLOPE = W / (F1 - F0)
+A = INV_SLOPE * DF0
+B = INV_SLOPE * DF1
+! Simplified monotone cubic case.
+IF (A*B .LE. 0.0_R8) THEN
+   ! The check for delta >= 0 has already been performed above,
+   ! next check for alpha >= 0.
+   IF (SIGN*DDF1 .GT. SIGN*4.0_R8 * DF1 / W) THEN; IS_MONOTONE = .FALSE.
+   ELSE
+      ! Now compute the value of 2 * \sqrt{ alpha delta }, store in TEMP.
+      TEMP = SIGN * 2.0_R8 * INV_SLOPE * SQRT(DF0 * (4*DF1 - DDF1*W))
+      ! Check for gamma >= delta - 2 * \sqrt{ alpha delta }
+      IF (TEMP + INV_SLOPE*(3.0_R8*DF0 + DDF0*W) .LT. 0.0_R8) THEN
+         IS_MONOTONE = .FALSE.
+      ! Check for beta >= alpha - 2 * \sqrt{ alpha delta }
+      ELSE IF (60.0_R8 + 2.0_R8*TEMP + INV_SLOPE*((5.0_R8*DDF1 - 3.0_R8*DDF0) &
+         * W - 8.0_R8*(3.0_R8*DF0 + 4.0_R8*DF1)) .LT. 0.0_R8) THEN
+         IS_MONOTONE = .FALSE.
+      ELSE; IS_MONOTONE = .TRUE.
+      END IF
+   END IF
+ELSE
+   ! Full monotone quintic case.
+   TAU = 24.0_R8 + 2.0_R8*SQRT(A*B) - 3.0_R8*(A+B)
+   IF (TAU .LT. 0.0_R8) THEN; IS_MONOTONE = .FALSE.
+   ELSE
+      ! Compute alpha, gamma, beta from theorems to determine monotonicity.
+      TEMP = (A / B)**(0.75_R8)
+      ALPHA = TEMP * (4.0_R8*DF1 - DDF1*W) / DF0
+      GAMMA = (4.0_R8*DF0 + DDF0*W) / (TEMP * DF1)
+      BETA = (3.0_R8 * INV_SLOPE * ((DDF1-DDF0)*W - 8.0_R8*(DF0+DF1)) + &
+         60.0_R8) / (2.0 * SQRT(A*B))
+      IF (BETA .LE. 6.0_R8) THEN; TEMP = -(BETA + 2.0_R8) / 2.0_R8
+      ELSE;                       TEMP = -2.0_R8 * SQRT(BETA - 2.0_R8)
+      END IF
+      IS_MONOTONE = (ALPHA .GT. TEMP) .AND. (GAMMA .GT. TEMP)
+   END IF
+END IF
 END FUNCTION IS_MONOTONE
 
 SUBROUTINE QUADRATIC(I2)
-  ! Given an index I, compute the coefficients A on x^2 and B
-  ! on x for the quadratic interpolant of X(I-1:I+1), Y(I-1:I+1).
-  INTEGER, INTENT(IN) :: I2
-  ! Local variables.
-  REAL(KIND=R8) :: D, & ! Denominator for computing A and B.
-       C1, C2, C3 ! Intermediate terms for computation.
-  INTEGER :: I1, I3
-  I1 = I2-1
-  I3 = I2+1
-  ! Compute the shared denominator.
-  D = (X(I1) - X(I2)) * (X(I1) - X(I3)) * (X(I2) - X(I3))
-  ! Compute coefficients A and B in  Ax^2 + Bx + C  quadratic interpolant.
-  C1 = X(I1) * (Y(I3) - Y(I2))
-  C2 = X(I2) * (Y(I1) - Y(I3))
-  C3 = X(I3) * (Y(I2) - Y(I1))
-  A = (C1 + C2 + C3) / D
-  B = - (X(I1)*C1 + X(I2)*C2 + X(I3)*C3) / D
+! Given an index I2, compute the coefficients A of x^2 and B
+! of x for the quadratic interpolating Y(I2-1:I2+1) at X(I2-1:I2+1),.
+INTEGER, INTENT(IN) :: I2
+! Local variables.
+REAL(KIND=R8) :: C1, C2, C3, & ! Intermediate terms for computation.
+  D ! Denominator for computing A and B via Cramer's rule.
+INTEGER :: I1, I3
+    
+I1 = I2-1
+I3 = I2+1
+! Compute the shared denominator.
+D = (X(I1) - X(I2)) * (X(I1) - X(I3)) * (X(I2) - X(I3))
+! Compute coefficients A and B in quadratic interpolant  Ax^2 + Bx + C.
+C1 = X(I1) * (Y(I3) - Y(I2))
+C2 = X(I2) * (Y(I1) - Y(I3))
+C3 = X(I3) * (Y(I2) - Y(I1))
+A = (C1 + C2 + C3) / D
+B = - (X(I1)*C1 + X(I2)*C2 + X(I3)*C3) / D
 END SUBROUTINE QUADRATIC
 
 END SUBROUTINE PMQSI

@@ -5,7 +5,7 @@ SUBROUTINE EVAL_BSPLINE(T, XY, D)
 !   T(1:N) -- The nondecreasing sequence of knots for the B-spline.
 ! 
 ! INPUT / OUTPUT:
-!   XY(1:Z) -- On input, the locations at which the B-spline is evaluated;
+!   XY(1:M) -- On input, the locations at which the B-spline is evaluated;
 !     on output, holds the value of the Dth derivative of the B-spline
 !     with prescribed knots evaluated at the given locations, or the
 !     integral of the B-spline over [T(1), XY(.)] in XY(.).
@@ -41,7 +41,6 @@ SUBROUTINE EVAL_BSPLINE(T, XY, D)
 !   For the computation of the derivative of the B-spline, the divided
 !   difference definition of B_{I,J}(X) is used, building from J = N-D,
 !   ..., N-1 via
-! 
 !                       (J-1) B_{I,J-1}(X)     (J-1) B_{I+1,J-1}(X)  
 !   D/DX[B_{I,J}(X)] =  ------------------  -  --------------------.
 !                         T(I+J-1) - T(I)         T(I+J) - T(I+1)     
@@ -61,8 +60,8 @@ REAL(KIND=R8) :: LEFT, RIGHT, TN
 ! Assign the local value of the optional derivative "D" argument.
 IF (PRESENT(D)) THEN; DERIV = D; ELSE; DERIV = 0; END IF
 ! Collect local variables for notational convenience.
-N = SIZE(T) ! Number of knots
-K = N - 1 ! Order of B-spline
+N = SIZE(T) ! Number of knots.
+K = N - 1 ! Order of B-spline.
 L = K - 1 ! One less than the order of the B-spline.
 TN = T(N) ! Value of the last knot, T(N).
 
@@ -190,7 +189,7 @@ compute_derivative : DO J = N-DERIV, K
 END DO compute_derivative
 END IF int_or_diff
 
-! Assign the values to the XY output.
+! Assign the values to the output XY.
 XY(:) = BIATX(:,1)
 
 END SUBROUTINE EVAL_BSPLINE
