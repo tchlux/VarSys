@@ -25,12 +25,12 @@ IMPLICIT NONE
 ! 
 INTEGER, PARAMETER :: TRIALS = 100
 REAL(KIND=R8), PARAMETER :: ERROR_TOLERANCE = SQRT(EPSILON(1.0_R8))
-INTEGER, PARAMETER :: NS(5) = (/ 2**3, 2**4, 2**5, 2**6, 2**7 /)
+INTEGER, PARAMETER :: NS(6) = (/ 2**3, 2**4, 2**5, 2**6, 2**7, 2**8 /)
 LOGICAL, PARAMETER :: EQ_SPACED(2) = (/ .TRUE., .FALSE. /)
 CHARACTER(LEN=20), PARAMETER :: &
      TEST_FUNC_NAMES(5) = (/ "Large tangent       ", "Piecewise polynomial", &
-     "Random              ", "Random monotone     ", "Decay signal        " /)
-INTEGER, PARAMETER :: TIME_SIZE = 30
+     "Random              ", "Random monotone     ", "Signal decay        " /)
+INTEGER, PARAMETER :: TIME_SIZE = 100
 ! ------------------------------------------------------------------
 ! Iteration indices.
 INTEGER :: I, J, K, N
@@ -46,6 +46,16 @@ main_loop : DO I = 1, SIZE(NS)
   N = NS(I)
   PRINT "('')"
   PRINT "('N: 'I5)", N
+  ! Run a test with very nearby points.
+  PRINT "('  Machine precision')"
+  IF (.NOT. EPSILON_TEST(N)) THEN
+        ! Describe the test that failed and exit.
+        PRINT "('__________________________________')"
+        PRINT "('')"
+        ALL_PASSED = .FALSE.
+        EXIT main_loop
+  END IF
+  ! Run a test on each test function (with this number of points).
   DO J = 1, SIZE(TEST_FUNC_NAMES)
     PRINT "('  'A)", TEST_FUNC_NAMES(J)
     DO K = 1, SIZE(EQ_SPACED)
@@ -67,7 +77,8 @@ main_loop : DO I = 1, SIZE(NS)
     END DO
   END DO
 END DO main_loop
-IF (ALL_PASSED) THEN ; PRINT "('')" ; PRINT "('All tests PASSED.')" ; END IF
+IF (ALL_PASSED) THEN ; PRINT "('')" ; PRINT "('All tests PASSED.')" ; 
+ELSE ; CALL EXIT(1) ; END IF
 ! End of testing code, beginning of timing code.
 PRINT "('')"
 PRINT "('--------------------------------------------------------------')"
@@ -140,7 +151,7 @@ FUNCTION PASSES_TEST()
           TEST_FUNC_NAMES(J), PASSES_TEST)
   ! Decaying signal
   ELSE IF (J .EQ. 5) THEN
-     CALL RUN_TEST(N, EQ_SPACED(K), DECAY_SIGNAL, &
+     CALL RUN_TEST(N, EQ_SPACED(K), SIGNAL_DECAY, &
           TEST_FUNC_NAMES(J), PASSES_TEST)
   ! Unknown test number
   ELSE
@@ -171,7 +182,7 @@ SUBROUTINE RUN_TIME_TEST(EVAL_TIME, FIT_TIME)
           TEST_FUNC_NAMES(J), FIT_TIME, EVAL_TIME)
   ! Decaying signal
   ELSE IF (J .EQ. 5) THEN
-     CALL TIME_TEST(N, EQ_SPACED(K), DECAY_SIGNAL, &
+     CALL TIME_TEST(N, EQ_SPACED(K), SIGNAL_DECAY, &
           TEST_FUNC_NAMES(J), FIT_TIME, EVAL_TIME)
   ! Unknown test number
   ELSE
@@ -213,20 +224,20 @@ INTERFACE
 END INTERFACE
 REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND), &
      T(TRIALS), U(ND), X(ND), Y(ND), Z(TRIALS)
-REAL :: FINISH_TIME_SEC, START_TIME_SEC
 INTEGER :: I, INFO, J
 INTEGER, DIMENSION(:), ALLOCATABLE :: SEED
 ! -------------------------------------------------
-! Initialize random seed.
-CALL RANDOM_SEED(SIZE=J)
-ALLOCATE(SEED(J))
-SEED(:) = 0
-CALL RANDOM_SEED(PUT=SEED)
 ! Initialize X values.
 IF (EQUALLY_SPACED_X) THEN
    DO I = 1, ND ; X(I) = I-1; END DO
-   X(:) = X(:) / REAL(I-1, KIND=R8)
+   X(:) = X(:) / REAL(ND-1, KIND=R8)
 ELSE
+   ! Initialize random seed.
+   CALL RANDOM_SEED(SIZE=J)
+   ALLOCATE(SEED(J))
+   SEED(:) = 0
+   CALL RANDOM_SEED(PUT=SEED)
+   ! Generate random data.
    CALL RANDOM_NUMBER(X)
    CALL SORT(X)
    ! Make sure the random points have ample spacing.
@@ -320,11 +331,17 @@ REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND), &
      T(TRIALS), U(ND), X(ND), Y(ND), Z(TRIALS)
 REAL :: FINISH_TIME_SEC, START_TIME_SEC
 INTEGER :: I, INFO, J
+INTEGER, DIMENSION(:), ALLOCATABLE :: SEED
 ! -------------------------------------------------
+! Initialize random seed.
+CALL RANDOM_SEED(SIZE=J)
+ALLOCATE(SEED(J))
+SEED(:) = 0
+CALL RANDOM_SEED(PUT=SEED)
 ! Initialize X values.
 IF (EQUALLY_SPACED_X) THEN
    DO I = 1, ND ; X(I) = I-1; END DO
-   X(:) = X(:) / REAL(I-1, KIND=R8)
+   X(:) = X(:) / REAL(ND-1, KIND=R8)
 ELSE
    CALL RANDOM_NUMBER(X)
    CALL SORT(X)
@@ -376,6 +393,92 @@ END DO
 ! End of test subroutine.
 END SUBROUTINE TIME_TEST
 
+FUNCTION EPSILON_TEST(ND) RESULT(PASSES)
+! Run a test on data that is at the limit of being as close together
+! as possible.
+INTEGER, INTENT(IN) :: ND
+LOGICAL :: PASSES
+! -------------------------------------------------
+!               Local variables
+INTERFACE
+ SUBROUTINE PMQSI(X, Y, T, BCOEF, INFO)
+   USE REAL_PRECISION, ONLY: R8
+   REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X, Y
+   REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: T, BCOEF
+   INTEGER, INTENT(OUT) :: INFO
+ END SUBROUTINE PMQSI
+ SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
+   USE REAL_PRECISION, ONLY: R8
+   REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: T, BCOEF
+   REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
+   INTEGER, INTENT(OUT) :: INFO
+   INTEGER, INTENT(IN), OPTIONAL :: D
+ END SUBROUTINE EVAL_SPLINE
+END INTERFACE
+REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND), &
+     T(TRIALS), U(ND), X(ND), Y(ND), Z(TRIALS)
+INTEGER :: I, INFO, J
+INTEGER, DIMENSION(:), ALLOCATABLE :: SEED
+! -------------------------------------------------
+DO I = 1, ND ; X(I) = (I-1) ; END DO
+X(:) = X(:) / REAL(ND-1, KIND=R8)
+CALL PIECEWISE_POLYNOMIAL(X, Y)
+! Construct the smallest spacing of "X" values that is allowed by the
+! PMQSI routine (then we will check for correct monotonicity).
+X(:) = (X(:) * (ND-1)) * SQRT(EPSILON(1.0_R8))
+INFO = 3
+grow_x_gap : DO WHILE ((INFO .EQ. 3) .OR. (INFO .EQ. 7))
+   CALL PMQSI(X, Y, SK, SC, INFO)
+   IF ((INFO .NE. 3) .AND. (INFO .NE. 7)) EXIT grow_x_gap
+   X(:) = X(:) * 1.1_R8 ! <- Growth factor that roughly matches runtime of other tests.
+END DO grow_x_gap
+IF (INFO .NE. 0) THEN
+   PRINT "('')"   
+   PRINT "('Failed to construct PMQSI, code 'I3'.')", INFO
+   PASSES = .FALSE.
+   RETURN
+END IF
+! Check that the spline reproduces the function values correctly.
+U(:) = X(:)
+CALL EVAL_SPLINE(SK, SC, U, INFO)
+IF (INFO .NE. 0) THEN
+   PRINT "('')"   
+   PRINT "('Failed to evaluate spline, code 'I3'.')", INFO
+   PASSES = .FALSE.
+   RETURN
+END IF
+MAX_ERROR = MAXVAL( ABS((U(:) - Y(:))) / (1.0_R8 + ABS(Y(:))) )
+IF (MAX_ERROR .GT. ERROR_TOLERANCE) THEN
+   PRINT "('')"
+   PRINT "('Value test:        FAILED')"
+   PRINT "('  relative error:  'ES10.3)", MAX_ERROR
+   PRINT "('  error tolerance: 'ES10.3)", ERROR_TOLERANCE
+   PASSES = .FALSE.
+   RETURN
+END IF
+! Check for monotonicity over all intervals.
+check_monotonicity :DO I = 1, ND-1
+   DO J = 1, TRIALS ; Z(J) = J-1 ; END DO
+   Z(:) = X(I) + (Z(:) / REAL(TRIALS-1, KIND=R8)) * (X(I+1) - X(I))
+   CALL EVAL_SPLINE(SK, SC, Z, INFO, D=1)
+   IF ( ((Y(I+1) .EQ. Y(I)) .AND. (MAXVAL(ABS(Z(:))) .GT. SQRT(ERROR_TOLERANCE))) .OR. &
+        ((Y(I+1) .GT. Y(I)) .AND. (ANY(Z(:) .LT. -SQRT(ERROR_TOLERANCE)))) .OR. &
+        ((Y(I+1) .LT. Y(I)) .AND. (ANY(Z(:) .GT.  SQRT(ERROR_TOLERANCE)))) ) THEN
+      PRINT "('')"
+      PRINT "('Monotonicity test: FAILED')"
+      PRINT "('  interval ['ES10.3', 'ES10.3']')", X(I), X(I+1)
+      PRINT "('  interval function change: 'ES10.3)", Y(I+1) - Y(I)
+      PRINT "('  minimum derivative value: 'ES10.3)", MINVAL(Z(:))
+      PRINT "('  maximum derivative value: 'ES10.3)", MAXVAL(Z(:))
+      PRINT "('  error tolerance:          'ES10.3)", ERROR_TOLERANCE
+      PASSES = .FALSE.
+      J = -1
+      RETURN
+   END IF
+END DO check_monotonicity
+PASSES = .TRUE.
+! End of test subroutine.
+END FUNCTION EPSILON_TEST
 
 
 ! ====================================================================
@@ -460,14 +563,14 @@ SUBROUTINE RANDOM_MONOTONE(X, Y)
   CALL SORT(Y)
 END SUBROUTINE RANDOM_MONOTONE
 
-SUBROUTINE DECAY_SIGNAL(X, Y)
+SUBROUTINE SIGNAL_DECAY(X, Y)
   !  "signal" function that is a decaying magnitude sine wave.
   REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X
   REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: Y
   REAL(KIND=R8) :: PI
   PI = ACOS(-1.0_R8)
   Y(:) = SIN(8.0_R8 * PI * X(:)) / (X(:)**2 + 0.1_R8)
-END SUBROUTINE DECAY_SIGNAL
+END SUBROUTINE SIGNAL_DECAY
 
 ! ====================================================================
 !                       Utility function.

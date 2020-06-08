@@ -89,17 +89,6 @@ estimate_derivatives : DO I = 1, ND
    ! Precompute these frequently used integers.
    J = I+1
    K = I-1
-   ! Determine the direction of change at the point I.
-   IF (GROWING(I) .OR. SHRINKING(I)) THEN ; DIRECTION = 0.0_R8
-   ELSE IF (I .EQ. 1) THEN
-      IF      (Y(I) .LT. Y(J)) THEN; DIRECTION =  1.0_R8
-      ELSE IF (Y(I) .GT. Y(J)) THEN; DIRECTION = -1.0_R8
-      END IF
-   ELSE
-      IF      (Y(K) .LT. Y(I)) THEN; DIRECTION =  1.0_R8
-      ELSE IF (Y(K) .GT. Y(I)) THEN; DIRECTION = -1.0_R8
-      END IF
-   END IF
    ! Initialize the curvature to be maximally large.
    FX(I,3) = REAL_MAX
    ! If this is a local flat, first and second derivatives are zero valued.
@@ -117,6 +106,16 @@ estimate_derivatives : DO I = 1, ND
       ! Compute the actual second derivative (instead of coefficient A).
       FX(I,3) = MAX(MIN(2.0_R8 * FX(I,3), REAL_MAX), -REAL_MAX)
    ELSE
+      ! Determine the direction of change at the point I.
+      IF (I .EQ. 1) THEN
+         IF      (Y(I) .LT. Y(J)) THEN; DIRECTION =  1.0_R8
+         ELSE IF (Y(I) .GT. Y(J)) THEN; DIRECTION = -1.0_R8
+         END IF
+      ELSE
+         IF      (Y(K) .LT. Y(I)) THEN; DIRECTION =  1.0_R8
+         ELSE IF (Y(K) .GT. Y(I)) THEN; DIRECTION = -1.0_R8
+         END IF
+      END IF
       ! --------------------
       ! Quadratic left of I.
       IF (K .GT. 1) THEN
@@ -367,11 +366,6 @@ SUBROUTINE QUADRATIC(I2)
   I3 = I2+1
   ! Compute the shared denominator.
   D = (X(I1) - X(I2)) * (X(I1) - X(I3)) * (X(I2) - X(I3))
-  ! Prevent division by zero.
-  IF (D .EQ. 0.0_R8) THEN
-     A = REAL_MAX
-     B = 0.0_R8
-  END IF
   ! Compute coefficients A and B in  Ax^2 + Bx + C  quadratic interpolant.
   C1 = X(I1) * (Y(I3) - Y(I2))
   C2 = X(I2) * (Y(I1) - Y(I3))

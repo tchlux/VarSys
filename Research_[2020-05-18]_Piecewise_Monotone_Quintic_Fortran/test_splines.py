@@ -28,10 +28,10 @@ if TEST_PMQSI:
     SHOW_DERIVATIVES = False
     VISUALIZE_TEST = True
     RANDOM = False
-    NUM_KNOTS = 30
+    NUM_KNOTS = 18
     # NUM_KNOTS *= 2
     np.random.seed(0)
-    NAME = sorted(TESTS)[4]
+    NAME = sorted(TESTS)[1]
     FUNC = TESTS[NAME]
     print('-'*70)
     print("Possible tests:")
@@ -51,13 +51,17 @@ if TEST_PMQSI:
 
     # Get the knots and values for the test.
     values = FUNC(knots)
+
+    knots = [i*(2**(-26) + 2**(-52)) for i in range(18)]
+    values = [0, 1, 1, 1, 0, 20, 19, 18, 17, 0, 0, 3, 0, 1, 6, 16, 16.1, 1 ]
+
     knots = np.asfortranarray(knots, dtype=float)
     values = np.asfortranarray(values, dtype=float)
 
     print()
-    print(f"knots ({len(knots)}):\n  {knots}")
+    print(f"knots ({len(knots)}):\n  {repr(knots)}")
     print()
-    print(f"values ({len(values)}):\n  {values}")
+    print(f"values ({len(values)}):\n  {repr(values)}")
     print("values:")
     print()
     # Compute the spline knots and spline coefficients.
