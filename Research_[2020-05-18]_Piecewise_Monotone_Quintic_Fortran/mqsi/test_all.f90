@@ -1,7 +1,7 @@
 ! This file contains code relevant to testing a local installation of
-! the PMQSI package. Example command to compile and run all tests:
+! the MQSI package. Example command to compile and run all tests:
 ! 
-!  $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 PMQSI.f90 \
+!  $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 MQSI.f90 \
 !    test.f90 -o test lapack.f blas.f && ./test
 ! 
 ! where '$F95' is the name of the Fortran 95 compiler, '$OPTS' are
@@ -11,79 +11,85 @@
 ! failed test cases. Otherwise a message saying tests have passed will
 ! be directed to standard output. A small timing test will also be
 ! run to display the expected time required to fit and evaluate a
-! PMQSI to data of a given size.
+! MQSI to data of a given size.
 ! 
 ! 
 ! ====================================================================
-!                 Test program for PMQSI package.
+!                 Test program for MQSI package.
 ! 
 PROGRAM TEST_ALL
 USE REAL_PRECISION, ONLY: R8
 IMPLICIT NONE
 ! ------------------------------------------------------------------
-!                         Testing parameters
-! 
-INTEGER, PARAMETER :: TRIALS = 100
-REAL(KIND=R8), PARAMETER :: ERROR_TOLERANCE = SQRT(EPSILON(1.0_R8))
-INTEGER, PARAMETER :: NS(6) = (/ 2**3, 2**4, 2**5, 2**6, 2**7, 2**8 /)
-LOGICAL, PARAMETER :: EQ_SPACED(2) = (/ .TRUE., .FALSE. /)
-CHARACTER(LEN=20), PARAMETER :: &
-     TEST_FUNC_NAMES(5) = (/ "Large tangent       ", "Piecewise polynomial", &
-     "Random              ", "Random monotone     ", "Signal decay        " /)
-INTEGER, PARAMETER :: TIME_SIZE = 100
-! ------------------------------------------------------------------
+INTEGER :: TRIALS
+REAL(KIND=R8) :: ERROR_TOLERANCE
+INTEGER :: NS(6)
+LOGICAL :: EQ_SPACED(2)
+CHARACTER(LEN=20) :: TEST_FUNC_NAMES(5)
+INTEGER :: TIME_SIZE
 ! Iteration indices.
 INTEGER :: I, J, K, N
 LOGICAL :: ALL_PASSED
 ! Time recording variables.
 REAL :: EVAL_TIMES(5,5,2), FIT_TIMES(5,5,2)
+! ------------------------------------------------------------------
+!                         Testing parameters
+! 
+TRIALS = 100
+ERROR_TOLERANCE = SQRT(EPSILON(1.0_R8))
+NS(:) = (/ 2**3, 2**4, 2**5, 2**6, 2**7, 2**8 /)
+EQ_SPACED(:) = (/ .TRUE., .FALSE. /)
+TEST_FUNC_NAMES(:) = (/ "Large tangent       ", "Piecewise polynomial", &
+   "Random              ", "Random monotone     ", "Signal decay        " /)
+TIME_SIZE = 50
+! ------------------------------------------------------------------
 ALL_PASSED = .TRUE.
 ! Run all tests.
-PRINT "('')"
-PRINT "('-------------------------------')"
-PRINT "('Running tests, 'I3' trials each.')", TRIALS
+WRITE (*,*) ''
+WRITE (*,"('-------------------------------')")
+WRITE (*,"('Running tests, ',I3,' trials each.')") TRIALS
 main_loop : DO I = 1, SIZE(NS)
   N = NS(I)
-  PRINT "('')"
-  PRINT "('N: 'I5)", N
+  WRITE (*,*) ''
+  WRITE (*,"('N: ',I5)") N
   ! Run a test with very nearby points.
-  PRINT "('  Machine precision')"
+  WRITE (*,"('  Machine precision')")
   IF (.NOT. EPSILON_TEST(N)) THEN
         ! Describe the test that failed and exit.
-        PRINT "('__________________________________')"
-        PRINT "('')"
+        WRITE (*,"('__________________________________')")
+        WRITE (*,*) ''
         ALL_PASSED = .FALSE.
         EXIT main_loop
   END IF
   ! Run a test on each test function (with this number of points).
   DO J = 1, SIZE(TEST_FUNC_NAMES)
-    PRINT "('  'A)", TEST_FUNC_NAMES(J)
+    WRITE (*,"('  ',A)") TEST_FUNC_NAMES(J)
     DO K = 1, SIZE(EQ_SPACED)
       IF (.NOT. PASSES_TEST()) THEN
         ! Describe the test that failed and exit.
-        PRINT "('')"
-        PRINT "('Test configuration:')"
-        PRINT "('  function:   'A)", TEST_FUNC_NAMES(J)
-        IF (EQ_SPACED(K)) THEN ; PRINT "('  spacing:    equally spaced')"
-        ELSE ;                   PRINT "('  spacing:    randomly spaced')"
+        WRITE (*,*) ''
+        WRITE (*,"('Test configuration:')")
+        WRITE (*,"('  function:   ',A)") TEST_FUNC_NAMES(J)
+        IF (EQ_SPACED(K)) THEN ; WRITE (*,"('  spacing:    equally spaced')")
+        ELSE ;                   WRITE (*,"('  spacing:    randomly spaced')")
         END IF
-        PRINT "('  data size: '1I5)", N
-        PRINT "('  num trials:'1I5)", TRIALS
-        PRINT "('__________________________________')"
-        PRINT "('')"
+        WRITE (*,"('  data size: ',1I5)") N
+        WRITE (*,"('  num trials:',1I5)") TRIALS
+        WRITE (*,"('__________________________________')")
+        WRITE (*,*) ''
         ALL_PASSED = .FALSE.
         EXIT main_loop
       END IF
     END DO
   END DO
 END DO main_loop
-IF (ALL_PASSED) THEN ; PRINT "('')" ; PRINT "('All tests PASSED.')" ; 
-ELSE ; CALL EXIT(1) ; END IF
+IF (ALL_PASSED) THEN ; WRITE (*,*) '' ; WRITE (*,"('All tests PASSED.')") ; 
+ELSE ; ERROR STOP ; END IF
 ! End of testing code, beginning of timing code.
-PRINT "('')"
-PRINT "('--------------------------------------------------------------')"
+WRITE (*,*) ''
+WRITE (*,"('--------------------------------------------------------------')")
 N = TIME_SIZE
-PRINT "('Computing timing data for size 'I5'.')", N
+WRITE (*,"('Computing timing data for size ',I5,'.')") N
 DO J = 1, SIZE(TEST_FUNC_NAMES)
    DO K = 1, SIZE(EQ_SPACED)
       CALL RUN_TIME_TEST(EVAL_TIMES(:,J,K), FIT_TIMES(:,J,K))
@@ -95,34 +101,34 @@ EVAL_TIMES(:,1,1) = SUM(SUM(EVAL_TIMES(:,:,:), DIM=3), DIM=2) / &
 FIT_TIMES(:,1,1) = SUM(SUM(FIT_TIMES(:,:,:), DIM=3), DIM=2) / &
      REAL(SIZE(FIT_TIMES,2) * SIZE(FIT_TIMES,3))
 ! Print out the results.
-PRINT "('')"
-PRINT "(' Fit time for PMQSI of 'I5' points:')", N
+WRITE (*,*) ''
+WRITE (*,"(' Fit time for MQSI of ',I5,' points:')") N
 J = SIZE(EVAL_TIMES,1)
 DO I = 1, J
   IF (I .EQ. 1) THEN
-    PRINT "('      min  'F8.6' seconds')", FIT_TIMES(I,1,1)
+    WRITE (*,"('      min  ',F8.6,' seconds')") FIT_TIMES(I,1,1)
   ELSE IF ((I-1 .EQ. (J-1)/2) .AND. (MOD(I,2) .EQ. 1)) THEN
-    PRINT "('   median  'F8.6' seconds')", FIT_TIMES(I,1,1)
+    WRITE (*,"('   median  ',F8.6,' seconds')") FIT_TIMES(I,1,1)
   ELSE IF (I .EQ. J) THEN
-    PRINT "('      max  'F8.6' seconds')", FIT_TIMES(I,1,1)
+    WRITE (*,"('      max  ',F8.6,' seconds')") FIT_TIMES(I,1,1)
   ELSE
     K = INT(1.0 + REAL((99)*(I-1))/REAL(J-1))
-    PRINT "('      'I3'  'F8.6' seconds')", K, FIT_TIMES(I,1,1)
+    WRITE (*,"('      ',I3,'  ',F8.6,' seconds')") K, FIT_TIMES(I,1,1)
   END IF
 END DO
-PRINT "('')"
-PRINT "(' Evaluation time per point for PMQSI built from 'I5' points:')", N
+WRITE (*,*) ''
+WRITE (*,"(' Evaluation time per point for MQSI built from ',I5,' points:')") N
 J = SIZE(EVAL_TIMES,1)
 DO I = 1, J
   IF (I .EQ. 1) THEN
-    PRINT "('      min  'F8.6' seconds')", EVAL_TIMES(I,1,1)
+    WRITE (*,"('      min  ',F8.6,' seconds')") EVAL_TIMES(I,1,1)
   ELSE IF ((I-1 .EQ. (J-1)/2) .AND. (MOD(I,2) .EQ. 1)) THEN
-    PRINT "('   median  'F8.6' seconds')", EVAL_TIMES(I,1,1)
+    WRITE (*,"('   median  ',F8.6,' seconds')") EVAL_TIMES(I,1,1)
   ELSE IF (I .EQ. J) THEN
-    PRINT "('      max  'F8.6' seconds')", EVAL_TIMES(I,1,1)
+    WRITE (*,"('      max  ',F8.6,' seconds')") EVAL_TIMES(I,1,1)
   ELSE
     K = INT(1.0 + REAL((99)*(I-1))/REAL(J-1))
-    PRINT "('      'I3'  'F8.6' seconds')", K, EVAL_TIMES(I,1,1)
+    WRITE (*,"('      ',I3,'  ',F8.6,' seconds')") K, EVAL_TIMES(I,1,1)
   END IF
 END DO
 
@@ -155,7 +161,7 @@ FUNCTION PASSES_TEST()
           TEST_FUNC_NAMES(J), PASSES_TEST)
   ! Unknown test number
   ELSE
-     PRINT "('Unknown test number 'I2)", J
+     WRITE (*,"('Unknown test number ',I2)") J
      PASSES_TEST = .FALSE.
   END IF
 END FUNCTION PASSES_TEST
@@ -186,7 +192,7 @@ SUBROUTINE RUN_TIME_TEST(EVAL_TIME, FIT_TIME)
           TEST_FUNC_NAMES(J), FIT_TIME, EVAL_TIME)
   ! Unknown test number
   ELSE
-     PRINT "('Unknown test number 'I2)", J
+     WRITE (*,"('Unknown test number ',I2)") J
   END IF
 END SUBROUTINE RUN_TIME_TEST
 
@@ -208,12 +214,12 @@ INTERFACE
    REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X
    REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: Y
  END SUBROUTINE F
- SUBROUTINE PMQSI(X, Y, T, BCOEF, INFO)
+ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
    USE REAL_PRECISION, ONLY: R8
    REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X, Y
    REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: T, BCOEF
    INTEGER, INTENT(OUT) :: INFO
- END SUBROUTINE PMQSI
+ END SUBROUTINE MQSI
  SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
    USE REAL_PRECISION, ONLY: R8
    REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: T, BCOEF
@@ -248,10 +254,10 @@ END IF
 ! Initialize Y values.
 CALL F(X, Y)
 ! Show the X and Y values.
-CALL PMQSI(X, Y, SK, SC, INFO)
+CALL MQSI(X, Y, SK, SC, INFO)
 IF (INFO .NE. 0) THEN
-   PRINT "('')"   
-   PRINT "('Failed to construct PMQSI, code 'I3'.')", INFO
+   WRITE (*,*) ''   
+   WRITE (*,"('Failed to construct MQSI, code ',I3,'.')") INFO
    PASSES = .FALSE.
    RETURN
 END IF
@@ -259,17 +265,17 @@ END IF
 U(:) = X(:)
 CALL EVAL_SPLINE(SK, SC, U, INFO)
 IF (INFO .NE. 0) THEN
-   PRINT "('')"   
-   PRINT "('Failed to evaluate spline, code 'I3'.')", INFO
+   WRITE (*,*) ''   
+   WRITE (*,"('Failed to evaluate spline, code ',I3,'.')") INFO
    PASSES = .FALSE.
    RETURN
 END IF
 MAX_ERROR = MAXVAL( ABS((U(:) - Y(:))) / (1.0_R8 + ABS(Y(:))) )
 IF (MAX_ERROR .GT. ERROR_TOLERANCE) THEN
-   PRINT "('')"
-   PRINT "('Value test:        FAILED')"
-   PRINT "('  relative error:  'ES10.3)", MAX_ERROR
-   PRINT "('  error tolerance: 'ES10.3)", ERROR_TOLERANCE
+   WRITE (*,*) ''
+   WRITE (*,"('Value test:        FAILED')")
+   WRITE (*,"('  relative error:  ',ES10.3)") MAX_ERROR
+   WRITE (*,"('  error tolerance: ',ES10.3)") ERROR_TOLERANCE
    PASSES = .FALSE.
    RETURN
 END IF
@@ -281,13 +287,13 @@ check_monotonicity :DO I = 1, ND-1
    IF ( ((Y(I+1) .EQ. Y(I)) .AND. (MAXVAL(ABS(Z(:))) .GT. SQRT(ERROR_TOLERANCE))) .OR. &
         ((Y(I+1) .GT. Y(I)) .AND. (ANY(Z(:) .LT. -SQRT(ERROR_TOLERANCE)))) .OR. &
         ((Y(I+1) .LT. Y(I)) .AND. (ANY(Z(:) .GT.  SQRT(ERROR_TOLERANCE)))) ) THEN
-      PRINT "('')"
-      PRINT "('Monotonicity test: FAILED')"
-      PRINT "('  interval ['ES10.3', 'ES10.3']')", X(I), X(I+1)
-      PRINT "('  interval function change: 'ES10.3)", Y(I+1) - Y(I)
-      PRINT "('  minimum derivative value: 'ES10.3)", MINVAL(Z(:))
-      PRINT "('  maximum derivative value: 'ES10.3)", MAXVAL(Z(:))
-      PRINT "('  error tolerance:          'ES10.3)", ERROR_TOLERANCE
+      WRITE (*,*) ''
+      WRITE (*,"('Monotonicity test: FAILED')")
+      WRITE (*,"('  interval [',ES10.3,', ',ES10.3,']')") X(I), X(I+1)
+      WRITE (*,"('  interval function change: ',ES10.3)") Y(I+1) - Y(I)
+      WRITE (*,"('  minimum derivative value: ',ES10.3)") MINVAL(Z(:))
+      WRITE (*,"('  maximum derivative value: ',ES10.3)") MAXVAL(Z(:))
+      WRITE (*,"('  error tolerance:          ',ES10.3)") ERROR_TOLERANCE
       PASSES = .FALSE.
       J = -1
       RETURN
@@ -313,12 +319,12 @@ INTERFACE
    REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X
    REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: Y
  END SUBROUTINE F
- SUBROUTINE PMQSI(X, Y, T, BCOEF, INFO)
+ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
    USE REAL_PRECISION, ONLY: R8
    REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X, Y
    REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: T, BCOEF
    INTEGER, INTENT(OUT) :: INFO
- END SUBROUTINE PMQSI
+ END SUBROUTINE MQSI
  SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
    USE REAL_PRECISION, ONLY: R8
    REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: T, BCOEF
@@ -355,12 +361,12 @@ CALL F(X, Y)
 DO I = 1, TRIALS
    ! Construct the piecewise monotone quintic spline interpolant.
    CALL CPU_TIME(START_TIME_SEC)
-   CALL PMQSI(X, Y, SK, SC, INFO)
+   CALL MQSI(X, Y, SK, SC, INFO)
    CALL CPU_TIME(FINISH_TIME_SEC)
    T(I) = REAL(FINISH_TIME_SEC - START_TIME_SEC, KIND=R8)
    IF (INFO .NE. 0) THEN
-      PRINT "('')"   
-      PRINT "('Failed to construct PMQSI, code 'I3'.')", INFO
+      WRITE (*,*) ''   
+      WRITE (*,"('Failed to construct MQSI, code ',I3,'.')") INFO
       RETURN
    END IF
 END DO
@@ -369,14 +375,14 @@ J = SIZE(TFIT)
 DO I = 0, J-1
    TFIT(I+1) = T( INT(1.0 + REAL((TRIALS-1)*I)/REAL(J-1)) )
 END DO
-! Print out some evaluations of the PMQSI.
+! Print out some evaluations of the MQSI.
 DO I = 1, TRIALS
    CALL RANDOM_NUMBER(Z)
    CALL CPU_TIME(START_TIME_SEC)
    CALL EVAL_SPLINE(SK, SC, Z, INFO)
    IF (INFO .NE. 0) THEN
-      PRINT "('')"   
-      PRINT "('Failed to evaluate spline, code 'I3'.')", INFO
+      WRITE (*,*) ''   
+      WRITE (*,"('Failed to evaluate spline, code ',I3,'.')") INFO
       RETURN
    END IF
    CALL CPU_TIME(FINISH_TIME_SEC)
@@ -401,12 +407,12 @@ LOGICAL :: PASSES
 ! -------------------------------------------------
 !               Local variables
 INTERFACE
- SUBROUTINE PMQSI(X, Y, T, BCOEF, INFO)
+ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
    USE REAL_PRECISION, ONLY: R8
    REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X, Y
    REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: T, BCOEF
    INTEGER, INTENT(OUT) :: INFO
- END SUBROUTINE PMQSI
+ END SUBROUTINE MQSI
  SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
    USE REAL_PRECISION, ONLY: R8
    REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: T, BCOEF
@@ -424,17 +430,17 @@ DO I = 1, ND ; X(I) = (I-1) ; END DO
 X(:) = X(:) / REAL(ND-1, KIND=R8)
 CALL PIECEWISE_POLYNOMIAL(X, Y)
 ! Construct the smallest spacing of "X" values that is allowed by the
-! PMQSI routine (then we will check for correct monotonicity).
+! MQSI routine (then we will check for correct monotonicity).
 X(:) = (X(:) * (ND-1)) * SQRT(EPSILON(1.0_R8))
-INFO = 3
-grow_x_gap : DO WHILE ((INFO .EQ. 3) .OR. (INFO .EQ. 7))
-   CALL PMQSI(X, Y, SK, SC, INFO)
-   IF ((INFO .NE. 3) .AND. (INFO .NE. 7)) EXIT grow_x_gap
+INFO = 5
+grow_x_gap : DO WHILE ((INFO .EQ. 5) .OR. (INFO .EQ. 7))
+   CALL MQSI(X, Y, SK, SC, INFO)
+   IF ((INFO .NE. 5) .AND. (INFO .NE. 7)) EXIT grow_x_gap
    X(:) = X(:) * 1.1_R8 ! <- Growth factor that roughly matches runtime of other tests.
 END DO grow_x_gap
 IF (INFO .NE. 0) THEN
-   PRINT "('')"   
-   PRINT "('Failed to construct PMQSI, code 'I3'.')", INFO
+   WRITE (*,*) ''   
+   WRITE (*,"('Failed to construct MQSI, code ',I3,'.')") INFO
    PASSES = .FALSE.
    RETURN
 END IF
@@ -442,17 +448,17 @@ END IF
 U(:) = X(:)
 CALL EVAL_SPLINE(SK, SC, U, INFO)
 IF (INFO .NE. 0) THEN
-   PRINT "('')"   
-   PRINT "('Failed to evaluate spline, code 'I3'.')", INFO
+   WRITE (*,*) ''   
+   WRITE (*,"('Failed to evaluate spline, code ',I3,'.')") INFO
    PASSES = .FALSE.
    RETURN
 END IF
 MAX_ERROR = MAXVAL( ABS((U(:) - Y(:))) / (1.0_R8 + ABS(Y(:))) )
 IF (MAX_ERROR .GT. ERROR_TOLERANCE) THEN
-   PRINT "('')"
-   PRINT "('Value test:        FAILED')"
-   PRINT "('  relative error:  'ES10.3)", MAX_ERROR
-   PRINT "('  error tolerance: 'ES10.3)", ERROR_TOLERANCE
+   WRITE (*,*) ''
+   WRITE (*,"('Value test:        FAILED')")
+   WRITE (*,"('  relative error:  ',ES10.3)") MAX_ERROR
+   WRITE (*,"('  error tolerance: ',ES10.3)") ERROR_TOLERANCE
    PASSES = .FALSE.
    RETURN
 END IF
@@ -464,13 +470,13 @@ check_monotonicity :DO I = 1, ND-1
    IF ( ((Y(I+1) .EQ. Y(I)) .AND. (MAXVAL(ABS(Z(:))) .GT. SQRT(ERROR_TOLERANCE))) .OR. &
         ((Y(I+1) .GT. Y(I)) .AND. (ANY(Z(:) .LT. -SQRT(ERROR_TOLERANCE)))) .OR. &
         ((Y(I+1) .LT. Y(I)) .AND. (ANY(Z(:) .GT.  SQRT(ERROR_TOLERANCE)))) ) THEN
-      PRINT "('')"
-      PRINT "('Monotonicity test: FAILED')"
-      PRINT "('  interval ['ES10.3', 'ES10.3']')", X(I), X(I+1)
-      PRINT "('  interval function change: 'ES10.3)", Y(I+1) - Y(I)
-      PRINT "('  minimum derivative value: 'ES10.3)", MINVAL(Z(:))
-      PRINT "('  maximum derivative value: 'ES10.3)", MAXVAL(Z(:))
-      PRINT "('  error tolerance:          'ES10.3)", ERROR_TOLERANCE
+      WRITE (*,*) ''
+      WRITE (*,"('Monotonicity test: FAILED')")
+      WRITE (*,"('  interval [',ES10.3,', ',ES10.3,']')") X(I), X(I+1)
+      WRITE (*,"('  interval function change: ',ES10.3)") Y(I+1) - Y(I)
+      WRITE (*,"('  minimum derivative value: ',ES10.3)") MINVAL(Z(:))
+      WRITE (*,"('  maximum derivative value: ',ES10.3)") MAXVAL(Z(:))
+      WRITE (*,"('  error tolerance:          ',ES10.3)") ERROR_TOLERANCE
       PASSES = .FALSE.
       J = -1
       RETURN

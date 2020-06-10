@@ -1,19 +1,18 @@
-    PMQSI: Piecewise monotone quintic spline interpolation
+    MQSI: Monotone quintic spline interpolation
 
-The package  PMQSI  is a collection of Fortran 2003 routines for the
-construction of a C^2 piecewise monotone quintic spline interpolant Q(X)
-to data (X(I),F(X(I)), with the property that Q(X) is monotone increasing
-(decreasing) over exactly the same intervals [X(I), X(J)] as the data
-F(X(.)) is monotone increasing (decreasing). All routines use the module
-REAL_PRECISION  from HOMPACK90 (ACM TOMS Algorithm 777) for specifying the
-real data type.
+The package MQSI is a collection of Fortran 2003 routines for the construction
+of a C^2 monotone quintic spline interpolant Q(X) to data (X(I),F(X(I)), 
+with the property that Q(X) is monotone increasing (decreasing) over exactly
+the same intervals [X(I), X(J)] as the data F(X(.)) is monotone increasing
+(decreasing). All routines use the module REAL_PRECISION from HOMPACK90
+(ACM TOMS Algorithm 777) for specifying the real data type.
 
 The physical organization into files is as follows.
 
  * The file 'REAL_PRECISION.f90' contains the module  REAL_PRECISION.
 
- * The file 'PMQSI.f90' contains the subroutine  PMQSI, which computes
-   a C^2 piecewise monotone quintic spline interpolant to data in terms
+ * The file 'MQSI.f90' contains the subroutine  MQSI, which computes
+   a C^2 (piecewise) monotone quintic spline interpolant to data in terms
    of a B-spline basis, matching the monotonicity of the data.
 
  * The file 'SPLINE.f90' contains the subroutines  FIT_SPLINE  for
@@ -33,7 +32,7 @@ The physical organization into files is as follows.
 
 To compile and link, use the command:
 
- $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 PMQSI.f90 \
+ $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 MQSI.f90 \
     $MAIN -o $EXEC_NAME $LIB
 
 where '$F95' is the name of the Fortran 95 compiler, '$OPTS' are

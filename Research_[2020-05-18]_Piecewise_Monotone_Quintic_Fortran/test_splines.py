@@ -6,26 +6,26 @@ import fmodpy
 #                          autocompile_extra_files=True,
 #                          module_link_args=["-lblas", "-llapack"])
 
-bspline = fmodpy.fimport("pmqsi/EVAL_BSPLINE.f90", output_dir="pmqsi", lapack=True)
-spline = fmodpy.fimport("pmqsi/SPLINE.f90", output_dir="pmqsi", lapack=True)
-pmqsi = fmodpy.fimport("pmqsi/PMQSI.f90", output_dir="pmqsi", lapack=True)
+bspline = fmodpy.fimport("mqsi/EVAL_BSPLINE.f90", output_dir="mqsi", lapack=True)
+spline = fmodpy.fimport("mqsi/SPLINE.f90", output_dir="mqsi", lapack=True)
+mqsi = fmodpy.fimport("mqsi/MQSI.f90", output_dir="mqsi", lapack=True)
 
 # Define an object that has all of the expected functions.
 class splines:
-    pmqsi = pmqsi.pmqsi
+    mqsi = mqsi.mqsi
     fit_spline = spline.fit_spline
     eval_spline = spline.eval_spline
     eval_bspline = bspline.eval_bspline
 
-TEST_PMQSI = True
+TEST_MQSI = True
 TEST_SPLINE = False
 TEST_B_SPLINE = False
 
-if TEST_PMQSI:
+if TEST_MQSI:
     from test_points import TESTS
     from util.system import Timer
     import numpy as np
-    SHOW_DERIVATIVES = False
+    SHOW_DERIVATIVES = True
     VISUALIZE_TEST = True
     RANDOM = False
     NUM_KNOTS = 18
@@ -52,8 +52,19 @@ if TEST_PMQSI:
     # Get the knots and values for the test.
     values = FUNC(knots)
 
-    knots = [i*(2**(-26) + 2**(-52)) for i in range(18)]
+    knots = [i*(2**(-26)) for i in range(18)]
     values = [0, 1, 1, 1, 0, 20, 19, 18, 17, 0, 0, 3, 0, 1, 6, 16, 16.1, 1 ]
+    # 
+    knots = list(range(10))
+    values = [1.0, 1.000000001, .99999999,  .99999998]
+    e = 2**(-26)
+    values = [-10.0, 1, 1+e, 1+2*e, 10]
+    # 
+    # huge = 1.7976931348623157E+308
+    # values = 
+    # values = [1.0, 1.0000000001, .999999999,  .999999998]
+
+    knots = knots[:len(values)]
 
     knots = np.asfortranarray(knots, dtype=float)
     values = np.asfortranarray(values, dtype=float)
@@ -69,7 +80,11 @@ if TEST_PMQSI:
     nd = len(knots)
     sk = np.ones(3*nd + 6)
     sc = np.ones(3*nd)
-    sk, sc, info = splines.pmqsi(knots, values, sk, sc)
+    info = 5
+    while (info == 5):
+        sk, sc, info = splines.mqsi(knots, values, sk, sc)
+        if (info != 5): break
+        knots *= (1 + 2**(-26))
     t.stop()
     print("info: ",info)
     print(f"Fortran time: {t()}s")

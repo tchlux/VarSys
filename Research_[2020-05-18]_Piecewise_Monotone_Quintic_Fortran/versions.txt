@@ -40,3 +40,17 @@ v7
 
 v8
   Included the source LAPACK code and compiled it with the PMQSI routine.
+
+v9
+  Changes near final with some corrections by Dr. Watson.
+  Removed redundant check in monotonicity (conflicting derivative).
+  Added approximate equality checks.
+
+v10
+  Removed approximate equality checks.
+
+v11
+  Changed INFO flags.
+  Added modified approximate equality checks.
+  Enforces bounds on allowable range of X and Y values.
+  Removed possibility of experiencing REAL overflow.

@@ -9,24 +9,24 @@ from util.data import Data
 from util.plot import Plot
 
 SHOW_PCHIP = False
-VERSION = 8.1
+VERSION = 11.1
 TRIALS = 100
 
 # Import the splines Fortran code.
 import fmodpy
 
-bspline = fmodpy.fimport("pmqsi/EVAL_BSPLINE.f90", output_dir="pmqsi")
-spline = fmodpy.fimport("pmqsi/SPLINE.f90", output_dir="pmqsi")
-pmqsi = fmodpy.fimport("pmqsi/PMQSI.f90", output_dir="pmqsi")
+bspline = fmodpy.fimport("mqsi/EVAL_BSPLINE.f90", output_dir="mqsi")
+spline = fmodpy.fimport("mqsi/SPLINE.f90", output_dir="mqsi")
+mqsi = fmodpy.fimport("mqsi/MQSI.f90", output_dir="mqsi")
 
 # Define an object that has all of the expected functions.
 class splines:
-    pmqsi = pmqsi.pmqsi
+    mqsi = mqsi.mqsi
     fit_spline = spline.fit_spline
     eval_spline = spline.eval_spline
     eval_bspline = bspline.eval_bspline
 
-# Get the distribution of times required for doing PMQSI fits on all
+# Get the distribution of times required for doing MQSI fits on all
 # test problems, and random problems of a few different sizes.
 # 
 # Define an infinitely continuous "truth" for all test problems.
@@ -40,7 +40,7 @@ class splines:
 #    (8, 16, 32, 64, 128, 256, 512, 1024)
 # 
 # 
-d = Data(names=["Test Name", "N", "Trial", "Equispaced", "PMQSI fit", "PCHIP fit", "PMQSI eval", "PCHIP eval"],
+d = Data(names=["Test Name", "N", "Trial", "Equispaced", "MQSI fit", "PCHIP fit", "MQSI eval", "PCHIP eval"],
          types=[str,         int, int,     bool,         float,       float,       float,        float])
 t = Timer()
 
@@ -65,12 +65,12 @@ if not os.path.exists(file_name):
                     x.sort()
                     # Evaluate the "y" values at all points.
                     y = np.asfortranarray( TESTS[test_name](x), dtype=float )
-                    # Fit the PMQSI.
-                    print(f"   {trial} {str(equispaced)[:1]} -- PMQSI fit", flush=True, end="\r")
+                    # Fit the MQSI.
+                    print(f"   {trial} {str(equispaced)[:1]} -- MQSI fit", flush=True, end="\r")
                     nd = len(x)
                     sk = np.ones(3*nd + 6)
                     sc = np.ones(3*nd)
-                    t.start() ; sk, sc, info = splines.pmqsi(x, y, sk, sc) ; t.stop()
+                    t.start() ; sk, sc, info = splines.mqsi(x, y, sk, sc) ; t.stop()
                     if (info != 0):
                         print()
                         print()
@@ -82,9 +82,9 @@ if not os.path.exists(file_name):
                         print("y =", repr(y))
                         print()
                         raise(Exception(f"PQMSI FIT ERROR: {info}"))
-                    pmqsi_fit = t.total
-                    # Eval the PMQSI.
-                    print(f"   {trial} {str(equispaced)[:1]} -- PMQSI eval", flush=True, end="\r")
+                    mqsi_fit = t.total
+                    # Eval the MQSI.
+                    print(f"   {trial} {str(equispaced)[:1]} -- MQSI eval", flush=True, end="\r")
                     eval_pts = np.asfortranarray(np.linspace(min(x), max(x), TRIALS), dtype=float)
                     t.start() ; _, info = splines.eval_spline(sk, sc, eval_pts, d=0) ; t.stop()
                     if (info != 0):
@@ -98,7 +98,7 @@ if not os.path.exists(file_name):
                         print("y =", repr(y))
                         print()
                         raise(Exception(f"PQMSI EVAL ERROR: {info}"))
-                    pmqsi_eval = t.total / TRIALS
+                    mqsi_eval = t.total / TRIALS
                     # Fit the PCHIP.
                     print(f"   {trial} {str(equispaced)[:1]} -- PCHIP fit", flush=True, end="\r")
                     t.start() ; f = PchipInterpolator(x, y) ; t.stop()
@@ -109,7 +109,7 @@ if not os.path.exists(file_name):
                     t.start() ; f(eval_pts) ; t.stop()
                     pchip_eval = t.total / TRIALS
                     # Store these results.
-                    d.append( row + [equispaced, pmqsi_fit, pchip_fit, pmqsi_eval, pchip_eval] )
+                    d.append( row + [equispaced, mqsi_fit, pchip_fit, mqsi_eval, pchip_eval] )
     print(" "*40)
     d.save(file_name)
 else:
@@ -126,26 +126,28 @@ versions = [f for f in os.listdir() if ("v" == f[0]) and (".csv" == f[-4:])]
 versions = sorted(versions, key=lambda v: float(v[1:-4]))
 
 # --------------------------------------------------------------------
-# Add PMQSI approximation.
-cdf = cdf_fit(d["PMQSI fit"])
-p.add_func(f"v{VERSION} PMQSI fit", cdf, cdf(), color=1, group='current')
-cdf = cdf_fit(d["PMQSI eval"])
-p.add_func(f"  v{VERSION} PMQSI eval", cdf, cdf(), color=1, group='current')
+# Add MQSI approximation.
+cdf = cdf_fit(d["MQSI fit"])
+p.add_func(f"v{VERSION} MQSI fit", cdf, cdf(), color=1, group='current')
+cdf = cdf_fit(d["MQSI eval"])
+p.add_func(f"  v{VERSION} MQSI eval", cdf, cdf(), color=1, group='current')
 
 for step, v in reversed(list(enumerate(versions))):
     # Load old data.
     d2 = Data.load(v)
-    # Only add *old* PMQSI information.
+    # Only add *old* MQSI information.
     if (float(v[1:-4]) == VERSION): continue
     if (int(float(v[1:-4])) == int(VERSION)): d = None
     else:                                     d = "dot"
-    # Add old PMQSI information.
-    cdf = cdf_fit(d2["PMQSI fit"])
-    p.add_func(f"V{v[1:-4]} PMQSI fit", cdf, cdf(), color=1,
+    # Add old MQSI information.
+    if ("MQSI fit" in d2): cdf = cdf_fit(d2["MQSI fit"])
+    else:                  cdf = cdf_fit(d2["PMQSI fit"])
+    p.add_func(f"V{v[1:-4]} MQSI fit", cdf, cdf(), color=1,
                opacity=(step+1) / (len(versions)+1), dash=d,
                group=v[1:-4].split('.')[0]+" fit")
-    cdf = cdf_fit(d2["PMQSI eval"])
-    p.add_func(f"V{v[1:-4]} PMQSI eval", cdf, cdf(), color=1,
+    if ("MQSI eval" in d2): cdf = cdf_fit(d2["MQSI eval"])
+    else:                   cdf = cdf_fit(d2["PMQSI eval"])
+    p.add_func(f"V{v[1:-4]} MQSI eval", cdf, cdf(), color=1,
                opacity=(step+1) / (len(versions)+1), dash=d,
                group=v[1:-4].split('.')[0]+" eval")
 
