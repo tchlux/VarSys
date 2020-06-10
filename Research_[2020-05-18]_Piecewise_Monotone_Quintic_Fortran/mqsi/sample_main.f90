@@ -1,5 +1,5 @@
-! This file (sample_main.f90) contains a sample main program that calls
-! MQSI to interpolate handcrafted nonmonotone data.
+! This file (sample_main.f90) contains a sample main program that
+! calls MQSI to interpolate handcrafted nonmonotone data.
 
 PROGRAM SAMPLE_MAIN
 USE REAL_PRECISION, ONLY: R8  
@@ -35,42 +35,46 @@ REAL(KIND=R8) :: SC(1:3*ND), SK(1:3*ND+6), U(ND)
 INTEGER :: I, INFO
 ! Initialize "X" values.
 DO I = 1, ND ; X(I) = REAL(I, KIND=R8) ; END DO
-! ! Make X values very close to each other.
-! X(:) = X(:) * (2.0 * SQRT(EPSILON(1.0_R8)))
-! ! Make X values very far apart.
-! X(:) = X(:) * (SQRT(SQRT(HUGE(1.0_R8))) / (MAXVAL(X(:)) * 2.0_R8))
-! ! Make Y values very far apart.
-! Y(:) = Y(:) * (SQRT(SQRT(HUGE(1.0_R8))) / (MAXVAL(Y(:)) * 2.0_R8))
-! ! Make Y values very close to each other.
-! Y(:) = Y(:) * (2.0 * SQRT(EPSILON(1.0_R8)))
+! ------------------------------------------------------------------------------
+!                    Optional rescaling operations 
+! X(:) = X(:) * (2.0 * SQRT(EPSILON(1.0_R8))) ! Low separation X values.
+! X(:) = X(:) * (10.0_R8**38 / (MAXVAL(X(:)) * 2.0_R8)) ! High separation X values.
+! Y(:) = Y(:) * (10.0_R8**(-38)) ! Low separation Y values.
+! Y(:) = Y(:) * (10.0_R8**38 / (MAXVAL(Y(:)) * 2.0_R8)) ! High separation Y values.
+! ------------------------------------------------------------------------------
 WRITE (*,*) ''
-WRITE (*,"('    X:  ',100ES10.2)") X(:)
-WRITE (*,"('    Y:  ',100ES10.2)") Y(:)
+WRITE (*,"('     X: ',100ES10.2)") X(:)
+WRITE (*,"('     Y: ',100ES10.2)") Y(:)
 ! Construct a MQSI.
 CALL MQSI(X, Y, SK, SC, INFO)
-IF (INFO .NE. 0) THEN; WRITE (*,"('MQSI error ',I3)") INFO; ERROR STOP; END IF
+IF (INFO .NE. 0) THEN; WRITE (*,"('MQSI error ',I3)") INFO; END IF
 ! Copy the "evaluation points" into the input/output buffer.
 U(:) = X(:)
 ! Evaluate the spline at all points (result is updated in-place in U).
 CALL EVAL_SPLINE(SK, SC, U, INFO)
-IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; ERROR STOP; END IF
+IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; END IF
 ! Show the evaluations.
-WRITE (*,"('  F(X): ',100ES10.2)") U(:)
-WRITE (*,*) ''
-WRITE (*,"('Machine precision:  ',F18.16)") EPSILON(1.0_R8)
-WRITE (*,"('   square root ^^:  ',F18.16)") SQRT(EPSILON(1.0_R8))
-WRITE (*,"('Max relative error: ',F18.16)") MAXVAL(ABS(U(:) - Y(:)) / ABS(1.0_R8 + ABS(Y(:))))
-WRITE (*,*) '' 
+WRITE (*,"('  Q(X): ',100ES10.2)") U(:)
 ! Evaluate the first derivative of the spline at all points.
 U(:) = X(:)
 CALL EVAL_SPLINE(SK, SC, U, INFO, D=1)
-IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; ERROR STOP; END IF
-WRITE (*,"(' DF(X): ',100ES10.2)") U(:)
+IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; END IF
+WRITE (*,"(' DQ(X): ',100ES10.2)") U(:)
 ! Evaluate the second derivative of the spline at all points.
 U(:) = X(:)
 CALL EVAL_SPLINE(SK, SC, U, INFO, D=2)
-IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; ERROR STOP; END IF
-WRITE (*,"('DDF(X): ',100ES10.2)") U(:)
+IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; END IF
+WRITE (*,"('DDQ(X): ',100ES10.2)") U(:)
+! Show the error of the values.
+U(:) = X(:)
+CALL EVAL_SPLINE(SK, SC, U, INFO)
+IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; END IF
+WRITE (*,*) ''
+WRITE (*,"('Machine precision:  ',ES18.10)") EPSILON(1.0_R8)
+WRITE (*,"('   square root ^^:  ',ES18.10)") SQRT(EPSILON(1.0_R8))
+WRITE (*,"('Max relative error: ',ES18.10)") MAXVAL(ABS(U(:) - Y(:)) / ABS(1.0_R8 + ABS(Y(:))))
+WRITE (*,"('Max absolute error: ',ES18.10)") MAXVAL(ABS(U(:) - Y(:)))
+WRITE (*,*) '' 
 
 END PROGRAM SAMPLE_MAIN
   

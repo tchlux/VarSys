@@ -41,6 +41,7 @@ SUBROUTINE EVAL_BSPLINE(T, XY, D)
 !   For the computation of the derivative of the B-spline, the divided
 !   difference definition of B_{I,J}(X) is used, building from J = N-D,
 !   ..., N-1 via
+! 
 !                       (J-1) B_{I,J-1}(X)     (J-1) B_{I+1,J-1}(X)  
 !   D/DX[B_{I,J}(X)] =  ------------------  -  --------------------.
 !                         T(I+J-1) - T(I)         T(I+J) - T(I+1)     

@@ -1,9 +1,18 @@
 
 
-import og_fmodpy as fmodpy
-splines = fmodpy.fimport("splines.f90", verbose=True,
-                         autocompile_extra_files=True,
-                         module_link_args=["-lblas", "-llapack"])
+# Import the splines Fortran code.
+import fmodpy
+
+bspline = fmodpy.fimport("mqsi/EVAL_BSPLINE.f90")
+spline = fmodpy.fimport("mqsi/SPLINE.f90")
+mqsi = fmodpy.fimport("mqsi/MQSI.f90")
+
+# Define an object that has all of the expected functions.
+class splines:
+    mqsi = mqsi.mqsi
+    fit_spline = spline.fit_spline
+    eval_spline = spline.eval_spline
+    eval_bspline = bspline.eval_bspline
 
 
 from polynomial import Spline

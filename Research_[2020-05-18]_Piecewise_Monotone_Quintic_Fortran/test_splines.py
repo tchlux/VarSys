@@ -1,14 +1,15 @@
 
-import fmodpy
 
 # import og_fmodpy as fmodpy
 # splines = fmodpy.fimport("splines.f90", verbose=True,
 #                          autocompile_extra_files=True,
 #                          module_link_args=["-lblas", "-llapack"])
 
-bspline = fmodpy.fimport("mqsi/EVAL_BSPLINE.f90", output_dir="mqsi", lapack=True)
-spline = fmodpy.fimport("mqsi/SPLINE.f90", output_dir="mqsi", lapack=True)
-mqsi = fmodpy.fimport("mqsi/MQSI.f90", output_dir="mqsi", lapack=True)
+import fmodpy
+
+bspline = fmodpy.fimport("mqsi/EVAL_BSPLINE.f90")
+spline = fmodpy.fimport("mqsi/SPLINE.f90")
+mqsi = fmodpy.fimport("mqsi/MQSI.f90")
 
 # Define an object that has all of the expected functions.
 class splines:

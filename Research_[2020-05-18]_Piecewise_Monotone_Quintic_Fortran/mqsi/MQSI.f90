@@ -1,10 +1,9 @@
-
 SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
 ! Computes a monotone quintic spline interpolant (MQSI) Q(X) to data
-! in terms of spline coefficients BCOEF for a B-spline basis defined
-! by knots T.  Q(X) is theoretically guaranteed to be monotone
-! increasing (decreasing) over exactly the same intervals [X(I), X(J)]
-! that the data Y(.) is monotone increasing (decreasing).
+! in terms of spline coefficients BCOEF for a B-spline basis defined by
+! knots T. Q(X) is theoretically guaranteed to be monotone increasing
+! (decreasing) over exactly the same intervals [X(I), X(J)] that the
+! data Y(.) is monotone increasing (decreasing).
 ! 
 ! INPUT:
 !   X(1:ND) -- A real array of increasing values.
@@ -21,17 +20,15 @@ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
 !    4  The size of BCOEF(:) must be at least the spline space dimension 3*ND.
 !    5  The values in X(:) are not increasing or not separated by at least
 !       their size times the square root of machine precision.
-!    6  The values in X(:) are larger than the fourth root of the
-!       largest representable real number.
+!    6  The magnitude or spacing of the data (X(:), Y(:)) could lead to
+!       overflow. Some differences Y(I+1)-Y(I) or X(I+1)-X(I) or their
+!       reciprocals exceed 10**38, or some X exceed 10**38, which could
+!       lead to some local Lipschitz constants exceeding 10**76.
 !    7  The computed spline does not match the provided data in Y(:) and
 !       this result should not be used. This arises when the scaling of
 !       function values and derivative values causes the linear system used
 !       to compute the final spline interpolant to have a prohibitively
 !       large condition number.
-!    8  The values in X(:) are separated by more than the fourth root
-!       of the largest representable real number.
-!    9  The values in Y(:) are separated by more than the fourth root
-!       of the largest representable real number.
 !  >10  10 plus the info flag as returned by DGBSV from LAPACK when computing
 !       the final spline interpolant.
 !   
@@ -46,7 +43,9 @@ REAL(KIND=R8), DIMENSION(SIZE(X),2) :: FHATX ! Estimated function values.
 REAL(KIND=R8), DIMENSION(SIZE(X),3) :: FX ! Spline function values.
 LOGICAL, DIMENSION(SIZE(X)) :: CHECKING, GROWING, SHRINKING ! Execution
 INTEGER, DIMENSION(SIZE(X)) :: TO_CHECK, TO_GROW, TO_SHRINK !   queues.
-REAL(KIND=R8) :: A, ACCURACY, B, DIRECTION, DX, REAL_MAX, SEP_MAX, STEP_SIZE
+REAL(KIND=R8) :: A, ACCURACY, B, DIRECTION, DX, STEP_SIZE
+REAL(KIND=R8), PARAMETER :: TM38 = 10.0_R8**(-38), TP38 = 10.0_R8**38, &
+   TM76 = 10.0_R8**(-76), TP76 = 10.0_R8**76
 INTEGER :: I, J, K, NC, ND, NG, NS
 LOGICAL :: SEARCHING
 INTERFACE
@@ -58,26 +57,22 @@ INTERFACE
      INTEGER, INTENT(OUT) :: INFO
    END SUBROUTINE FIT_SPLINE
 END INTERFACE
-
 ! Declare constants for computation.
 ND = SIZE(X)
 ACCURACY = SQRT(EPSILON(1.0_R8))
-REAL_MAX = HUGE(1.0_R8)
-SEP_MAX = SQRT(SQRT(REAL_MAX))
 ! Check the shape of incoming arrays.
 IF      (ND .LT. 3)             THEN; INFO = 1; RETURN
 ELSE IF (SIZE(Y) .NE. ND)       THEN; INFO = 2; RETURN
 ELSE IF (SIZE(T) .LT. 3*ND + 6) THEN; INFO = 3; RETURN
 ELSE IF (SIZE(BCOEF) .LT. 3*ND) THEN; INFO = 4; RETURN
 END IF
-! Verify that X values are increasing and appropriately spaced.
+! Verify that X values are increasing, and that (X,Y) data is not extreme.
 DO I = 1, ND-1
    J = I + 1
    A = X(J) - X(I)
-   IF (ABS(A) .LT. ACCURACY)               THEN; INFO = 5; RETURN
-   ELSE IF (ABS(X(I)) .GE. SEP_MAX)        THEN; INFO = 6; RETURN
-   ELSE IF (A .GE. SEP_MAX)                THEN; INFO = 8; RETURN
-   ELSE IF (ABS(Y(J) - Y(I)) .GT. SEP_MAX) THEN; INFO = 9; RETURN
+   IF (ABS(A) .LT. ACCURACY) THEN; INFO = 5; RETURN
+   ELSE IF ((ABS(X(I)) .GT. TP38) .OR. (A .GE. TP38) .OR. &
+        (ABS(Y(J) - Y(I)) .GT. TP38)) THEN; INFO = 6; RETURN
    END IF
 END DO
 ! ==================================================================
@@ -88,14 +83,14 @@ END DO
 FX(:,1) = Y(:)
 ! Identify local extreme points and flat points. Denote location
 ! of flats in GROWING and extrema in SHRINKING.
-GROWING(1) = ABS(Y(1) - Y(2)) .LT. ACCURACY
-GROWING(ND) = ABS(Y(ND-1) - Y(ND)) .LT. ACCURACY
+GROWING(1) = ABS(Y(1) - Y(2)) .LT. TM76
+GROWING(ND) = ABS(Y(ND-1) - Y(ND)) .LT. TM76
 SHRINKING(1) = .FALSE.
 SHRINKING(ND) = .FALSE.
 DO I = 2, ND-1
    J = I+1
    K = I-1
-   IF ((ABS(Y(K)-Y(I)) .LT. ACCURACY) .OR. (ABS(Y(I)-Y(J)) .LT. ACCURACY)) THEN
+   IF ((ABS(Y(K)-Y(I)) .LT. TM76) .OR. (ABS(Y(I)-Y(J)) .LT. TM76)) THEN
       GROWING(I) = .TRUE.
       SHRINKING(I) = .FALSE.
    ELSE
@@ -110,7 +105,7 @@ estimate_derivatives : DO I = 1, ND
    J = I+1
    K = I-1
    ! Initialize the curvature to be maximally large.
-   FX(I,3) = REAL_MAX
+   FX(I,3) = TP76
    ! If this is a local flat, first and second derivatives are zero valued.
    pick_quadratic : IF (GROWING(I)) THEN; FX(I,2:3) = 0.0_R8
    ! If this is an extreme point, construct quadratic interpolants
@@ -185,13 +180,12 @@ estimate_derivatives : DO I = 1, ND
          END IF
       END IF
       ! Set the final quadratic.
-      IF (FX(I,3) .EQ. REAL_MAX) THEN; FX(I,2:3) = 0.0_R8
+      IF (FX(I,3) .EQ. TP76) THEN; FX(I,2:3) = 0.0_R8
       ! Compute curvature of quadratic from coefficient of x^2.
       ELSE; FX(I,3) = 2.0_R8 * FX(I,3)
       END IF
    END IF pick_quadratic
 END DO estimate_derivatives
-! ------------------------------------------------------------------
 ! ==================================================================
 !           Identify viable piecewise monotone derivative
 !             values by doing a quasi-bisection search.
@@ -208,7 +202,7 @@ DO I = 1, ND-1
    IF ((.NOT. (GROWING(I) .AND. GROWING(J))) .AND. &
         (.NOT. IS_MONOTONE(X(I), X(J), FX(I,1), FX(J,1), &
         FX(I,2), FX(J,2), FX(I,3), FX(J,3)))) THEN
-      ! Record points bounding nonomonotone segments in the TO_SHRINK queue.
+      ! Store points bounding nonomonotone segments in the TO_SHRINK queue.
       IF (.NOT. SHRINKING(I)) THEN
          SHRINKING(I) = .TRUE.; NS = NS+1; TO_SHRINK(NS) = I
       END IF
@@ -313,36 +307,38 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
    NC = 0
 END DO
 ! ------------------------------------------------------------------
-! Use FIT_SPLINE to fit the final MQSI.
+! Use FIT_SPLINE to fit the final MQSI. For numerical stability and accuracy
+! this routine requires the enforced separation of the values X(I).
 CALL FIT_SPLINE(X, FX, T, BCOEF, INFO)
 
 CONTAINS
 
 FUNCTION IS_MONOTONE(U0, U1, F0, F1, DF0, DF1, DDF0, DDF1)
-! Given an interval [U0, U1] and function values F0, F1, first derivatives
-! DF0, DF1, and second derivatives DDF0, DDF1 at U0, U1, respectively,
-! return TRUE if the quintic polynomial matching these values is monotone
-! over [U0, U1], and FALSE otherwise.
+IMPLICIT NONE
+! Given an interval [U0, U1] and function values F0, F1, first
+! derivatives DF0, DF1, and second derivatives DDF0, DDF1 at U0, U1,
+! respectively, return TRUE if the quintic polynomial matching these
+! values is monotone over [U0, U1], and FALSE otherwise.
 !
 REAL(KIND=R8), INTENT(IN) :: U0, U1, F0, F1, DF0, DF1, DDF0, DDF1
 LOGICAL :: IS_MONOTONE
 ! Local variables.
 REAL(KIND=R8) :: A, ALPHA, B, BETA, GAMMA, INV_SLOPE, SIGN, TAU, TEMP, W
 ! Identify the direction of change of the function (increasing or decreasing).
-IF      (F1 .GT. F0+ACCURACY) THEN; SIGN =  1.0_R8
-ELSE IF (F1 .LT. F0-ACCURACY) THEN; SIGN = -1.0_R8
+IF      (F1 .GT. F0+TM76) THEN; SIGN =  1.0_R8
+ELSE IF (F1 .LT. F0-TM76) THEN; SIGN = -1.0_R8
 ! When the function values are flat, everything *must* be 0.
 ELSE
-   IS_MONOTONE = (ABS(DF0)  .LT. ACCURACY) .AND. (ABS(DF1)  .LT. ACCURACY) .AND. &
-                 (ABS(DDF0) .LT. ACCURACY) .AND. (ABS(DDF1) .LT. ACCURACY)
+   IS_MONOTONE = (ABS(DF0)  .LT. TM76) .AND. (ABS(DF1)  .LT. TM76) .AND. &
+                 (ABS(DDF0) .LT. TM76) .AND. (ABS(DDF1) .LT. TM76)
    RETURN
 END IF
 W = U1 - U0
 INV_SLOPE = W / (F1 - F0)
 ! Determine which set of monotonicity conditions to use based on the
 ! assigned first derivative values at either end of the interval.
-IF ((ABS(DF0) .LT. ACCURACY) .OR. (ABS(DF1) .LT. ACCURACY)) THEN
-   ! Simplified monotone case, whichredcues to a test of cubic
+IF ((ABS(DF0) .LT. TM76) .OR. (ABS(DF1) .LT. TM76)) THEN
+   ! Simplified monotone case, which redcues to a test of cubic
    ! positivity studied in
    ! 
    ! J. W. Schmidt and W. He{\ss}, ``Positivity of cubic polynomials on
@@ -352,8 +348,8 @@ IF ((ABS(DF0) .LT. ACCURACY) .OR. (ABS(DF1) .LT. ACCURACY)) THEN
    ! Notably, monotonicity results when the following conditions hold:
    !    alpha >= 0,
    !    delta >= 0,
-   !    gamma >= delta - 2 * \sqrt{ alpha delta },
    !    beta  >= alpha - 2 * \sqrt{ alpha delta },
+   !    gamma >= delta - 2 * \sqrt{ alpha delta },
    ! 
    ! where alpha, beta, delta, and gamma are defined in the paper. The
    ! equations that follow are the result of algebreic simplifications
@@ -404,6 +400,7 @@ END IF
 END FUNCTION IS_MONOTONE
 
 SUBROUTINE QUADRATIC(I2)
+IMPLICIT NONE
 ! Given an index I2, compute the coefficients A of x^2 and B
 ! of x for the quadratic interpolating Y(I2-1:I2+1) at X(I2-1:I2+1),.
 INTEGER, INTENT(IN) :: I2
@@ -413,7 +410,8 @@ REAL(KIND=R8) :: C1, C2, C3, & ! Intermediate terms for computation.
 INTEGER :: I1, I3
 I1 = I2-1
 I3 = I2+1
-! Compute the shared denominator.
+! The earlier tests for extreme data (X,Y) keep the quantities below 
+! within floating point range. Compute the shared denominator.
 D = (X(I1) - X(I2)) * (X(I1) - X(I3)) * (X(I2) - X(I3))
 ! Compute coefficients A and B in quadratic interpolant  Ax^2 + Bx + C.
 C1 = X(I1) * (Y(I3) - Y(I2))

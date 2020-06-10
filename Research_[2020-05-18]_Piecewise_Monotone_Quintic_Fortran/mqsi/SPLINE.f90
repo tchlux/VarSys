@@ -33,10 +33,10 @@ SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
 ! DESCRIPTION:
 !   This subroutine computes the B-spline basis representation of the
 !   spline interpolant to given function values (and derivative values)
-!   at unique breakpoints.  The osculatory interpolating spline of order
+!   at unique breakpoints. The osculatory interpolating spline of order
 !   2*NCC is returned in terms of knots T and coefficients BCOEF, defining
 !   the underlying B-splines and their linear combination that interpolates
-!   the given data.  This function uses the subroutine EVAL_BSPLINE to
+!   the given data. This function uses the subroutine EVAL_BSPLINE to
 !   evaluate the B-splines at all knots and the LAPACK routine DGBSV to
 !   compute the B-spline coefficients. The difference between the provided
 !   function (and derivative) values and the actual values produced by the
@@ -57,13 +57,13 @@ INTEGER, DIMENSION(SIZE(BCOEF)) :: IPIV
 REAL(KIND=R8), DIMENSION(1 + 3*(2*SIZE(FX,2)-1), SIZE(FX)) :: AB
 REAL(KIND=R8) :: MAX_ERROR
 INTEGER :: DEGREE, & ! Degree of B-spline.
-     DERIV, & ! Derivative loop index.       
+     DERIV, & ! Derivative loop index.
      I, I1, I2, J, J1, J2, & ! Miscellaneous loop indices.
-     K, &    ! Order of B-splines = 2*NCC.           
+     K, &    ! Order of B-splines = 2*NCC.
      NB, &   ! Number of breakpoints.
      NCC, &  ! Number of continuity conditions.
      NK, &   ! Number of knots = NSPL + 2*NCC.
-     NSPL    ! Dimension of spline space = number of B-spline 
+     NSPL    ! Dimension of spline space = number of B-spline
              ! coefficients = NB * NCC.
 ! LAPACK subroutine for solving banded linear systems.
 EXTERNAL :: DGBSV
@@ -232,14 +232,14 @@ SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
 !     2  T is not nondecreasing.
 ! 
 ! OPTIONAL INPUT:
-!   D --  The order of the derivative of the spline to take at the points in
-!     XY.  If omitted, D = 0.  When D < 0, the spline integral over
+!   D --  The order of the derivative of the spline to take at the points 
+!     in XY. If omitted, D = 0. When D < 0, the spline integral over
 !     [T(1), XY(.)] is returned in XY(.).
 ! 
 ! DESCRIPTION:
 ! 
 !   This subroutine serves as a convenient wrapper to the underlying calls
-!   to EVAL_BSPLINE to evaluate the full spline.  Internally this uses a
+!   to EVAL_BSPLINE to evaluate the full spline. Internally this uses a
 !   matrix-vector multiplication of the B-spline evaluations (Gram matrix)
 !   with the assigned coefficients. This requires O(M*NSPL) memory, so
 !   evaluating single points might be more efficient in some situations.
