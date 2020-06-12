@@ -11,13 +11,14 @@ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
 ! 
 ! OUTPUT:
 !   T(1:3*ND+6) -- The knots for the MQSI B-spline basis.
-!   BCOEF(1:3*ND) -- The coefficients for the MQSI B-spline basis.
+!   BCOEF(1:3*ND+1) -- The coefficients for the MQSI B-spline basis.
 !   INFO -- Integer representing the subroutine return status.
 !    0  Normal return.
 !    1  There are fewer than three data points, so there is nothing to do.
 !    2  X(:) and Y(:) have different sizes.
 !    3  The size of T(:) must be at least the number of knots 3*ND+6.
-!    4  The size of BCOEF(:) must be at least the spline space dimension 3*ND.
+!    4  The size of BCOEF(:) must be at least the spline space
+!       dimension 3*ND plus one (for the value offset).
 !    5  The values in X(:) are not increasing or not separated by at least
 !       their size times the square root of machine precision.
 !    6  The magnitude or spacing of the data (X(:), Y(:)) could lead to
@@ -44,8 +45,8 @@ REAL(KIND=R8), DIMENSION(SIZE(X),3) :: FX ! Spline function values.
 LOGICAL, DIMENSION(SIZE(X)) :: CHECKING, GROWING, SHRINKING ! Execution
 INTEGER, DIMENSION(SIZE(X)) :: TO_CHECK, TO_GROW, TO_SHRINK !   queues.
 REAL(KIND=R8) :: A, ACCURACY, B, DIRECTION, DX, STEP_SIZE
-REAL(KIND=R8), PARAMETER :: TM38 = 10.0_R8**(-38), TP38 = 10.0_R8**38, &
-   TM76 = 10.0_R8**(-76), TP76 = 10.0_R8**76
+REAL(KIND=R8), PARAMETER :: TM54 = 10.0_R8**(-54), &
+     TP38 = 10.0_R8**38, TP76 = 10.0_R8**76
 INTEGER :: I, J, K, NC, ND, NG, NS
 LOGICAL :: SEARCHING
 INTERFACE
@@ -56,22 +57,29 @@ INTERFACE
      REAL(KIND=R8), INTENT(OUT), DIMENSION(:)   :: T, BCOEF
      INTEGER, INTENT(OUT) :: INFO
    END SUBROUTINE FIT_SPLINE
+   SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
+     USE REAL_PRECISION, ONLY: R8
+     REAL(KIND=R8), INTENT(IN), DIMENSION(:) :: T, BCOEF
+     REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
+     INTEGER, INTENT(OUT) :: INFO
+     INTEGER, INTENT(IN), OPTIONAL :: D
+   END SUBROUTINE EVAL_SPLINE
 END INTERFACE
 ! Declare constants for computation.
 ND = SIZE(X)
 ACCURACY = SQRT(EPSILON(1.0_R8))
 ! Check the shape of incoming arrays.
-IF      (ND .LT. 3)             THEN; INFO = 1; RETURN
-ELSE IF (SIZE(Y) .NE. ND)       THEN; INFO = 2; RETURN
-ELSE IF (SIZE(T) .LT. 3*ND + 6) THEN; INFO = 3; RETURN
-ELSE IF (SIZE(BCOEF) .LT. 3*ND) THEN; INFO = 4; RETURN
+IF      (ND .LT. 3)               THEN; INFO = 1; RETURN
+ELSE IF (SIZE(Y) .NE. ND)         THEN; INFO = 2; RETURN
+ELSE IF (SIZE(T) .LT. 3*ND + 6)   THEN; INFO = 3; RETURN
+ELSE IF (SIZE(BCOEF) .LT. 3*ND+1) THEN; INFO = 4; RETURN
 END IF
 ! Verify that X values are increasing, and that (X,Y) data is not extreme.
 DO I = 1, ND-1
    J = I + 1
    A = X(J) - X(I)
-   IF (ABS(A) .LT. ACCURACY) THEN; INFO = 5; RETURN
-   ELSE IF ((ABS(X(I)) .GT. TP38) .OR. (A .GE. TP38) .OR. &
+   IF      (ABS(A) .LT. ACCURACY)     THEN; INFO = 5; RETURN
+   ELSE IF ((A .GE. TP38) .OR. &
         (ABS(Y(J) - Y(I)) .GT. TP38)) THEN; INFO = 6; RETURN
    END IF
 END DO
@@ -83,14 +91,14 @@ END DO
 FX(:,1) = Y(:)
 ! Identify local extreme points and flat points. Denote location
 ! of flats in GROWING and extrema in SHRINKING.
-GROWING(1) = ABS(Y(1) - Y(2)) .LT. TM76
-GROWING(ND) = ABS(Y(ND-1) - Y(ND)) .LT. TM76
+GROWING(1) = ABS(Y(1) - Y(2)) .LT. TM54
+GROWING(ND) = ABS(Y(ND-1) - Y(ND)) .LT. TM54
 SHRINKING(1) = .FALSE.
 SHRINKING(ND) = .FALSE.
 DO I = 2, ND-1
    J = I+1
    K = I-1
-   IF ((ABS(Y(K)-Y(I)) .LT. TM76) .OR. (ABS(Y(I)-Y(J)) .LT. TM76)) THEN
+   IF ((ABS(Y(K)-Y(I)) .LT. TM54) .OR. (ABS(Y(I)-Y(J)) .LT. TM54)) THEN
       GROWING(I) = .TRUE.
       SHRINKING(I) = .FALSE.
    ELSE
@@ -323,21 +331,21 @@ IMPLICIT NONE
 REAL(KIND=R8), INTENT(IN) :: U0, U1, F0, F1, DF0, DF1, DDF0, DDF1
 LOGICAL :: IS_MONOTONE
 ! Local variables.
-REAL(KIND=R8) :: A, ALPHA, B, BETA, GAMMA, INV_SLOPE, SIGN, TAU, TEMP, W
-! Identify the direction of change of the function (increasing or decreasing).
-IF      (F1 .GT. F0+TM76) THEN; SIGN =  1.0_R8
-ELSE IF (F1 .LT. F0-TM76) THEN; SIGN = -1.0_R8
+REAL(KIND=R8) :: A, ALPHA, B, BETA, GAMMA, INV_SLOPE, SIGN, TEMP, W
+
 ! When the function values are flat, everything *must* be 0.
-ELSE
-   IS_MONOTONE = (ABS(DF0)  .LT. TM76) .AND. (ABS(DF1)  .LT. TM76) .AND. &
-                 (ABS(DDF0) .LT. TM76) .AND. (ABS(DDF1) .LT. TM76)
+IF (ABS(F1 - F0) .LT. TM54) THEN
+   IS_MONOTONE = (DF0  .EQ. 0.0_R8) .AND. (DF1  .EQ. 0.0_R8) .AND. &
+                 (DDF0 .EQ. 0.0_R8) .AND. (DDF1 .EQ. 0.0_R8)
    RETURN
+! Identify the direction of change of the function (increasing or decreasing).
+ELSE IF (F1 .GT. F0) THEN; SIGN =  1.0_R8
+ELSE IF (F1 .LT. F0) THEN; SIGN = -1.0_R8
 END IF
 W = U1 - U0
-INV_SLOPE = W / (F1 - F0)
 ! Determine which set of monotonicity conditions to use based on the
 ! assigned first derivative values at either end of the interval.
-IF ((ABS(DF0) .LT. TM76) .OR. (ABS(DF1) .LT. TM76)) THEN
+IF ((ABS(DF0) .LT. TM54) .OR. (ABS(DF1) .LT. TM54)) THEN
    ! Simplified monotone case, which redcues to a test of cubic
    ! positivity studied in
    ! 
@@ -352,21 +360,24 @@ IF ((ABS(DF0) .LT. TM76) .OR. (ABS(DF1) .LT. TM76)) THEN
    !    gamma >= delta - 2 * \sqrt{ alpha delta },
    ! 
    ! where alpha, beta, delta, and gamma are defined in the paper. The
-   ! equations that follow are the result of algebreic simplifications
-   ! of the terms as they are defined by Schmidt and He{\ss}.
+   ! equations that follow are the result of algebraic simplifications
+   ! of the terms as they are defined by Schmidt and He{\ss}. The
+   ! following conditions are constructed via algebraic
+   ! transformations on the original variable definitions.
    ! 
    ! The check for delta >= 0 has already been implicitly performed
    ! above, next check for alpha >= 0.
-   IF (SIGN*DDF1 .GT. SIGN*4.0_R8 * DF1 / W) THEN; IS_MONOTONE = .FALSE.
+   IF (SIGN*DDF1 .GT. SIGN*4.0_R8*DF1/W) THEN; IS_MONOTONE = .FALSE.
    ELSE
-      ! Now compute the value of 2 * \sqrt{ alpha delta }, store in TEMP.
-      TEMP = SIGN * 2.0_R8 * INV_SLOPE * SQRT(DF0 * (4*DF1 - DDF1*W))
+      ! Now compute a simplification of 2 * \sqrt{ alpha delta }, store in TEMP.
+      TEMP = DF0 * (4*DF1 - DDF1*W)
+      IF (TEMP .GT. 0.0_R8) TEMP = 2.0_R8 * SQRT(TEMP)
       ! Check for gamma >= delta - 2 * \sqrt{ alpha delta }
-      IF (TEMP + INV_SLOPE*(3.0_R8*DF0 + DDF0*W) .LT. 0.0_R8) THEN
+      IF (TEMP + SIGN*(3.0_R8*DF0 + DDF0*W) .LT. 0.0_R8) THEN
          IS_MONOTONE = .FALSE.
       ! Check for beta >= alpha - 2 * \sqrt{ alpha delta }
-      ELSE IF (60.0_R8 + 2.0_R8*TEMP + INV_SLOPE*((5.0_R8*DDF1 - 3.0_R8*DDF0) &
-         * W - 8.0_R8*(3.0_R8*DF0 + 4.0_R8*DF1)) .LT. 0.0_R8) THEN
+      ELSE IF (60.0_R8*(F1-F0)*SIGN - W*(SIGN*(24*DF0 + 32*DF1) - 2.0_R8*TEMP &
+           + W*SIGN*(3.0_R8*DDF0 - 5.0_R8*DDF1)) .LT. 0.0_R8) THEN
          IS_MONOTONE = .FALSE.
       ELSE; IS_MONOTONE = .TRUE.
       END IF
@@ -377,20 +388,29 @@ ELSE
    ! G. Ulrich and L. T. Watson, ``Positivity conditions for quartic
    ! polynomials'', {\sl SIAM J. Sci. Comput.}, 15 (1994) 528--544.
    ! 
-   ! The following terms A, B, TAU, ALPHA, GAMMA, and BETA all
-   ! directly correspond to notation defined by Ulrich and Watson.
-   A = INV_SLOPE * DF0
-   B = INV_SLOPE * DF1
-   ! Full monotone quintic case.
-   TAU = 24.0_R8 + 2.0_R8*SQRT(A*B) - 3.0_R8*(A+B)
-   IF (TAU .LT. 0.0_R8) THEN; IS_MONOTONE = .FALSE.
+   ! Monotonicity results when the following conditions hold:
+   !    tau > 0,
+   !    if (beta <= 6) then
+   !       alpha >= -(beta + 2) / 2,
+   !       gamma >= -(beta + 2) / 2,
+   !    else
+   !       alpha >= -2 sqrt(beta - 2),
+   !       gamma >= -2 sqrt(beta - 2),
+   ! 
+   ! where alpha, beta, gamma, and tau are defined in the paper. The
+   ! following conditions are the result of algebraic simplifications
+   ! of the terms as defined by Ulrich and Watson.
+   ! 
+   ! Check for tau > 0.
+   IF (SIGN*24.0_R8*(F0-F1) - W*(2.0_R8*SQRT(DF0*DF1) - SIGN * &
+        3.0_R8*(DF0+DF1)) .GE. 0.0_R8) THEN; IS_MONOTONE = .FALSE.
    ELSE
       ! Compute alpha, gamma, beta from theorems to determine monotonicity.
-      TEMP = (DF0 / DF1)**(0.75_R8)
-      ALPHA = TEMP * (4.0_R8*DF1 - DDF1*W) / DF0
-      GAMMA = (4.0_R8*DF0 + DDF0*W) / (TEMP * DF1)
-      BETA = (3.0_R8 * INV_SLOPE * ((DDF1-DDF0)*W - 8.0_R8*(DF0+DF1)) + &
-         60.0_R8) / (2.0 * SQRT(A*B))
+      TEMP = (DF0*DF1)**(0.75_R8)
+      ALPHA = SIGN * (4.0_R8*DF1 - DDF1*W) * SQRT(SIGN*DF0) / TEMP
+      GAMMA = SIGN * (4.0_R8*DF0 + DDF0*W) * SQRT(SIGN*DF1) / TEMP
+      BETA = SIGN * (3.0_R8 * ((DDF1-DDF0)*W - 8.0_R8*(DF0+DF1)) + &
+           60.0_R8 * (F1-F0) / W) / (2.0 * SQRT(DF0*DF1))
       IF (BETA .LE. 6.0_R8) THEN; TEMP = -(BETA + 2.0_R8) / 2.0_R8
       ELSE;                       TEMP = -2.0_R8 * SQRT(BETA - 2.0_R8)
       END IF

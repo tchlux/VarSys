@@ -1,0 +1,123 @@
+This is TeX, Version 3.14159265 (TeX Live 2019) (preloaded format=tex 2019.5.8)  11 JUN 2020 13:17
+**mqsi20
+(./mqsi20.tex (./eplain.tex
+{ifpdf}  2016/04/04 v3.0 Provides the ifpdf switch
+) (./colordvi.tex)
+\bbfam=\fam8
+ (./epsf.tex
+This is `epsf.tex' v2.7.4 <14 February 2011>
+\epsffilein=\read0
+\epsfframemargin=\dimen58
+\epsfframethickness=\dimen59
+\epsfrsize=\dimen60
+\epsftmp=\dimen61
+\epsftsize=\dimen62
+\epsfxsize=\dimen63
+\epsfysize=\dimen64
+\pspoints=\dimen65
+)
+\headdigit=\dimen66
+ (./mqsi20.aux)
+\openout0 = `mqsi20.aux'.
+
+ [1]
+(vt_logo.eps
+)
+246: Undefined label `fig:spline_demonstration'. [2]
+258: Undefined label `sec:monotone-cubic'.
+260: Undefined label `sec:monotone-quintic'.
+261: Undefined label `sec:results'. 263: Undefined label `sec:discussion'.
+263: Undefined label `sec:conclusion'. 299: Undefined label `fig:projection'.
+(vt_logo.eps
+)
+330: Undefined label `alg:check-monotone'.
+331: Undefined label `alg:make-monotone'.
+333: Undefined label `alg:monotone-spline'. [3] [4]
+Underfull \hbox (badness 10000) in paragraph at lines 364--366
+
+
+\hbox(0.0+0.0)x360.0
+.\glue(\rightskip) 0.0
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 366--369
+
+
+\hbox(0.0+0.0)x360.0
+.\glue(\rightskip) 0.0
+
+369: Undefined label `alg1-alpha'. 369: Undefined label `alg1-beta'.
+369: Undefined label `alg1-gamma'.
+369: Undefined label `alg1-simplified-true'.
+Underfull \hbox (badness 10000) in paragraph at lines 370--379
+
+
+\hbox(0.0+0.0)x360.0
+.\glue(\rightskip) 0.0
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 379--382
+
+
+\hbox(0.0+0.0)x360.0
+.\glue(\rightskip) 0.0
+
+[5]
+Underfull \hbox (badness 10000) in paragraph at lines 382--389
+
+
+\hbox(0.0+0.0)x360.0
+.\glue(\rightskip) 0.0
+
+389: Undefined label `alg1-abg'.
+Underfull \hbox (badness 10000) in paragraph at lines 389--397
+
+
+\hbox(0.0+0.0)x360.0
+.\glue(\rightskip) 0.0
+
+405: Undefined label `alg1-abg'. [6] 408: Undefined label `alg1-last'.
+426: Undefined label `step:create'.
+Overfull \hbox (9.1989pt too wide) in paragraph at lines 431--436
+\tenrm if $[]$changed$(\teni j\tenrm )[]  \teni Df\tenrm (\teni k[]\tenrm ) := 
+\teni Df\tenrm (\teni k[]\tenrm ) \tensy ^^@ []$\tenrm step[]size$(\teni j\tenr
+m )$ if $[]$changed$(\teni j \tenrm + 1)[] \teni Df\tenrm (\teni k[]\tenrm ) :=
+|
+
+\hbox(8.50005+3.50006)x360.0, glue set - 1.0
+.\tenrm i
+.\tenrm f
+.\glue 3.33333 plus 1.66666 minus 1.11111
+.\mathon
+.\hbox(8.50005+3.50006)x4.58336
+..\mathon
+..\hbox(8.50005+3.50006)x4.58336
+...\hbox(0.39998+11.60013)x4.58336, shifted -8.10007 []
+...\vbox(8.5+0.0)x0.0
+...\hbox(0.0+0.0)x0.0, shifted -2.5
+..\mathoff
+.etc.
+
+[7] 443: Undefined label `step:changed'. 443: Undefined label `step:requeue'.
+452: Undefined label `alg1-alpha'. 452: Undefined label `alg1-gamma'.
+452: Undefined label `alg1-simplified-true'.
+462: Undefined label `fig:cubic_quintic_sin'.
+462: Undefined label `fig:experiment_1'. [8]
+478: Undefined label `fig:experiment_2_distribution'.
+478: Undefined label `fig:experiment_2_results'.
+Overfull \hbox (28.37411pt too wide) in paragraph at lines 478--479
+\tenrm three Gaus-sian dis-tri-bu-tions and vi-su-al-ized in Fig-ure `\tentt fi
+g:experiment_2_distribution\tenrm '.|
+
+\hbox(6.94444+2.22223)x360.0, glue set - 1.0
+.\tenrm t
+.\tenrm h
+.\tenrm r
+.\tenrm e
+.\tenrm e
+.etc.
+
+[9]
+\@itemnum=\count49
+ (./mqsi20.bbl [10]) [11] )
+Output written on mqsi20.dvi (11 pages, 40188 bytes).

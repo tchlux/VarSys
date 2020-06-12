@@ -1,4 +1,0 @@
-- pre-compute differences between breakpoints for faster evaluation
-
-- write a separate fit routine that fits Bernstein polynomial coefficients
-- write a separate evaluation routine that evaluates Bernstein polynomial bases

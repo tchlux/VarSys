@@ -12,8 +12,8 @@ SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
 ! OUTPUT:
 !   T(1:NB*NCC+2*NCC) -- The nondecreasing real-valued locations
 !                        of the knots for the B-spline basis.
-!   BCOEF(1:NB*NCC) -- The coefficients for the B-splines
-!                      that define the interpolating spline.
+!   BCOEF(1:NB*NCC+1) -- The coefficients for the B-splines
+!                        that define the interpolating spline.
 !   INFO -- Integer representing the subroutine execution status:
 !       0    Successful execution.
 !       1    SIZE(XI) is less than 1.
@@ -45,7 +45,6 @@ SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
 !   of the linear system defining BCOEF is large, the computed interpolant
 !   may fail to accurately reproduce the data, indicated by INFO = 7.
 !   
-! 
 USE REAL_PRECISION, ONLY: R8
 IMPLICIT NONE
 REAL(KIND=R8), INTENT(IN),  DIMENSION(:)   :: XI
@@ -53,7 +52,7 @@ REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: FX
 REAL(KIND=R8), INTENT(OUT), DIMENSION(:)   :: T, BCOEF
 INTEGER, INTENT(OUT) :: INFO
 ! Local variables.
-INTEGER, DIMENSION(SIZE(BCOEF)) :: IPIV
+INTEGER, DIMENSION(SIZE(BCOEF)-1) :: IPIV
 REAL(KIND=R8), DIMENSION(1 + 3*(2*SIZE(FX,2)-1), SIZE(FX)) :: AB
 REAL(KIND=R8) :: MAX_ERROR
 INTEGER :: DEGREE, & ! Degree of B-spline.
@@ -93,11 +92,11 @@ DEGREE = K - 1
 INFO = 0
 
 ! Check the shape of incoming arrays.
-IF      (NB .LT. 1)             THEN; INFO = 1; RETURN
-ELSE IF (NSPL .LT. 1)           THEN; INFO = 2; RETURN
-ELSE IF (SIZE(FX,1) .NE. NB)    THEN; INFO = 3; RETURN
-ELSE IF (SIZE(T) .LT. NK)       THEN; INFO = 4; RETURN
-ELSE IF (SIZE(BCOEF) .LT. NSPL) THEN; INFO = 5; RETURN
+IF      (NB .LT. 1)               THEN; INFO = 1; RETURN
+ELSE IF (NSPL .LT. 1)             THEN; INFO = 2; RETURN
+ELSE IF (SIZE(FX,1) .NE. NB)      THEN; INFO = 3; RETURN
+ELSE IF (SIZE(T) .LT. NK)         THEN; INFO = 4; RETURN
+ELSE IF (SIZE(BCOEF) .LT. NSPL+1) THEN; INFO = 5; RETURN
 END IF
 ! Verify that breakpoints are increasing.
 DO I = 1, NB - 1
@@ -114,8 +113,8 @@ END DO
 ! Assign the last knot to exist a small step outside the supported
 ! interval to ensure the B-spline basis functions are nonzero at the
 ! rightmost breakpoint.
-T(NK-DEGREE:NK) = MAX( XI(NB) + ABS(XI(NB))*SQRT(EPSILON(XI(1))),  &
-                       XI(NB) + SQRT(EPSILON(XI(1))) )
+T(NK-DEGREE:NK) = MAX( XI(NB) + ABS(XI(NB))*SQRT(EPSILON(XI(NB))),  &
+                       XI(NB) + SQRT(EPSILON(XI(NB))) )
 
 ! The next block of code evaluates each B-spline and it's
 ! derivatives at all breakpoints. The first and last elements of
@@ -185,6 +184,9 @@ END DO
 DO I = 1, NCC
    BCOEF(I:NSPL:NCC) = FX(:,I)
 END DO
+I = NSPL+1
+BCOEF(I) = MINVAL(FX(:,1))
+BCOEF(1:NSPL:NCC) = BCOEF(1:NSPL:NCC) - BCOEF(I)
 ! Call the LAPACK subroutine to solve the banded linear system.
 CALL DGBSV(NSPL, DEGREE, DEGREE, 1, AB, SIZE(AB,1), IPIV, BCOEF, NSPL, INFO)
 ! Check for errors in the execution of DGBSV, (this should not happen).
@@ -217,13 +219,13 @@ SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
 !   T(1:NSPL+2*NCC) -- The nondecreasing real-valued locations of
 !      the knots for the underlying B-splines, where the spline
 !      has NCC - 1 continuous derivatives.
-!   BCOEF(1:NSPL) -- The coefficients of the B-spline basis functions
+!   BCOEF(1:NSPL+1) -- The coefficients of the B-spline basis functions
 !      defining this interpolating spline.
 ! 
 ! INPUT/OUTPUT:
 !   XY(1:M) -- On input, the locations at which the spline is to be
-!      evaluated; on output, holds the value of the spline with knots T and
-!      coefficients BCOEF evaluated at the given locations.
+!      evaluated; on output, holds the value of the spline with knots T
+!      and coefficients BCOEF evaluated at the given locations.
 ! 
 ! OUTPUT:
 !   INFO -- Integer representing subroutine exeuction status.
@@ -252,7 +254,7 @@ INTEGER, INTENT(OUT) :: INFO
 INTEGER, INTENT(IN), OPTIONAL :: D
 ! Local variables.
 INTEGER :: DERIV, I, K, N, NSPL
-REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(BCOEF)) :: BIATX
+REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(BCOEF)-1) :: BIATX
 INTERFACE
    SUBROUTINE EVAL_BSPLINE(T, XY, D)
      USE REAL_PRECISION, ONLY: R8
@@ -261,9 +263,8 @@ INTERFACE
      INTEGER, INTENT(IN), OPTIONAL :: D
    END SUBROUTINE EVAL_BSPLINE
 END INTERFACE
-
 N = SIZE(T) ! Number of knots.
-NSPL = SIZE(BCOEF) ! Number of spline basis functions (B-splines).
+NSPL = SIZE(BCOEF)-1 ! Number of spline basis functions (B-splines).
 ! Check for size-related errors.
 IF ( ((N-NSPL)/2 .LT. 1) .OR. (T(1) .EQ. T(N)) .OR. (MOD(N-NSPL,2) .NE. 0) )&
   THEN; INFO = 1; RETURN; ENDIF
@@ -283,8 +284,14 @@ DO I = 1, NSPL
    ! Compute Gram matrix.
    CALL EVAL_BSPLINE(T(I:I+K), BIATX(:,I), D=DERIV)
 END DO
-! Evaluate interpolant at all points in XY(:), returning values in XY(:).
-XY(:) = MATMUL(BIATX(:,:), BCOEF(:))
+! Incorporate the "shift" coefficient into function / integral evaluations
+! and evaluate the interpolant at all points in XY(:), returning values in XY(:).
+IF (D .EQ. 0) THEN
+   XY(:) = MATMUL(BIATX(:,:), BCOEF(1:NSPL)) + BCOEF(NSPL+1)
+ELSE IF (D .LT. 0) THEN
+   XY(:) = MATMUL(BIATX(:,:), BCOEF(1:NSPL)) + BCOEF(NSPL+1)*MAX(0.0_R8,XY(:)-T(1))
+ELSE; XY(:) = MATMUL(BIATX(:,:), BCOEF(1:NSPL))
+END IF
 INFO = 0  ! Set INFO to indicate successful execution.
 
 END SUBROUTINE EVAL_SPLINE

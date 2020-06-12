@@ -53,19 +53,27 @@ if TEST_MQSI:
     # Get the knots and values for the test.
     values = FUNC(knots)
 
+    # -------------------------------------------------------------
     knots = [i*(2**(-26)) for i in range(18)]
     values = [0, 1, 1, 1, 0, 20, 19, 18, 17, 0, 0, 3, 0, 1, 6, 16, 16.1, 1 ]
-    # 
-    knots = list(range(10))
-    values = [1.0, 1.000000001, .99999999,  .99999998]
-    e = 2**(-26)
-    values = [-10.0, 1, 1+e, 1+2*e, 10]
-    # 
-    # huge = 1.7976931348623157E+308
-    # values = 
-    # values = [1.0, 1.0000000001, .999999999,  .999999998]
-
     knots = knots[:len(values)]
+
+    # # -------------------------------------------------------------
+    # knots = list(range(10))
+    # values = [1.0, 1.000000001, .99999999,  .99999998]
+    # knots = knots[:len(values)]
+
+    # # -------------------------------------------------------------
+    # e = 2**(-26)
+    # knots = list(range(10))
+    # values = [-10.0, 1, 1+e, 1+2*e, 10]
+    # knots = knots[:len(values)]
+
+    # # -------------------------------------------------------------
+    # huge = 1.7976931348623157E+308
+    # values = [1.0, 1.0000000001, .999999999,  .999999998]
+    # knots = knots[:len(values)]
+
 
     knots = np.asfortranarray(knots, dtype=float)
     values = np.asfortranarray(values, dtype=float)
@@ -80,7 +88,7 @@ if TEST_MQSI:
     t = Timer(); t.start()
     nd = len(knots)
     sk = np.ones(3*nd + 6)
-    sc = np.ones(3*nd)
+    sc = np.ones(3*nd+1)
     info = 5
     while (info == 5):
         sk, sc, info = splines.mqsi(knots, values, sk, sc)
@@ -99,9 +107,9 @@ if TEST_MQSI:
     # print()
 
     # --------------------------------------------------------
-    from search_monotone import monotone_quintic_spline
+    from monotone_quintic import monotone_quintic_spline
     t.start()
-    truth = monotone_quintic_spline(knots, values, exact=True)
+    truth = monotone_quintic_spline(knots, values)
     t.stop() ; print(f"Python time: {t()}s")
     # --------------------------------------------------------
     # for v in truth.values:
@@ -114,7 +122,7 @@ if TEST_MQSI:
         padding = 0 #.1
         x = [knots[0]]
         for i in range(len(knots) -1):
-            x += list(np.linspace(knots[i], knots[i+1], 20))[1:]
+            x += list(np.linspace(knots[i], knots[i+1], 100))[1:]
         p = Plot(NAME)
         x = np.array(x, dtype=float)
         if SHOW_DERIVATIVES:
@@ -163,7 +171,7 @@ if TEST_SPLINE:
         nb = len(values)
         ncc = len(values[0])
         sk = np.ones(nb*ncc + 2*ncc)
-        sc = np.ones(nb*ncc)
+        sc = np.ones(nb*ncc+1)
         sk, sc, info = splines.fit_spline(knots, values, sk, sc)
         print("info: ",info)
         print()
@@ -221,7 +229,7 @@ if TEST_SPLINE:
         nb = len(values)
         ncc = len(values[0])
         sk = np.ones(nb*ncc + 2*ncc)
-        sc = np.ones(nb*ncc)
+        sc = np.ones(nb*ncc+1)
         sk, sc, info = splines.fit_spline(knots, values, sk, sc)
 
         # sc *= -1

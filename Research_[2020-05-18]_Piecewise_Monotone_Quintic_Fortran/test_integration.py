@@ -25,7 +25,7 @@ def exact(l):
 # f = Polynomial([Fraction(1),Fraction(0),Fraction(0),Fraction(0)])
 # f = Polynomial([Fraction(1),Fraction(0)])
 interval = [0,1]
-f = Spline(interval, exact([[1],[1]]))
+f = Spline(interval, exact([[1,-1],[1,1]]))
 g1 = f.integral(c=0)
 g2 = g1.integral(c=0)
 g3 = g2.integral(c=0)
@@ -49,7 +49,7 @@ print('y: ', y.shape)
 x = np.array(x, dtype=float)
 y = np.array(y, dtype=float, order='F')
 sk = np.ones(nb*ncc + 2*ncc, dtype=float)
-sc = np.ones(nb*ncc, dtype=float)
+sc = np.ones(nb*ncc+1, dtype=float)
 sk, sc, info = splines.fit_spline(x, y, sk, sc)
 
 print("sk:   ", list(sk))

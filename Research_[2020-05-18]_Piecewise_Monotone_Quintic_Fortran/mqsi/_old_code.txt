@@ -1,0 +1,60 @@
+! IF (IS_MONOTONE) THEN
+!    TEMP2(:) = (/ U0, U1 /)
+!    TEMP23(1,:) = (/ F0, DF0, DDF0 /)
+!    TEMP23(2,:) = (/ F1, DF1, DDF1 /)
+!    ! Verify that the function is in fact nonmonotone on the interval.
+!    CALL FIT_SPLINE(TEMP2, TEMP23, TEMP12, TEMP6, TEMPINFO)
+!    ! Evaluate the derivative of this spline at 100 points on the interval.
+!    IF (TEMPINFO .EQ. 0) THEN
+!       TEMPINFO = SIZE(TEMP100IN)
+!       DO TEMPI = 1, TEMPINFO
+!          TEMP100IN(TEMPI) = REAL(TEMPI-1, R8) / REAL(TEMPINFO-1, R8)
+!       END DO
+!       TEMP100IN(:) = U0 + TEMP100IN(:) * (U1 - U0)
+!       TEMP100OUT(:) = TEMP100IN(:)
+!       CALL EVAL_SPLINE(TEMP12, TEMP6, TEMP100OUT, TEMPINFO, D=1)
+!       ! Print out an error if the interval values are clearly not monotone.
+!       IF (TEMPINFO .EQ. 0) THEN
+!          TEMPMAX = MAXVAL(TEMP100OUT)
+!          TEMPMIN = MINVAL(TEMP100OUT)
+!          IF (((SIGN*TEMPMAX .GE. -SQRT(EPSILON(1.0_R8))) .NEQV. IS_MONOTONE) .OR. &
+!              ((SIGN*TEMPMIN .GE. -SQRT(EPSILON(1.0_R8))) .NEQV. IS_MONOTONE)) THEN
+!             WRITE (*,*) ''
+!             WRITE (*,*) '------------------------------------------------------------------'
+!             WRITE (*,*) "The result of IS_MONOTONE does not agree with an empirical sample."
+!             WRITE (*,*) "IS_MONOTONE: ", IS_MONOTONE
+!             WRITE (*,*) "  SIGN: ", SIGN
+!             WRITE (*,*) "    U0: ", U0
+!             WRITE (*,*) "    U1: ", U1
+!             WRITE (*,*) "    F0: ", F0
+!             WRITE (*,*) "   DF0: ", DF0
+!             WRITE (*,*) "  DDF0: ", DDF0
+!             WRITE (*,*) "    F1: ", F1
+!             WRITE (*,*) "   DF1: ", DF1
+!             WRITE (*,*) "  DDF1: ", DDF1
+!             WRITE (*,*) ''
+!             WRITE (*,*) "  SK:     ", TEMP12
+!             WRITE (*,*) "  SC:     ", TEMP6
+!             WRITE (*,*) "  PTS:    ", TEMP100IN
+!             WRITE (*,*) "  VALS:   ", TEMP100OUT
+!             WRITE (*,*) "  MINPT = ", TEMP100IN(MINLOC(TEMP100OUT))
+!             WRITE (*,*) "  MAXPT = ", TEMP100IN(MAXLOC(TEMP100OUT))
+!             WRITE (*,*) "  MINVAL: ", TEMPMIN
+!             WRITE (*,*) "  MAXVAL: ", TEMPMAX
+!             WRITE (*,*) ''
+!             ! FLUSH(OUTPUT_UNIT)
+!             ! ERROR STOP
+!          END IF
+!       END IF
+!    END IF
+! END IF
+
+
+! ! Temporary variables introduced for verifying monotonicity check.
+! INTEGER, PARAMETER :: TEMPSIZE = 3
+! REAL(KIND=R8) :: TEMP2(2), TEMP12(12), TEMP6(6), TEMP100IN(TEMPSIZE), &
+!      TEMP100OUT(TEMPSIZE), TEMP23(2,3), TEMPMAX, TEMPMIN
+! INTEGER :: TEMPINFO, TEMPI
+
+
+

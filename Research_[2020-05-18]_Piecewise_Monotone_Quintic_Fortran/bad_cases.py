@@ -3,6 +3,7 @@
 # to require millions of steps. I had to change the procedure for this
 # to work well.
 
+import numpy as np
 x = np.array([0.        , 0.00787402, 0.01574803, 0.02362205, 0.03149606,
        0.03937008, 0.04724409, 0.05511811, 0.06299213, 0.07086614,
        0.07874016, 0.08661417, 0.09448819, 0.1023622 , 0.11023622,
@@ -56,6 +57,20 @@ y = np.array([0.84428838, 0.5316782 , 0.84361549, 0.3297786 , 0.35008627,
        0.87479339, 0.71821783, 0.13031115, 0.76900987, 0.1506704 ,
        0.14867378, 0.29046   , 0.74657833])
 
-print("Fitting PMQSI..")
-sk, sc, info = splines.pmqsi(x, y)
-exit()
+
+# --------------------------------------------------------------------
+#  Construct the monotone quintic spline interpolant.
+# 
+from monotone_quintic import monotone_quintic_spline
+f = monotone_quintic_spline(x, y)
+
+# --------------------------------------------------------------------
+#  Plot the resultings monotone quintic spline interpolant.
+# 
+from util.plot import Plot
+p = Plot()
+p.add("points", x, y)
+x = sum((list(np.linspace(x[i],x[i+1],10)) for i in range(len(x)-1)),[])
+y = list(map(f,x))
+p.add("Q", x, y, mode='lines')
+p.show()

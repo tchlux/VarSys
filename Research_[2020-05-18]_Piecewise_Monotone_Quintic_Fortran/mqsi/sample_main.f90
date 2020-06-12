@@ -30,14 +30,14 @@ REAL(KIND=R8), DIMENSION(ND) :: &
             19.0_R8, 18.0_R8, 17.0_R8, 0.0_R8, 0.0_R8, 3.0_R8, &
             0.0_R8, 1.0_R8, 6.0_R8, 16.0_R8, 16.1_R8, 1.0_R8 /)
 ! Definition of holder for spline knots, coefficients, and temporary data.
-REAL(KIND=R8) :: SC(1:3*ND), SK(1:3*ND+6), U(ND)
+REAL(KIND=R8) :: SC(1:3*ND+1), SK(1:3*ND+6), U(ND)
 ! Loop index and info integer for checking exeuction status.
 INTEGER :: I, INFO
 ! Initialize "X" values.
 DO I = 1, ND ; X(I) = REAL(I, KIND=R8) ; END DO
 ! ------------------------------------------------------------------------------
 !                    Optional rescaling operations 
-! X(:) = X(:) * (2.0 * SQRT(EPSILON(1.0_R8))) ! Low separation X values.
+X(:) = X(:) * (2.0 * SQRT(EPSILON(1.0_R8))) ! Low separation X values.
 ! X(:) = X(:) * (10.0_R8**38 / (MAXVAL(X(:)) * 2.0_R8)) ! High separation X values.
 ! Y(:) = Y(:) * (10.0_R8**(-38)) ! Low separation Y values.
 ! Y(:) = Y(:) * (10.0_R8**38 / (MAXVAL(Y(:)) * 2.0_R8)) ! High separation Y values.
@@ -51,7 +51,7 @@ IF (INFO .NE. 0) THEN; WRITE (*,"('MQSI error ',I3)") INFO; END IF
 ! Copy the "evaluation points" into the input/output buffer.
 U(:) = X(:)
 ! Evaluate the spline at all points (result is updated in-place in U).
-CALL EVAL_SPLINE(SK, SC, U, INFO)
+CALL EVAL_SPLINE(SK, SC, U, INFO, D=0)
 IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; END IF
 ! Show the evaluations.
 WRITE (*,"('  Q(X): ',100ES10.2)") U(:)
@@ -67,7 +67,7 @@ IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; END IF
 WRITE (*,"('DDQ(X): ',100ES10.2)") U(:)
 ! Show the error of the values.
 U(:) = X(:)
-CALL EVAL_SPLINE(SK, SC, U, INFO)
+CALL EVAL_SPLINE(SK, SC, U, INFO, D=0)
 IF (INFO .NE. 0) THEN; WRITE (*,"('EVAL_SPLINE error ',I3)") INFO; END IF
 WRITE (*,*) ''
 WRITE (*,"('Machine precision:  ',ES18.10)") EPSILON(1.0_R8)
