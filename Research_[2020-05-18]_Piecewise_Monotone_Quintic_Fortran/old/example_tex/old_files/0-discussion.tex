@@ -1,0 +1,22 @@
+\heading{4. DISCUSSION}
+
+The monotone quintic spline interpolant provides a distinct increase
+in accuracy over the monotone cubic variant. The computational
+complexity of this algorithm is identical to the existing cubic method
+and the cost of evaluating the spline after construction is
+unchanged. While the number of computations required per interval has
+increased, the number of points required to achieve the same level of
+accuracy has decreased. In the present state, the algorithm for
+enforcing monotonicity on a spline is not as trivially parallel as the
+cubic algorithm, however it can still be parallelized. The checks for
+monotonicity across all intervals are independent and the monotonicity
+adjustments could be computed independently and intelligently merged
+with minor changes to the serial algorithm.
+
+Acknowledging that the algorithm for constructing a monotone quintic
+spline interpolant is slightly more expensive than the cubic case,
+gains in accuracy or decreased necessary number of points are often
+worth the computational effort. In practice the costs of spline
+interpolation are often dominated by evaluation rather than
+construction, and the increased accuracy is afforded for a negligible
+increase in computational cost.

@@ -136,7 +136,7 @@ FIT_TIMES(:,1,1) = SUM(SUM(FIT_TIMES(:,:,:), DIM=3), DIM=2) / &
      REAL(SIZE(FIT_TIMES,2) * SIZE(FIT_TIMES,3))
 ! Print out the results.
 WRITE (*,*) ''
-WRITE (*,"(' Fit time for MQSI of ',I5,' points:')") N
+WRITE (*,"(' Fit time percentiles for MQSI of ',I5,' points:')") N
 J = SIZE(EVAL_TIMES,1)
 DO I = 1, J
   IF (I .EQ. 1) THEN
@@ -242,7 +242,7 @@ LOGICAL :: PASSES
 ! -------------------------------------------------
 !               Local variables
 
-REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND+1), &
+REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND), &
      T(TRIALS), U(ND), X(ND), Y(ND), Z(TRIALS)
 INTEGER :: I, INFO, J
 INTEGER, DIMENSION(:), ALLOCATABLE :: SEED
@@ -304,7 +304,7 @@ INTEGER, INTENT(IN) :: ND
 LOGICAL :: PASSES
 ! -------------------------------------------------
 !               Local variables
-REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND+1), &
+REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND), &
      T(TRIALS), U(ND), X(ND), Y(ND), Z(TRIALS)
 INTEGER :: I, INFO, J
 INTEGER, DIMENSION(:), ALLOCATABLE :: SEED
@@ -377,7 +377,7 @@ INTERFACE
    REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: Y
  END SUBROUTINE F
 END INTERFACE
-REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND+1), &
+REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND), &
      T(TRIALS), U(ND), X(ND), Y(ND), Z(TRIALS)
 INTEGER :: I, INFO, J
 INTEGER, DIMENSION(:), ALLOCATABLE :: SEED
@@ -458,7 +458,7 @@ INTERFACE
    REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: Y
  END SUBROUTINE F
 END INTERFACE
-REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND+1), &
+REAL(KIND=R8) :: MAX_ERROR, SK(1:3*ND+6), SC(1:3*ND), &
      T(TRIALS), U(ND), X(ND), Y(ND), Z(TRIALS)
 REAL :: FINISH_TIME_SEC, START_TIME_SEC
 INTEGER :: I, INFO, J
@@ -545,7 +545,7 @@ SUBROUTINE PIECEWISE_POLYNOMIAL(X, Y)
   REAL(KIND=R8), DIMENSION(1:ND) :: XI
   REAL(KIND=R8), DIMENSION(1:ND,1:2) :: FX
   REAL(KIND=R8), DIMENSION(1:ND*2+2*2) :: SK
-  REAL(KIND=R8), DIMENSION(1:ND*2+1) :: SC
+  REAL(KIND=R8), DIMENSION(1:ND*2) :: SC
   INTEGER :: I, INFO
   !   xi               f(x)      Df(x)  
   FX(1, 1:2)  = (/  0.0_R8,  1.0_R8 /)

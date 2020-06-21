@@ -1,3 +1,9 @@
+# import og_fmodpy as fmodpy
+# splines = fmodpy.fimport("splines.f90", verbose=True,
+#                          autocompile_extra_files=True,
+#                          module_link_args=["-lblas", "-llapack"])
+
+
 ! IF (IS_MONOTONE) THEN
 !    TEMP2(:) = (/ U0, U1 /)
 !    TEMP23(1,:) = (/ F0, DF0, DDF0 /)

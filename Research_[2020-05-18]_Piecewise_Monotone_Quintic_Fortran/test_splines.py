@@ -1,16 +1,8 @@
 
-
-# import og_fmodpy as fmodpy
-# splines = fmodpy.fimport("splines.f90", verbose=True,
-#                          autocompile_extra_files=True,
-#                          module_link_args=["-lblas", "-llapack"])
-
 import fmodpy
-
 bspline = fmodpy.fimport("mqsi/EVAL_BSPLINE.f90")
 spline = fmodpy.fimport("mqsi/SPLINE.f90")
 mqsi = fmodpy.fimport("mqsi/MQSI.f90")
-
 # Define an object that has all of the expected functions.
 class splines:
     mqsi = mqsi.mqsi
@@ -18,21 +10,24 @@ class splines:
     eval_spline = spline.eval_spline
     eval_bspline = bspline.eval_bspline
 
+
 TEST_MQSI = True
 TEST_SPLINE = False
 TEST_B_SPLINE = False
+
 
 if TEST_MQSI:
     from test_points import TESTS
     from util.system import Timer
     import numpy as np
-    SHOW_DERIVATIVES = True
+    SHOW_DERIVATIVES = False
     VISUALIZE_TEST = True
     RANDOM = False
-    NUM_KNOTS = 18
+    NUM_KNOTS = 10
+    NUM_PER_INTERVAL = 20
     # NUM_KNOTS *= 2
-    np.random.seed(0)
-    NAME = sorted(TESTS)[1]
+    np.random.seed(2)
+    NAME = sorted(TESTS)[3]
     FUNC = TESTS[NAME]
     print('-'*70)
     print("Possible tests:")
@@ -42,7 +37,6 @@ if TEST_MQSI:
 
     # Generate some random knots and values.
     if RANDOM:
-        np.random.seed(0)
         knots = np.random.random(size=(NUM_KNOTS))
         knots.sort()
     else:
@@ -53,10 +47,10 @@ if TEST_MQSI:
     # Get the knots and values for the test.
     values = FUNC(knots)
 
-    # -------------------------------------------------------------
-    knots = [i*(2**(-26)) for i in range(18)]
-    values = [0, 1, 1, 1, 0, 20, 19, 18, 17, 0, 0, 3, 0, 1, 6, 16, 16.1, 1 ]
-    knots = knots[:len(values)]
+    # # -------------------------------------------------------------
+    # knots = [i*(2**(-26)) for i in range(18)]
+    # values = [0, 1, 1, 1, 0, 20, 19, 18, 17, 0, 0, 3, 0, 1, 6, 16, 16.1, 1 ]
+    # knots = knots[:len(values)]
 
     # # -------------------------------------------------------------
     # knots = list(range(10))
@@ -78,6 +72,10 @@ if TEST_MQSI:
     knots = np.asfortranarray(knots, dtype=float)
     values = np.asfortranarray(values, dtype=float)
 
+    values = values - min(values)
+
+    knots *= 10.0**(20)
+
     print()
     print(f"knots ({len(knots)}):\n  {repr(knots)}")
     print()
@@ -88,12 +86,12 @@ if TEST_MQSI:
     t = Timer(); t.start()
     nd = len(knots)
     sk = np.ones(3*nd + 6)
-    sc = np.ones(3*nd+1)
-    info = 5
-    while (info == 5):
-        sk, sc, info = splines.mqsi(knots, values, sk, sc)
-        if (info != 5): break
-        knots *= (1 + 2**(-26))
+    sc = np.ones(3*nd)
+    info = 6
+    while (info == 6):
+        _, sk, sc, info = splines.mqsi(knots, values, sk, sc)
+        if (info != 6): break
+        knots /= (1 + 2**(-26))
     t.stop()
     print("info: ",info)
     print(f"Fortran time: {t()}s")
@@ -122,7 +120,7 @@ if TEST_MQSI:
         padding = 0 #.1
         x = [knots[0]]
         for i in range(len(knots) -1):
-            x += list(np.linspace(knots[i], knots[i+1], 100))[1:]
+            x += list(np.linspace(knots[i], knots[i+1], NUM_PER_INTERVAL))[1:]
         p = Plot(NAME)
         x = np.array(x, dtype=float)
         if SHOW_DERIVATIVES:
@@ -171,7 +169,7 @@ if TEST_SPLINE:
         nb = len(values)
         ncc = len(values[0])
         sk = np.ones(nb*ncc + 2*ncc)
-        sc = np.ones(nb*ncc+1)
+        sc = np.ones(nb*ncc)
         sk, sc, info = splines.fit_spline(knots, values, sk, sc)
         print("info: ",info)
         print()
@@ -229,7 +227,7 @@ if TEST_SPLINE:
         nb = len(values)
         ncc = len(values[0])
         sk = np.ones(nb*ncc + 2*ncc)
-        sc = np.ones(nb*ncc+1)
+        sc = np.ones(nb*ncc)
         sk, sc, info = splines.fit_spline(knots, values, sk, sc)
 
         # sc *= -1

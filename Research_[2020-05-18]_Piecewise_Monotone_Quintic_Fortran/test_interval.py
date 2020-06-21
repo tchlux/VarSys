@@ -25,7 +25,7 @@ F0   =    3.4295043674554457E+021
 DF0  =   -7.3547132703516163E-002
 DDF0 =   -4.7637407608192277E-023
 F1   =    3.3049635425868652E+021
-DF1  =  -0.14222222222201797     
+DF1  =   -0.14222222222201797     
 DDF1 =   -4.1453609064447915E-023
 
 # ====================================================================
@@ -42,10 +42,8 @@ DDF1 =   -4.1453609064447915E-023
 # ====================================================================
 #                        Normal value cases.
 
-
-
 # Use Python to construct an exact quintic piece that matches this data.
-from polynomial import Spline
+from polynomial import Spline, Polynomial
 from fraction import Fraction
 def exact(l):
     try: return [exact(v) for v in l]
@@ -55,6 +53,7 @@ x = [U0, U1]
 fx = [[F0, DF0, DDF0], [F1, DF1, DDF1]]
 f = Spline(exact(x), exact(fx))
 df = f.derivative()
+print(Polynomial(f._functions[0]))
 
 # Use Fortran to construct a quintic piece thata matches this data.
 
@@ -68,14 +67,16 @@ class splines:
 
 nb, ncc = 2, 3
 sk = np.ones(nb*ncc + 2*ncc)
-sc = np.ones(nb*ncc+1)
+sc = np.ones(nb*ncc)
 x = np.asarray(x, dtype=float, order='f')
 fx = np.asarray(fx, dtype=float, order='f')
+shift = np.min(fx[:,0])
+fx[:,0] -= shift
 sk, sc, info = splines.fit_spline(x, fx, sk, sc)
+sc += shift
 print('info:', info)
 print('sk:', sk)
 print('sc:', sc)
-
 # MAXPT =     1.2116159427162417E+031
 # MINPT =     2.8397248657411912E+030
 # print("max df:", float(df(MAXPT)))
@@ -89,9 +90,9 @@ print(max(abs(np.array(df(x.copy()),dtype=float) -
               splines.eval_spline(sk,sc,x.copy(),d=1)[0])))
 # exit()
 
-p.add("Py f", x, f(x.copy()), mode='lines', group=0)
-p.add("Py df", x, df(x.copy()), mode='lines', group=1)
-p.add("Py ddf", x, df.derivative()(x.copy()), mode='lines', group=2)
+p.add("Exact f", x, f(x.copy()), mode='lines', group=0)
+p.add("Exact df", x, df(x.copy()), mode='lines', group=1)
+p.add("Exact ddf", x, df.derivative()(x.copy()), mode='lines', group=2)
 
 p.add("F f", x, splines.eval_spline(sk,sc,x.copy(),d=0)[0], mode='lines', color=0, dash='dash', group=0)
 p.add("F df", x, splines.eval_spline(sk,sc,x.copy(),d=1)[0], mode='lines', color=1, dash='dash', group=1)

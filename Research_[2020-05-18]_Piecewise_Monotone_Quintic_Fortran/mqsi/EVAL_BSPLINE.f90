@@ -1,8 +1,9 @@
 SUBROUTINE EVAL_BSPLINE(T, XY, D)
-! Subroutine for evaluating a B-spline with provided knot sequence.
+! Subroutine for evaluating a B-spline with provided knot sequence, T. For
+! sake of speed, this routine DOES NOT DO ERROR CHECKING. Use with caution.
 ! 
 ! INPUT:
-!   T(1:N) -- The nondecreasing sequence of knots for the B-spline.
+!   T(1:N) -- The nondecreasing sequence of N knots for the B-spline.
 ! 
 ! INPUT / OUTPUT:
 !   XY(1:M) -- On input, the locations at which the B-spline is evaluated;
@@ -28,8 +29,8 @@ SUBROUTINE EVAL_BSPLINE(T, XY, D)
 !   B_{I,J}(X) = ------------- B_{I,J-1}(X) + ------------- B_{I+1,J-1}(X).
 !                T(I+J-1)-T(I)                T(I+J)-T(I+1)                 
 !                                                                   
-!   All of the intermediate steps (J) are stored in a single block
-!   of memory that is reused for each step.
+!   All the intermediate steps (J) are stored in a single block of
+!   memory that is reused for each step.
 ! 
 !   The computation of the integral of the B-spline proceeds from
 !   the above formula one integration step at a time by adding a
@@ -51,23 +52,26 @@ SUBROUTINE EVAL_BSPLINE(T, XY, D)
 ! 
 USE REAL_PRECISION, ONLY: R8
 IMPLICIT NONE
+! Arguments.
 REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: T
 REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
 INTEGER, INTENT(IN), OPTIONAL :: D
 ! Local variables.
-INTEGER :: DERIV, I, J, K, L, N
+INTEGER :: I, J ! Index varaibes.
+INTEGER :: DERIV, K, L, N
 REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(T)) :: BIATX
 REAL(KIND=R8) :: LEFT, RIGHT, TN
 ! Assign the local value of the optional derivative "D" argument.
 IF (PRESENT(D)) THEN; DERIV = D; ELSE; DERIV = 0; END IF
-! Collect local variables for notational convenience.
+! Set local variables that are used for notational convenience.
 N = SIZE(T) ! Number of knots.
 K = N - 1 ! Order of B-spline.
 L = K - 1 ! One less than the order of the B-spline.
 TN = T(N) ! Value of the last knot, T(N).
 
 ! If this is a large enough derivative, we know it is zero everywhere.
-IF (DERIV+1 .GE. N) THEN; XY(:) = 0.0_R8; RETURN
+IF (DERIV+1 .GE. N) THEN
+   XY(:) = 0.0_R8; RETURN
 
 ! ---------------- Performing standard evaluation ------------------
 ! This is a standard B-spline with multiple unique knots, right continuous.
@@ -83,7 +87,7 @@ ELSE
       END WHERE
    END DO first_b_spline
 END IF
-! Compute the remainder of B-spline by building up from the step function.
+! Compute the remainder of B-spline by building up from the order one B-splines.
 ! Omit the final steps of this computation for derivatives.
 compute_spline : DO I = 2, K-MAX(DERIV,0)
    ! Cycle over each knot accumulating the values for the recurrence.
@@ -110,11 +114,11 @@ END DO compute_spline
 
 ! -------------------- Performing integration ----------------------
 int_or_diff : IF (DERIV .LT. 0) THEN
-! Integrals will be 1 for TN <= X(J) < \infty.
+! Integrals will be 1 for TN <= X(J) < infinity.
 WHERE (TN .LE. XY(:))
    BIATX(:,N) = 1.0_R8
 END WHERE
-! Loop through starting at the back, raising the order of all
+! The loop starts at the back, raising the order of all
 ! constituents to match the order of the first.
 raise_order : DO I = 1, L
    DO J = N-I, K
@@ -166,7 +170,7 @@ BIATX(:,1) = BIATX(:,1) * (TN - T(1))
 
 ! ------------------ Performing differentiation --------------------
 ELSE IF (DERIV .GT. 0) THEN
-! Compute the derivative of the B-spline (if D > 0).
+! Compute a derivative of the B-spline (if D > 0).
 compute_derivative : DO J = N-DERIV, K
    ! Cycle over each knot, following the same structure with the
    ! derivative computing relation instead of the B-spline one.
