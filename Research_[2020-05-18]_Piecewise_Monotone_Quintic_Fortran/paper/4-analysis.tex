@@ -1,0 +1,12 @@
+\heading{4. COMPLEXITY AND SENSITIVITY}
+
+Both Algorithms 1 and 2 have ${\cal O}(1)$ runtime. Given a fixed
+schedule for shrinking derivative values, Algorithm 3 has a ${\cal
+  O}(n)$ runtime for $n$ data points. In execution, the majority of
+time is spent solving the banded linear system of equations for
+B-spline coefficients. The quadratic facet model produces a unique
+sensitivity to input perturbation, as small changes in input may cause
+data points to be associated with different local quadratic
+interpolants. While this makes the technique susceptible to random
+perturbations, it generally produces high quality monotone quintic
+splines and is preferred for that reason.

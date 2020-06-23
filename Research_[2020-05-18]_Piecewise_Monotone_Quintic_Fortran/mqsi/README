@@ -1,11 +1,12 @@
          MQSI: Monotone Quintic Spline Interpolation
 
-The package MQSI is a collection of Fortran 1995 routines for the construction
-of a C^2 monotone quintic spline interpolant Q(X) to data (X(I),F(X(I)), 
-with the property that Q(X) is monotone increasing (decreasing) over exactly
-the same intervals [X(I), X(J)] as the data F(X(.)) is monotone increasing
-(decreasing). All routines use the module REAL_PRECISION from HOMPACK90
-(ACM TOMS Algorithm 777) for specifying the real data type.
+The package MQSI is a collection of Fortran 2003 routines for the
+construction of a C^2 monotone quintic spline interpolant Q(X) to data
+(X(I),F(X(I)), with the property that Q(X) is monotone increasing
+(decreasing) over the same intervals [X(I), X(J)] as the data F(X(.))
+is monotone increasing (decreasing). All routines use the module
+REAL_PRECISION from HOMPACK90 (ACM TOMS Algorithm 777) for specifying
+the real data type.
 
 The physical organization into files is as follows.
 
@@ -15,39 +16,38 @@ The physical organization into files is as follows.
    C^2 monotone quintic spline interpolant to data in terms of a
    B-spline basis, matching the monotonicity of the data.
 
- * The file 'SPLINE.f90' contains the subroutines  FIT_SPLINE  for
-   constructing a B-spline basis representation of an osculatory spline Q(X)
-   interpolating F(X), F'(X), ..., F^{(NCC-1)}(X) at each breakpoint X(K),
-   and  EVAL_SPLINE  for computing the value, derivatives, and integral of
-   Q(X).
+ * The file 'SPLINE.f90' contains the subroutines FIT_SPLINE for
+   constructing a B-spline basis representation of an osculatory
+   spline Q(X) interpolating F(X), F'(X), ..., F^{(NCC-1)}(X) for NCC
+   continuity conditions at each breakpoint X(K), and EVAL_SPLINE
+   for computing the value, derivatives, and integral of Q(X).
 
- * The file 'EVAL_BSPLINE.f90' contains the subroutine  EVAL_BSPLINE,
-   a Fortran 1995 implementation of the B-spline recurrence relation
-   evaluation code by C. deBoor for the value, derivatives, and integral
-   of a B-spline.
+ * The file 'EVAL_BSPLINE.f90' contains the subroutine EVAL_BSPLINE, a
+   Fortran 2003 implementation of the B-spline recurrence relation
+   evaluation code by C. deBoor for the value, derivatives, and
+   integral of a B-spline.
 
- * The files 'blas.f' and 'lapack.f' contain just the necessary BLAS and
-   LAPACK routines, in case the complete BLAS and LAPACK libraries are not
-   available.
+ * The files 'blas.f' and 'lapack.f' contain just the necessary BLAS
+   and LAPACK routines, in case the complete BLAS and LAPACK libraries
+   are not available.
 
 To compile and link, use the command:
 
- $F95 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 MQSI.f90 \
+ $F03 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 MQSI.f90 \
     $MAIN -o $EXEC_NAME $LIB
 
-where '$F95' is the name of the Fortran 1995 compiler, '$OPTS' are
+where '$F03' is the name of the Fortran 2003 compiler, '$OPTS' are
 compiler options such as '-O3', '$MAIN' is the name of the main
 program, '$EXEC_NAME' is the name of the executable, and '$LIB'
 provides a flag to link BLAS and LAPACK. If the BLAS and LAPACK
 libraries are not available on your system, then replace $LIB with the
-filenames 'blas.f lapack.f'; these provided files contain just the
-necessary routines from the BLAS and LAPACK libraries.
+filenames 'blas.f lapack.f'; these files contain the routines from the
+BLAS and LAPACK libraries that are necessary for this package.
 
-This package includes a sample main program in the file 'sample_main.f90',
-which can be compiled and linked as above. This package also includes an
-extensive test suite in the file 'test_all.f90' that requires a
-Fortran 2008 capable compiler (for passing subroutines as arguments).
+This package includes a sample main program in the file
+'sample_main.f90' and an extensive test suite in the file
+'test_all.f90', which can be compiled and linked as above.
 
---------------------------------------------------------------------------
+----------------------------------------------------------------------
 
-Inquiries should be directed to Thomas C. H. Lux, tchlux@vt.edu .
+Inquiries should be directed to Thomas C. H. Lux (tchlux@vt.edu).

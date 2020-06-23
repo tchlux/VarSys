@@ -1,3 +1,36 @@
+! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+!                        EVAL_BSPLINE.f90
+! 
+! DESCRIPTION:
+!   This file defines a subroutine EVAL_BSPLINE for computing the
+!   value, integral, or derivative(s) of a B-spline given its knot
+!   sequence.
+! 
+!   W A R N I N G : This routine has NO ERROR CHECKING and assumes
+!   informed usage for speed. It has undefined behavior for input that
+!   doesn't match specifications.
+! 
+! CONTAINS:
+!   SUBROUTINE EVAL_BSPLINE(T, XY, D)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: T
+!     REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
+!     INTEGER, INTENT(IN), OPTIONAL :: D
+!   END SUBROUTINE EVAL_BSPLINE
+! 
+! EXTERNAL DEPENDENCIES:
+!   MODULE REAL_PRECISION
+!     INTEGER, PARAMETER :: R8
+!   END MODULE REAL_PRECISION
+! 
+! CONTRIBUTORS:
+!   Thomas C.H. Lux (tchlux@vt.edu)
+!   Layne T. Watson (ltwatson@computer.org)
+!   William I. Thacker (thacker@winthrop.edu)
+! 
+! VERSION HISTORY:
+!   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
+! 
 SUBROUTINE EVAL_BSPLINE(T, XY, D)
 ! Subroutine for evaluating a B-spline with provided knot sequence, T. For
 ! sake of speed, this routine DOES NOT DO ERROR CHECKING. Use with caution.
@@ -12,8 +45,8 @@ SUBROUTINE EVAL_BSPLINE(T, XY, D)
 !     integral of the B-spline over [T(1), XY(.)] in XY(.).
 ! 
 ! OPTIONAL INPUT:
-!   D --  The order of the derivative to take of the B-spline.  If omitted,
-!     D = 0.  When D < 0, this subroutine integrates the B-spline over each
+!   D --  The order of the derivative to take of the B-spline. If omitted,
+!     D = 0. When D < 0, this subroutine integrates the B-spline over each
 !     interval [T(1), XY(.)].
 ! 
 ! DESCRIPTION:
@@ -57,12 +90,21 @@ REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: T
 REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
 INTEGER, INTENT(IN), OPTIONAL :: D
 ! Local variables.
-INTEGER :: I, J ! Index varaibes.
+!  Iteration variables.
+INTEGER :: I, J
+!  Derivative being evaluated, order of B-spline K, one less than the 
+!  order L, and number of knots defining the B-spline N.
 INTEGER :: DERIV, K, L, N
+!  Evaluations of T constituent B-splines (columns) at all points (rows).
 REAL(KIND=R8), DIMENSION(SIZE(XY), SIZE(T)) :: BIATX
+!  Temporary storage for compute denominators LEFT, RIGHT, and last knot TN.
 REAL(KIND=R8) :: LEFT, RIGHT, TN
 ! Assign the local value of the optional derivative "D" argument.
-IF (PRESENT(D)) THEN; DERIV = D; ELSE; DERIV = 0; END IF
+IF (PRESENT(D)) THEN
+   DERIV = D
+ELSE
+   DERIV = 0
+END IF
 ! Set local variables that are used for notational convenience.
 N = SIZE(T) ! Number of knots.
 K = N - 1 ! Order of B-spline.
@@ -71,7 +113,8 @@ TN = T(N) ! Value of the last knot, T(N).
 
 ! If this is a large enough derivative, we know it is zero everywhere.
 IF (DERIV+1 .GE. N) THEN
-   XY(:) = 0.0_R8; RETURN
+   XY(:) = 0.0_R8
+   RETURN
 
 ! ---------------- Performing standard evaluation ------------------
 ! This is a standard B-spline with multiple unique knots, right continuous.

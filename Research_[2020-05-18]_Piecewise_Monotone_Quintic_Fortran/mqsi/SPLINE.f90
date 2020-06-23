@@ -1,3 +1,50 @@
+! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+!                           SPLINE.f90
+! 
+! DESCRIPTION:
+!   This file defines the subroutines FIT_SPLINE for computing the
+!   coefficients of a B-spline basis necessary to reproduce given
+!   function and derivative values, and EVAL_SPLINE for evaluating the
+!   value, integral, and derivatives of a spline defined in terms of
+!   its B-spline basis.
+! 
+! CONTAINS:
+!   SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN),  DIMENSION(:)   :: XI
+!     REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: FX
+!     REAL(KIND=R8), INTENT(OUT), DIMENSION(:)   :: T, BCOEF
+!     INTEGER, INTENT(OUT) :: INFO
+!   END SUBROUTINE FIT_SPLINE
+! 
+!   SUBROUTINE EVAL_SPLINE(T, BCOEF, XY, INFO, D)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: T, BCOEF
+!     REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
+!     INTEGER, INTENT(OUT) :: INFO
+!     INTEGER, INTENT(IN), OPTIONAL :: D
+!   END SUBROUTINE EVAL_SPLINE
+! 
+! EXTERNAL DEPENDENCIES:
+!   MODULE REAL_PRECISION
+!     INTEGER, PARAMETER :: R8
+!   END MODULE REAL_PRECISION
+! 
+!   SUBROUTINE EVAL_BSPLINE(T, XY, D)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: T
+!     REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: XY
+!     INTEGER, INTENT(IN), OPTIONAL :: D
+!   END SUBROUTINE EVAL_BSPLINE
+! 
+! CONTRIBUTORS:
+!   Thomas C.H. Lux (tchlux@vt.edu)
+!   Layne T. Watson (ltwatson@computer.org)
+!   William I. Thacker (thacker@winthrop.edu)
+! 
+! VERSION HISTORY:
+!   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
+! 
 SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
 ! Subroutine for computing a linear combination of B-splines that
 ! interpolates the given function value (and function derivatives)
@@ -57,7 +104,7 @@ INTEGER, DIMENSION(SIZE(BCOEF)) :: IPIV ! LAPACK pivot indices.
 ! Storage for linear system that is solved to get B-spline coefficients.
 REAL(KIND=R8), DIMENSION(1 + 3*(2*SIZE(FX,2)-1), SIZE(FX)) :: AB
 ! Maximum allowed (relative) error in spline function values.
-REAL(KIND=R8), PARAMETER :: MAX_ERROR = = SQRT(SQRT(EPSILON(1.0_R8)))
+REAL(KIND=R8), PARAMETER :: MAX_ERROR = SQRT(SQRT(EPSILON(1.0_R8)))
 INTEGER :: DEGREE, & ! Degree of B-spline.
      DERIV, & ! Derivative loop index.
      I, I1, I2, J, J1, J2, & ! Miscellaneous loop indices.
@@ -103,7 +150,10 @@ ELSE IF (SIZE(BCOEF) .LT. NSPL) THEN; INFO = 5; RETURN
 END IF
 ! Verify that breakpoints are increasing.
 DO I = 1, NB - 1
-   IF (XI(I) .GE. XI(I+1)) THEN; INFO = 6; RETURN; END IF
+   IF (XI(I) .GE. XI(I+1)) THEN
+      INFO = 6
+      RETURN
+   END IF
 END DO
 
 ! Copy the knots that will define the B-spline representation.
@@ -137,8 +187,8 @@ T(NK-DEGREE:NK) = MAX( XI(NB) + ABS(XI(NB))*SQRT(EPSILON(XI(1))),  &
 ! with 0) and first derivative (even rows, terms end with 1). The
 ! linear system will look like:
 ! 
-!       B-SPLINE VALUES AT BREAKPOINTS     SPLINE           VALUES
-!        1st  2nd  3rd  4th  5th  6th    COEFICIENTS
+!       B-SPLINE VALUES AT BREAKPOINTS      SPLINE          VALUES
+!        1st  2nd  3rd  4th  5th  6th    COEFFICIENTS
 !      _                              _     _   _           _    _ 
 !     |                                |   |     |         |      |
 !   B |  1a0  2a0  3a0  4a0            |   |  1  |         |  a0  |

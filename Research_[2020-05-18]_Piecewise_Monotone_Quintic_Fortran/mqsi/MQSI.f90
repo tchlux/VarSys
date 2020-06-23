@@ -1,3 +1,40 @@
+! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+!                          MQSI.f90
+! 
+! DESCRIPTION:
+!   This file defines a subroutine MQSI for constructing a monotone
+!   quintic spline interpolant of data in terms of its B-spline basis.
+! 
+! CONTAINS:
+!   SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: X
+!     REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: Y
+!     REAL(KIND=R8), INTENT(OUT),   DIMENSION(:) :: T, BCOEF
+!     INTEGER, INTENT(OUT) :: INFO
+!   END SUBROUTINE MQSI
+! 
+! DEPENDENCIES:
+!   MODULE REAL_PRECISION
+!     INTEGER, PARAMETER :: R8
+!   END MODULE REAL_PRECISION
+! 
+!   SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
+!     USE REAL_PRECISION, ONLY: R8
+!     REAL(KIND=R8), INTENT(IN),  DIMENSION(:)   :: XI
+!     REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: FX
+!     REAL(KIND=R8), INTENT(OUT), DIMENSION(:)   :: T, BCOEF
+!     INTEGER, INTENT(OUT) :: INFO
+!   END SUBROUTINE FIT_SPLINE
+! 
+! CONTRIBUTORS:
+!   Thomas C.H. Lux (tchlux@vt.edu)
+!   Layne T. Watson (ltwatson@computer.org)
+!   William I. Thacker (thacker@winthrop.edu)
+! 
+! VERSION HISTORY:
+!   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
+! 
 SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
 ! Computes a monotone quintic spline interpolant (MQSI), Q(X), to data
 ! in terms of spline coefficients BCOEF for a B-spline basis defined by
@@ -34,21 +71,39 @@ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
 USE REAL_PRECISION, ONLY: R8
 IMPLICIT NONE
 ! Arguments.
-REAL(KIND=R8), INTENT(IN),  DIMENSION(:) :: X
-REAL(KIND=R8), INTENT(INOUT),  DIMENSION(:) :: Y
-REAL(KIND=R8), INTENT(OUT), DIMENSION(:) :: T, BCOEF
+REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: X
+REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: Y
+REAL(KIND=R8), INTENT(OUT),   DIMENSION(:) :: T, BCOEF
 INTEGER, INTENT(OUT) :: INFO
 ! Local variables.
-REAL(KIND=R8), DIMENSION(SIZE(X),2) :: FHATX ! Estimated first and
-                                             ! second derivatives.
-REAL(KIND=R8), DIMENSION(SIZE(X),3) :: FX ! Spline values, first,
-                                          !  and second derivatives.
-LOGICAL, DIMENSION(SIZE(X)) :: CHECKING, GROWING, SHRINKING ! Execution
-INTEGER, DIMENSION(SIZE(X)) :: TO_CHECK, TO_GROW, TO_SHRINK !   queues.
-REAL(KIND=R8) :: A, ACCURACY, B, DIRECTION, DX, SCALE, STEP_SIZE
-REAL(KIND=R8), PARAMETER :: EPS = EPSILON(1.0_R8), &
+!  Estimated first and second derivatives (columns) by quadraataic
+!  facet model at all data points (rows).
+REAL(KIND=R8), DIMENSION(SIZE(X),2) :: FHATX 
+!  Spline values, first, and second derivatives (columns) at all points (rows).
+REAL(KIND=R8), DIMENSION(SIZE(X),3) :: FX
+!  Execution queues for intervals to check for monotonicity CHECKING, 
+!  derivative values to grow (after shrinking) TO_GROW, and deriavtive
+!  values to shrink (because of nonmonotonicity) TO_SHRINK. The
+!  variables GROWING and SHRINKING are repurposed as identification
+!  of local maxima and minima of provided Y values.
+LOGICAL, DIMENSION(SIZE(X)) :: CHECKING, GROWING, SHRINKING
+INTEGER, DIMENSION(SIZE(X)) :: TO_CHECK, TO_GROW, TO_SHRINK
+!  Coefficients on a quadratic interpolant A and B, the direction of
+!  function change DIRECTION, a derivative value DX, the exponent
+!  scale difference between X and Y values SCALE, and the current
+!  bisection search step ratio STEP_SIZE.
+REAL(KIND=R8) :: A, B, DIRECTION, DX, SCALE, STEP_SIZE
+!  The smallest spacing of X and step size ACCURACY, the machine
+!  precision at unit scale EPS, the largest allowed spacing of X or Y
+!  values 10^38 TP38, and the placeholder large magnitude curvature
+!  value 10^54 TP54.
+REAL(KIND=R8), PARAMETER :: ACCURACY = SQRT(EPSILON(1.0_R8)), &
+     EPS = EPSILON(1.0_R8), &
      TP38 = 10.0_R8**38, TP54 = 10.0_R8**54
+!  Iteration indices I and J, number of data points ND, counters for
+!  exeuction queues on checking NC, growing NG, and shrinking NS.
 INTEGER :: I, J, NC, ND, NG, NS
+!  Boolean indicating whether the bisection search is in progress.
 LOGICAL :: SEARCHING
 INTERFACE
    SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
@@ -59,9 +114,7 @@ INTERFACE
      INTEGER, INTENT(OUT) :: INFO
    END SUBROUTINE FIT_SPLINE
 END INTERFACE
-! Declare constants for computation.
 ND = SIZE(X)
-ACCURACY = SQRT(EPSILON(1.0_R8))
 ! Check the shape of incoming arrays.
 IF      (ND .LT. 3)             THEN; INFO = 1; RETURN
 ELSE IF (SIZE(Y) .NE. ND)       THEN; INFO = 2; RETURN
@@ -120,7 +173,7 @@ estimate_derivatives : DO I = 1, ND
       FX(I,3) = (Y(I-1) - Y(I)) / (X(I-1) - X(I))**2
       ! Compute the coefficient A in  Ax^2+Bx+C  that interpolates at X(I+1).
       A = (Y(I+1) - Y(I)) / (X(I+1) - X(I))**2
-      IF (ABS(A) .LT. ABS(FX(I,3))) THEN; FX(I,3) = A; END IF
+      IF (ABS(A) .LT. ABS(FX(I,3))) FX(I,3) = A
       ! Compute the actual second derivative (instead of coefficient A).
       FX(I,3) = 2.0_R8 * FX(I,3)
    ELSE
@@ -184,9 +237,11 @@ estimate_derivatives : DO I = 1, ND
          END IF
       END IF
       ! Set the final quadratic.
-      IF (FX(I,3) .EQ. TP54) THEN; FX(I,2:3) = 0.0_R8
+      IF (FX(I,3) .EQ. TP54) THEN
+         FX(I,2:3) = 0.0_R8
       ! Compute curvature of quadratic from coefficient of x^2.
-      ELSE; FX(I,3) = 2.0_R8 * FX(I,3)
+      ELSE
+         FX(I,3) = 2.0_R8 * FX(I,3)
       END IF
    END IF pick_quadratic
 END DO estimate_derivatives
@@ -207,10 +262,14 @@ DO I = 1, ND-1
         FX(I,2), FX(I+1,2), FX(I,3), FX(I+1,3)))) THEN
       ! Store points bounding nonmonotone segments in the TO_SHRINK queue.
       IF (.NOT. SHRINKING(I)) THEN
-         SHRINKING(I) = .TRUE.; NS = NS+1; TO_SHRINK(NS) = I
+         SHRINKING(I) = .TRUE.
+         NS = NS+1
+         TO_SHRINK(NS) = I
       END IF
       IF (.NOT. SHRINKING(I+1)) THEN
-         SHRINKING(I+1) = .TRUE.; NS = NS+1; TO_SHRINK(NS) = I+1
+         SHRINKING(I+1) = .TRUE.
+         NS = NS+1
+         TO_SHRINK(NS) = I+1
       END IF
    END IF
 END DO
@@ -224,11 +283,14 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
    IF (SEARCHING) THEN
       STEP_SIZE = STEP_SIZE / 2.0_R8
       IF (STEP_SIZE .LT. ACCURACY) THEN
-         SEARCHING = .FALSE.; STEP_SIZE = ACCURACY; NG = 0
+         SEARCHING = .FALSE.
+         STEP_SIZE = ACCURACY
+         NG = 0
       END IF
    ! Grow the step size (at a slower rate than the size reduction
    ! rate) if there are still intervals to fix.
-   ELSE; STEP_SIZE = STEP_SIZE * 1.5_R8
+   ELSE
+      STEP_SIZE = STEP_SIZE * 1.5_R8
    END IF
    ! Grow all those first and second derivatives that were previously 
    ! shrunk, and correspond to currently monotone spline pieces.
@@ -253,12 +315,16 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
          FX(I,3) = FHATX(I,2)
       END IF
       ! Set this point and its neighboring intervals to be checked for
-      ! monotonicity.
+      ! monotonicity. Use sequential IF statements for short-circuiting.
       IF (I .GT. 1) THEN; IF (.NOT. CHECKING(I-1)) THEN
-            CHECKING(I-1) = .TRUE.; NC = NC+1; TO_CHECK(NC) = I-1
+         CHECKING(I-1) = .TRUE.
+         NC = NC+1
+         TO_CHECK(NC) = I-1
       END IF; END IF
       IF (I .LT. ND) THEN; IF (.NOT. CHECKING(I)) THEN
-         CHECKING(I) = .TRUE.; NC = NC+1; TO_CHECK(NC) = I
+         CHECKING(I) = .TRUE.
+         NC = NC+1
+         TO_CHECK(NC) = I
       END IF; END IF
    END DO grow_values
    ! Shrink the first and second derivatives that cause nonmonotonicity.
@@ -266,7 +332,9 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
       I = TO_SHRINK(J)
       SHRINKING(I) = .FALSE.
       IF (SEARCHING .AND. (.NOT. GROWING(I))) THEN
-         GROWING(I) = .TRUE.; NG = NG+1; TO_GROW(NG) = I
+         GROWING(I) = .TRUE.
+         NG = NG+1
+         TO_GROW(NG) = I
       END IF
       ! Shrink the values that are causing nonmonotonicity.
       FX(I,2) = FX(I,2) - STEP_SIZE * FHATX(I,1)
@@ -286,10 +354,14 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
       ! Set this point and its neighboring intervals to be checked for
       ! monotonicity.
       IF ((I .GT. 1) .AND. (.NOT. CHECKING(I-1))) THEN
-         CHECKING(I-1) = .TRUE.; NC = NC+1; TO_CHECK(NC) = I-1
+         CHECKING(I-1) = .TRUE.
+         NC = NC+1
+         TO_CHECK(NC) = I-1
       END IF
       IF ((I .LT. ND) .AND. (.NOT. CHECKING(I))) THEN
-         CHECKING(I) = .TRUE.; NC = NC+1; TO_CHECK(NC) = I
+         CHECKING(I) = .TRUE.
+         NC = NC+1
+         TO_CHECK(NC) = I
       END IF
    END DO shrink_values
    ! Identify which spline segments are nonmonotone after the updates.
@@ -300,10 +372,14 @@ DO WHILE (SEARCHING .OR. (NS .GT. 0))
       IF (.NOT. IS_MONOTONE(X(I), X(I+1), FX(I,1), FX(I+1,1), &
            FX(I,2), FX(I+1,2), FX(I,3), FX(I+1,3))) THEN
          IF (.NOT. SHRINKING(I)) THEN
-            SHRINKING(I) = .TRUE.; NS = NS+1; TO_SHRINK(NS) = I
+            SHRINKING(I) = .TRUE.
+            NS = NS+1
+            TO_SHRINK(NS) = I
          END IF
          IF (.NOT. SHRINKING(I+1)) THEN
-            SHRINKING(I+1) = .TRUE.; NS = NS+1; TO_SHRINK(NS) = I+1
+            SHRINKING(I+1) = .TRUE.
+            NS = NS+1
+            TO_SHRINK(NS) = I+1
          END IF
       END IF
    END DO check_monotonicity
@@ -332,6 +408,7 @@ FUNCTION IS_MONOTONE(U0, U1, F0, F1, DF0, DF1, DDF0, DDF1)
 REAL(KIND=R8), INTENT(IN) :: U0, U1, F0, F1, DF0, DF1, DDF0, DDF1
 LOGICAL :: IS_MONOTONE
 ! Local variables.
+REAL(KIND=R8), PARAMETER :: EPS = EPSILON(1.0_R8)
 REAL(KIND=R8) :: A, ALPHA, B, BETA, GAMMA, INV_SLOPE, SIGN, TEMP, W
 
 ! When the function values are flat, everything *must* be 0.
@@ -339,9 +416,12 @@ IF (ABS(F1 - F0) .LT. EPS*(1.0_R8 + ABS(F1) + ABS(F0))) THEN
    IS_MONOTONE = (DF0  .EQ. 0.0_R8) .AND. (DF1  .EQ. 0.0_R8) .AND. &
                  (DDF0 .EQ. 0.0_R8) .AND. (DDF1 .EQ. 0.0_R8)
    RETURN
+END IF
 ! Identify the direction of change of the function (increasing or decreasing).
-IF   (F1 .GT. F0) THEN; SIGN =  1.0_R8
-ELSE (F1 .LT. F0) THEN; SIGN = -1.0_R8
+IF (F1 .GT. F0) THEN
+   SIGN =  1.0_R8
+ELSE
+   SIGN = -1.0_R8
 END IF
 W = U1 - U0
 ! Determine which set of monotonicity conditions to use based on the
@@ -366,7 +446,8 @@ IF ((ABS(DF0) .LT. EPS) .OR. (ABS(DF1) .LT. EPS)) THEN
    ! 
    ! The condition delta >= 0 was enforced when first estimating
    ! derivative values (with correct sign). Next check for alpha >= 0.
-   IF (SIGN*DDF1*W .GT. SIGN*4.0_R8*DF1) THEN; IS_MONOTONE = .FALSE.
+   IF (SIGN*DDF1*W .GT. SIGN*4.0_R8*DF1) THEN
+      IS_MONOTONE = .FALSE.
    ELSE
       ! Compute a simplification of 2 * sqrt{ alpha delta }, store in TEMP.
       TEMP = DF0 * (4*DF1 - DDF1*W)
@@ -378,7 +459,8 @@ IF ((ABS(DF0) .LT. EPS) .OR. (ABS(DF1) .LT. EPS)) THEN
       ELSE IF (60.0_R8*(F1-F0)*SIGN - W*(SIGN*(24.0_R8*DF0 + 32.0_R8*DF1) &
            - 2.0_R8*TEMP + W*SIGN*(3.0_R8*DDF0 - 5.0_R8*DDF1)) .LT. 0.0_R8) THEN
          IS_MONOTONE = .FALSE.
-      ELSE; IS_MONOTONE = .TRUE.
+      ELSE
+         IS_MONOTONE = .TRUE.
       END IF
    END IF
 ELSE
@@ -403,7 +485,8 @@ ELSE
    ! 
    ! Check for tau_1 > 0.
    IF (W*(2.0_R8*SQRT(DF0*DF1) - SIGN * 3.0_R8*(DF0+DF1)) - &
-        SIGN*24.0_R8*(F0-F1) .LE. 0.0_R8) THEN; IS_MONOTONE = .FALSE.
+        SIGN*24.0_R8*(F0-F1) .LE. 0.0_R8) THEN
+      IS_MONOTONE = .FALSE.
    ELSE
       ! Compute alpha, gamma, beta from theorems to determine monotonicity.
       TEMP = (DF0*DF1)**(0.75_R8)
@@ -411,8 +494,10 @@ ELSE
       GAMMA = SIGN * (4.0_R8*DF0 + DDF0*W) * SQRT(SIGN*DF1) / TEMP
       BETA = SIGN * (3.0_R8 * ((DDF1-DDF0)*W - 8.0_R8*(DF0+DF1)) + &
            60.0_R8 * (F1-F0) / W) / (2.0 * SQRT(DF0*DF1))
-      IF (BETA .LE. 6.0_R8) THEN; TEMP = -(BETA + 2.0_R8) / 2.0_R8
-      ELSE;                       TEMP = -2.0_R8 * SQRT(BETA - 2.0_R8)
+      IF (BETA .LE. 6.0_R8) THEN
+         TEMP = -(BETA + 2.0_R8) / 2.0_R8
+      ELSE
+         TEMP = -2.0_R8 * SQRT(BETA - 2.0_R8)
       END IF
       IS_MONOTONE = (ALPHA .GT. TEMP) .AND. (GAMMA .GT. TEMP)
    END IF
