@@ -59,7 +59,7 @@ print(Polynomial(f._functions[0]))
 
 import numpy as np
 import fmodpy
-spline = fmodpy.fimport("mqsi/SPLINE.f90")
+spline = fmodpy.fimport("SPLINE.f90")
 # Define an object that has all of the expected functions.
 class splines:
     fit_spline = spline.fit_spline
