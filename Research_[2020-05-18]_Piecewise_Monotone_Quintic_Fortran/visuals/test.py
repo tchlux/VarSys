@@ -1,3 +1,62 @@
+import numpy as np
+
+# Sin function.
+np.random.seed(1)
+x = np.random.random(size=(30,))
+x.sort()
+x = np.linspace(0,1,20)
+y = np.sin(8*np.pi*x) / (x**2 + 0.1)
+print()
+print("Sin")
+print("x = {",", ".join(map(str,x)),"};")
+print("y = {",", ".join(map(str,y)),"};")
+
+# --------------------------------------------------------------------
+# Large tangent test.
+large_tangent = lambda x: -(1 + ( 1 / (x-1.01) ))
+np.random.seed(1)
+x = (1 - np.linspace(0, 1, 10) ** 2)[::-1]
+y = [large_tangent(v) for v in x]
+print()
+print("Large tangent")
+print("x = {",", ".join(map(str,x)),"};")
+print("y = {",", ".join(map(str,y)),"};")
+
+
+# from mqsi import monotone_quintic_spline as mqsi, weighted_harmonic
+# from scipy.interpolate import PchipInterpolator as PCHIP
+
+# f1a = mqsi(x, y)
+# f1b = mqsi(x, y, estimator=weighted_harmonic)
+# f2 = PCHIP(x, y)
+
+# from util.plot import Plot
+# p = Plot()
+# p.add("Data", x, y)
+# p.add_func("MQSI Quadratic Facet", f1a, [min(x),max(x)])
+# p.add_func("MQSI Weighted Harmonic", f1b, [min(x),max(x)])
+# p.add_func("PCHIP", f2, [min(x),max(x)])
+# p.show()
+# exit()
+
+
+# --------------------------------------------------------------------
+# Random monotone data test.
+np.random.seed(2)
+N = 16
+x = np.random.random(size=(N,))
+y = np.random.random(size=(N,))
+x.sort(); y.sort()
+print()
+print("Random monotone")
+print("x = {",", ".join(map(str,x)),"};")
+print("y = {",", ".join(map(str,y)),"};")
+
+
+exit()
+
+
+
 from util.plot import Plot
 from mqsi import Polynomial, monotone_quintic_spline
 
