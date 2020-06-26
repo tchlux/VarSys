@@ -45,8 +45,11 @@ filenames 'blas.f lapack.f'; these files contain the routines from the
 BLAS and LAPACK libraries that are necessary for this package.
 
 This package includes a sample main program in the file
-'sample_main.f90' and an extensive test suite in the file
-'test_all.f90', which can be compiled and linked as above.
+'sample_main.f90', an extensive test suite in the file
+'test_all.f90', and a command line interface program in the file
+'cli.f90', all of which can be compiled and linked as above.
+A demonstration of usage via the command line interface is provided
+in the 'demo' subdirectory through a shell script 'demo/run.sh'.
 
 ----------------------------------------------------------------------
 

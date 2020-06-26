@@ -120,7 +120,7 @@ increasing on $[x_0,x_1]$.
   \delta - 2 \sqrt{\alpha \delta}$.  Step 4 checked for $\delta < 0$,
   Step 8 checks $\alpha < 0$, Step 10 checks $\beta < \alpha - 2
   \sqrt{\alpha \delta}$, and Step 11 checks $\gamma < \delta - 2
-  \sqrt{\alpha \delta}$. If none of the monotonicity conditions were
+  \sqrt{\alpha \delta}$. If none of the monotonicity conditions are
   violated, then the order six piece is monotone and Step 12
   concludes.}
 
@@ -211,15 +211,43 @@ Given the minimum magnitude curvature nature of the initial derivative
 estimates, it is desirable to make the smallest necessary changes to
 the initial interpolating spline $Q$ while enforcing monotonicity. In
 practice a quasi-bisection search is used in place of solely shrinking
-$DQ$ and $D^2Q$, adding an additional step that increases previously
-shrunken derivative values by a smaller increment than the previous
-decrement. The goal is to converge on the boundary of the monotone region
-in the $(\tau_1$, $\alpha$, $\beta$, $\gamma)$ space. As long as a step size
-schedule is set that allows the value zero to be obtained in a fixed
-number of computations, this has no effect on computational
-complexity. Notably, since {\tt IS\_MONOTONE} handles both nondecreasing and
-nonincreasing simultaneously by taking into account the sign of $v$,
-Algorithm 3 produces $Q(x)$ that is monotone increasing (decreasing) over
-exactly the same intervals that the data $(X_i$, $Y_i)$ is monotone
-increasing (decreasing).
+$DQ$ and $D^2Q$. This algorithm is outlined below. The goal is to
+converge on the boundary of the monotone region in the $(\tau_1$,
+$\alpha$, $\beta$, $\gamma)$ space.
+
+%% ===================================================================
+%%              Algorithm 4: Quasi-bisection search
+\vskip 5mm
+{\parindent 0mm
+{\bf Algorithm 4:} {\tt QUASI-BISECTION}$\bigl(x_0, x_1, f \bigr)$
+
+where $x_0$, $x_1 \in {\bbb R}$, $x_0 < x_1$, and $f$ is an order six
+polynomial that is nonmonotone on the interval $[x_0$, $x_1]$. Defines
+a stepping procedure for function derivative values that ensures $f$
+can be made monotone in a fixed number of steps given a relative
+precision $e \in {\bbb R}$.
+
+}
+{\parindent=6mm
+\item{} Set a starting {\tt step\_size} and save the initial value of $f$.
+\item{} $\hat f := f$
+\item{} {\tt step\_size} $:= 1/2$
+\item{} {\tt shrinking} $:=$ {\tt TRUE}
+\item{} {\tt do while } $\big( ($ {\tt step\_size} $ > e)$ {\tt or not
+  IS\_MONOTONE}$(x_1$, $x_2$, $f)$ $\big)$
+\item{} \codent {\tt if shrinking then step\_size} $:=$ {\tt step\_size} $/ 2$
+
+}
+\vskip 5mm
+%% ----------------------------------------------------------------------
+
+
+As long as a step size schedule is
+set that allows the value zero to be obtained in a fixed number of
+computations, this has no effect on computational complexity. Notably,
+since {\tt IS\_MONOTONE} handles both nondecreasing and nonincreasing
+simultaneously by taking into account the sign of $v$, Algorithm 3
+produces $Q(x)$ that is monotone increasing (decreasing) over exactly
+the same intervals that the data $(X_i$, $Y_i)$ is monotone increasing
+(decreasing).
 

@@ -139,7 +139,7 @@ class Fraction:
         elif (self.denominator == 1): return str(self.numerator)
         my_string = f"{self.numerator} / {self.denominator}"
         float_string = str(float(self))
-        if (len(float_string) < len(my_string)): return float_string
+        if (2*len(float_string) < len(my_string)): return float_string
         else:                                    return my_string
     # Format this Fraction by converting it to a float.
     def __format__(self, *args, **kwargs): return float(self).__format__(*args,**kwargs)
@@ -1036,7 +1036,7 @@ if __name__ == "__main__":
 # one with the lowest curvature.
 def quadratic_facet(x, y, i, extremes, flats):
     # If this is a local flat, estimate 0.
-    if (i in flats): return [0, 0]
+    if (i in flats): return (0, 0)
     # If this is a local maximum, force first derivative to zero, 
     # and assume that it is not an endpoint.
     elif (i in extremes):
@@ -1096,7 +1096,7 @@ def quadratic_facet(x, y, i, extremes, flats):
         ddxi = ddf(x[i])
         derivatives += [(dxi, ddxi)]
     # If there were no viable options, return 0's.
-    if (len(derivatives) == 0): return [0, 0]
+    if (len(derivatives) == 0): return (0, 0)
     # Sort the derivatives by magnitude of curvature, then return the 
     # values from the function with the least curvature.
     derivatives.sort(key=lambda d: abs(d[1]))
@@ -1254,6 +1254,40 @@ def is_monotone(U0, U1, F0, DF0, DDF0, F1, DF1, DDF1, EPS=2**(-26)):
     if (BETA <= 6): TEMP = -(BETA + 2) / 2
     else:           TEMP = -2*(BETA - 2)**(0.5)
     return (ALPHA > TEMP) and (GAMMA > TEMP)
+
+# Construct an interpolant that minimizes the L2 of the second derivative.
+def min_curve(x, y, t=10):
+    # Pick first and second derivative values that minimize the L2.
+    import numpy as np
+    from util.optimize import minimize, zero_on_line
+    # Define an objective function that minimizes L2 and makes the derivative positive.
+    def obj_func(v):
+        f = Spline(x, list(zip(y,v[0::2],v[1::2])))
+        df = f.derivative()
+        dfx = df(x)
+        ddf = df.derivative()
+        ddfx = ddf(x)
+        if not all(is_monotone(x[i],x[i+1],y[i],dfx[i],ddfx[i],
+                               y[i+1],dfx[i+1],ddfx[i+1])
+                   for i in range(len(x)-1)):
+            return float('inf')
+        L2 = ((ddf)**2).integral()
+        return L2(x[-1]) - L2(x[0])
+    # Get an initial solution by using the monotone quintic.
+    d_vec = []
+    f = monotone_quintic_spline(x,y,estimator=weighted_harmonic)
+    df = f.derivative()
+    ddf = df.derivative()
+    for v in x: d_vec += [df(v), ddf(v)]
+    # Try and get an existing solution.
+    try:    from optimization_checkpoint import solution
+    except: solution = None
+    # Use the existing solution if it looks right.
+    if (solution is not None) and (len(solution) == len(d_vec)):
+        d_vec = solution
+    # Get the best interpolating spline by minimize L2.
+    v = minimize(obj_func, d_vec, max_time=t)
+    return Spline(x, list(zip(y,v[0::2],v[1::2])))
 
 # nonmonotone_funcs = []
 # def is_monotone(U0, U1, F0, DF0, DDF0, F1, DF1, DDF1, **kwargs):

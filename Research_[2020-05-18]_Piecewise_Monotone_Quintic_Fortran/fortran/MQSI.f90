@@ -43,8 +43,8 @@ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
 ! data Y(.) is monotone increasing (decreasing).
 ! 
 ! INPUT:
-!   X(1:ND) -- A real array of increasing values.
-!   Y(1:ND) -- A real array of function values Y(I) = F(X(I)).
+!   X(1:ND) -- A real array of ND increasing values.
+!   Y(1:ND) -- A real array of ND function values Y(I) = F(X(I)).
 ! 
 ! OUTPUT:
 !   T(1:3*ND+6) -- The knots for the MQSI B-spline basis.
@@ -76,22 +76,22 @@ REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: Y
 REAL(KIND=R8), INTENT(OUT),   DIMENSION(:) :: T, BCOEF
 INTEGER, INTENT(OUT) :: INFO
 ! Local variables.
-!  Estimated first and second derivatives (columns) by quadraataic
+!  Estimated first and second derivatives (columns) by quadratic
 !  facet model at all data points (rows).
 REAL(KIND=R8), DIMENSION(SIZE(X),2) :: FHATX 
 !  Spline values, first, and second derivatives (columns) at all points (rows).
 REAL(KIND=R8), DIMENSION(SIZE(X),3) :: FX
-!  Execution queues for intervals to check for monotonicity CHECKING, 
-!  derivative values to grow (after shrinking) TO_GROW, and deriavtive
+!  Execution queues holding intervals to check for monotonicity CHECKING, 
+!  derivative values to grow (after shrinking) TO_GROW, and derivative
 !  values to shrink (because of nonmonotonicity) TO_SHRINK. The
-!  variables GROWING and SHRINKING are repurposed as identification
-!  of local maxima and minima of provided Y values.
+!  variables GROWING and SHRINKING are repurposed as identification of
+!  local maxima and minima of provided Y values early in the routine.
 LOGICAL, DIMENSION(SIZE(X)) :: CHECKING, GROWING, SHRINKING
 INTEGER, DIMENSION(SIZE(X)) :: TO_CHECK, TO_GROW, TO_SHRINK
 !  Coefficients on a quadratic interpolant A and B, the direction of
 !  function change DIRECTION, a derivative value DX, the exponent
 !  scale difference between X and Y values SCALE, and the current
-!  bisection search step ratio STEP_SIZE.
+!  bisection search (relative) step size STEP_SIZE.
 REAL(KIND=R8) :: A, B, DIRECTION, DX, SCALE, STEP_SIZE
 !  The smallest spacing of X and step size ACCURACY, the machine
 !  precision at unit scale EPS, the largest allowed spacing of X or Y
@@ -101,7 +101,7 @@ REAL(KIND=R8), PARAMETER :: ACCURACY = SQRT(EPSILON(1.0_R8)), &
      EPS = EPSILON(1.0_R8), &
      TP38 = 10.0_R8**38, TP54 = 10.0_R8**54
 !  Iteration indices I and J, number of data points ND, counters for
-!  exeuction queues on checking NC, growing NG, and shrinking NS.
+!  execution queues on checking NC, growing NG, and shrinking NS.
 INTEGER :: I, J, NC, ND, NG, NS
 !  Boolean indicating whether the bisection search is in progress.
 LOGICAL :: SEARCHING
@@ -128,8 +128,8 @@ DO I = 1, ND-1
          (ABS(Y(I+1) - Y(I)) .GT. TP38)) THEN; INFO = 6; RETURN
    END IF
 END DO
-! Scale Y by an exact power of 2 to make Y and X commensurate, store scaled
-! Y in FX and also back in Y.
+! Scale Y by an exact power of 2 to make Y and X commensurate, store
+! scaled Y in FX and also back in Y.
 J = INT(LOG((1.0_R8+MAXVAL(ABS(Y(:))))/MAXVAL(ABS(X(:)))) / LOG(2.0_R8))
 SCALE = 2.0_R8**J
 FX(:,1) = (1.0_R8/SCALE)*Y(:)

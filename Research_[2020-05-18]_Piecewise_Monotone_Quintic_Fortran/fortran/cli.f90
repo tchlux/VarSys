@@ -60,14 +60,14 @@ INTERFACE
 END INTERFACE
 
 INTEGER :: I, INFO, C, M, N, NCC
-CHARACTER(LEN=32) :: FILE_NAME
+CHARACTER(LEN=218) :: FILE_NAME
 REAL(KIND=R8), ALLOCATABLE :: SC(:), SK(:), U(:), X(:), Y(:)
 
 ! Get the number of command line arguments provided.
 C = COMMAND_ARGUMENT_COUNT()
 
 ! Correct usage of this CLI provides either 2 or 3 command line arguments.
-IF ((C .EQ. 2) .OR. (C() .EQ. 3)) THEN
+IF ((C .EQ. 2) .OR. (C .EQ. 3)) THEN
    ! Open the data file and read the number of points.
    CALL GET_COMMAND_ARGUMENT(1,FILE_NAME)
    OPEN(10,FILE=FILE_NAME,STATUS='OLD')

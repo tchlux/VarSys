@@ -17,3 +17,18 @@ generally provides excellent initial estimates of the first and second
 derivatives at the breakpoints, with few iterations required to find a
 monotone $Q(x)$.
 
+\topinsert
+\centerline{\epsfxsize=4truein \epsffile{vis/1-sensitivity.eps}}
+{\narrower\noindent\rmVIII Fig.\ 1.
+A demonstration of the quadratic facet model's sensitivity to small
+data perturbations. In this example two quadratic functions $f_1(x) =
+x^2$ over $\{1$,$2$,$5/2\}$ and $f_2(x) = (x-2)^2 + 6$ over
+$\{5/2$,$3$,$4\}$ have the same curvature and equal value at
+$x=5/2$. Given the five points above Algorithm 2 produces the slope of
+the solid blue line because $f_1$ and $f_2$ have equal curvature.
+However, perturbing the curvature of $f_2$ down by the machine
+precision at values $x=\{3$, $4\}$ causes Algorithm 2 to produce the
+slope of the red dashed line at $x = 5/2$. This is the nature of a
+facet model and a side effect of associating data with local facets.
+\par}
+\endinsert
