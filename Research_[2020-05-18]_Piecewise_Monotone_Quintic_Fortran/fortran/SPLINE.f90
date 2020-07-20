@@ -40,7 +40,7 @@
 ! CONTRIBUTORS:
 !   Thomas C.H. Lux (tchlux@vt.edu)
 !   Layne T. Watson (ltwatson@computer.org)
-!   William I. Thacker (thacker@winthrop.edu)
+!   William I. Thacker (thackerw@winthrop.edu)
 ! 
 ! VERSION HISTORY:
 !   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
@@ -53,8 +53,9 @@ SUBROUTINE FIT_SPLINE(XI, FX, T, BCOEF, INFO)
 ! INPUT:
 !   XI(1:NB) -- The increasing real-valued locations of the NB
 !               breakpoints for the interpolating spline.
-!   FX(1:NB,1:NCC) -- FX(I,J) contains the (J-1)st derivative
-!                     at XI(I) to be interpolated.
+!   FX(1:NB,1:NCC) -- FX(I,J) contains the (J-1)st derivative at 
+!                     XI(I) to be interpolated, providing NCC
+!                     continuity conditions at all NB breakpoints.
 ! 
 ! OUTPUT:
 !   T(1:NB*NCC+2*NCC) -- The nondecreasing real-valued locations
@@ -100,10 +101,11 @@ REAL(KIND=R8), INTENT(IN),  DIMENSION(:,:) :: FX
 REAL(KIND=R8), INTENT(OUT), DIMENSION(:)   :: T, BCOEF
 INTEGER, INTENT(OUT) :: INFO
 ! Local variables.
-INTEGER, DIMENSION(SIZE(BCOEF)) :: IPIV ! LAPACK pivot indices.
-! Storage for linear system that is solved to get B-spline coefficients.
+!  LAPACK pivot indices.
+INTEGER, DIMENSION(SIZE(BCOEF)) :: IPIV
+!  Storage for linear system that is solved to get B-spline coefficients.
 REAL(KIND=R8), DIMENSION(1 + 3*(2*SIZE(FX,2)-1), SIZE(FX)) :: AB
-! Maximum allowed (relative) error in spline function values.
+!  Maximum allowed (relative) error in spline function values.
 REAL(KIND=R8), PARAMETER :: MAX_ERROR = SQRT(SQRT(EPSILON(1.0_R8)))
 INTEGER :: DEGREE, & ! Degree of B-spline.
      DERIV, & ! Derivative loop index.
@@ -166,8 +168,8 @@ END DO
 ! Assign the last knot to exist a small step outside the supported
 ! interval to ensure the B-spline basis functions are nonzero at the
 ! rightmost breakpoint.
-T(NK-DEGREE:NK) = MAX( XI(NB) + ABS(XI(NB))*SQRT(EPSILON(XI(1))),  &
-                       XI(NB) + SQRT(EPSILON(XI(1))) )
+T(NK-DEGREE:NK) = MAX( XI(NB) + ABS(XI(NB))*SQRT(EPSILON(XI(NB))),  &
+                       XI(NB) + SQRT(EPSILON(XI(NB))) )
 
 ! The next block of code evaluates each B-spline and it's derivatives
 ! at all breakpoints. The first and last elements of XI will be

@@ -7,14 +7,6 @@ at data points need to be estimated. Second, the estimated derivative
 values need to be modified to enforce monotonicity on all polynomial
 pieces.
 
-% The remainder of this section outlines three algorithms for
-% constructing a quintic spline interpolant.  Algorithm 1 uses a
-% quadratic facet model to construct initial first and second
-% derivative estimates for the interpolating spline, Algorithm 2
-% checks monotonicity of an interval, and Algorithm 3 defines a
-% procedure for stepping initial first and second derivative estimates
-% towards values which result in a monotone quintic spline.
-
 Fritsch and Carlson [1980] originally proposed the use of central differences
 to estimate derivatives, however this often leads to extra and unnecessary
 {\it wiggles} in the spline when used to approximate second derivatives.
@@ -32,9 +24,9 @@ magnitude curvature.
 {\bf Algorithm 1:} {
 \tt QUADRATIC\_FACET}$\bigl(X(1{:}n)$, $Y(1{:}n)$, $i \bigr)$
 
-where $X_j$, $Y_j$ $\in \bbb{R}$ for $j = 1$, $\ldots$, $n$, and $1 < i
-< n$. Returns the slope and curvature at $X_i$ of the local quadratic
-interpolant with minimum magnitude curvature.
+where $X_j$, $Y_j$ $\in \bbb{R}$ for $j = 1$, $\ldots$, $n$, and $1
+\le i \le n$. Returns the slope and curvature at $X_i$ of the local
+quadratic interpolant with minimum magnitude curvature.
 
 }
 {\parindent=3mm
@@ -57,8 +49,8 @@ $D^2f_2\bigr)$
 \itemitem{} {\tt endif}
 \item{} {\tt else}
 \itemitem{} {The point $(X_i$, $Y_i)$ is in a monotone segment of
-data. In the following, it is possible that either $f_1$ or $f_3$ does
-not exist because $i = 2$ or $i = n-1$. In those cases, the minimum
+data. In the following, it is possible that $f_1$, $f_2$, or $f_3$ does
+not exist because $i \in \{1, 2, n-1, n\}$. In those cases, the minimum
 magnitude curvature among existing quadratics is chosen.}
 \itemitem{} $f_1\:\hbox{interpolant to }(X_{i-2},Y_{i-2})$,
   $(X_{i-1},Y_{i-1})$, and $(X_i,Y_i)$.
@@ -107,8 +99,8 @@ increasing on $[x_0,x_1]$.
 \item{3.} {\tt endif}
 \item{4.} {\tt if} $\bigl(Df(x_0) < 0$ {\tt or} $Df(x_1) < 0\bigr)$ {\tt
   then; return FALSE; endif}
-\item{5.} $w := x_1 - x_0$
-\item{6.} $v := f(x_1) - f(x_0)$
+\item{5.} $w \: x_1 - x_0$
+\item{6.} $v \: f(x_1) - f(x_0)$
 
 \item{} {The necessity of Steps 2 and 4 follows directly from
   the fact that $f$ is $C^2$. The following Steps 7--13 coincide with
@@ -128,7 +120,7 @@ increasing on $[x_0,x_1]$.
 0\bigr)$ {\tt then}
 \item{8.} \codent {\tt if} $\bigl(D^2f(x_1)w > 4Df(x_1)$ {\tt then;
 return FALSE; endif}
-\item{9.} \codent $t := 2 \sqrt{Df(x_0) (4Df(x_1) - D^2f(x_1) w) }$
+\item{9.} \codent $t \: 2 \sqrt{Df(x_0) (4Df(x_1) - D^2f(x_1) w) }$
 \item{10.} \codent {\tt if} $\bigl(t + 3Df(x_0) + D^2f(x_0)w < 0 \bigr)$
   {\tt then; return FALSE; endif}
 \item{11.} \codent {\tt if} $\bigl(60v - w\bigl(24Df(x_0) + 32Df(x_1) - 2t
@@ -149,10 +141,10 @@ on $\alpha$, $\beta$, and $\gamma$.}
 \item{14.} {\tt if} $\bigl( w\bigl(2\sqrt{Df(x_0)\,Df(x_1)} - 3(Df(x_0) +
   Df(x_1))\bigr) - 24v \leq 0 \bigr)$
 \item{} \codent {\tt then; return FALSE; endif}
-\item{15.} $t := \bigl(Df(x_0)\, Df(x_1)\bigr)^{3/4}$
-\item{16.} $\alpha := (4 Df(x_1) - D^2f(x_1)w) \sqrt{Df(x_0)} / t$
-\item{17.} $\gamma := (4 Df(x_0) - D^2f(x_0)w) \sqrt{Df(x_1)} / t$
-\item{18.} $\displaystyle \beta := {60v/w + 3\bigl(w(D^2f(x_1) -
+\item{15.} $t \: \bigl(Df(x_0)\, Df(x_1)\bigr)^{3/4}$
+\item{16.} $\alpha \: (4 Df(x_1) - D^2f(x_1)w) \sqrt{Df(x_0)} / t$
+\item{17.} $\gamma \: (4 Df(x_0) - D^2f(x_0)w) \sqrt{Df(x_1)} / t$
+\item{18.} $\displaystyle \beta \: {60v/w + 3\bigl(w(D^2f(x_1) -
   D^2f(x_0)) - 8(Df(x_0) + Df(x_1))\bigr) \over 2 \sqrt{Df(x_0)\,Df(x_1)}}$
 \item{19.} {\tt if} $(\beta \leq 6)$ {\tt then; return}
 $\bigl( \min\{\alpha,\gamma\} > - (\beta + 2) / 2 \bigr)$
@@ -172,7 +164,7 @@ accompanying package.
 
 %% ===================================================================
 %%       Algorithm 3: MQSI - Monotone quintic spline interpolant
-\vskip 5mm
+\vskip 3mm
 {\parindent 0mm
 {\bf Algorithm 3:} {\tt MQSI}$\bigl(X(1{:}n), Y(1{:}n) \bigr)$
 
@@ -183,71 +175,135 @@ intervals that $Y_i$ is monotone increasing (decreasing).
 
 }
 {\parindent=6mm
-\item{} Approximate first and second derivatives at all $X_i$ with
-{\tt QUADRATIC\_FACET}.
-\item{} {\tt do} $i = 1, \ldots n-1$
-\item{} \codent $\bigl(D Q(X_i)$, $D^2 Q(X_i)\bigr):=$
+\item{} Approximate first and second derivatives at $X_i$ with {\tt
+  QUADRATIC\_FACET}.
+\item{} {\tt do} $i = 1, \ldots n$
+\item{} \codent $\bigl(D Q(X_i)$, $D^2 Q(X_i)\bigr)\:$
 {\tt QUADRATIC\_FACET}$(X$, $Y$, $i)$
 \item{} {\tt enddo}
-\item{} Identify and store all nonmonotone intervals in a {\tt queue}.
+\item{} Identify and store all intervals where $Q$ is nonmonotone in a {\tt queue}.
 \item{} {\tt do} $i = 1, \ldots n-1$
 \item{} \codent {\tt if not IS\_MONOTONE}$(X_i$, $X_{i+1}$, $Q)$ {\tt then}
 \item{} \codent\codent Add interval $\bigl(X_i$, $X_{i+1}\bigr)$ to
 {\tt queue}.
 \item{} \codent {\tt endif}
 \item{} {\tt enddo}
-\item{} {\tt do while} $\bigl($ {\tt queue} of nonmonotone intervals is
-nonempty $\bigr)$
-\itemitem{} Shrink (in magnitude) $DQ$ and $D^2Q$ that border nonmonotone
-intervals.
-\itemitem{} Identify and store all remaining nonmonotone intervals in
-{\tt queue}.
+\item{} {\tt do while} $\bigl($ {\tt queue} of intervals is nonempty $\bigr)$
+\itemitem{} Shrink (in magnitude) $DQ$ and $D^2Q$ that border intervals where $Q$ is nonmonotone.
+\itemitem{} Identify and store all remaining intervals where $Q$ is nonmonotone in {\tt queue}.
 \item{} {\tt enddo}
+\item{} Construct and return a spline representation of $Q(x)$.
 }
-\vskip 5mm
+\vskip 3mm
 %% ----------------------------------------------------------------------
+
+Since {\tt IS\_MONOTONE} handles both nondecreasing and
+nonincreasing simultaneously by taking into account the sign of $v$,
+Algorithm 3 produces $Q(x)$ that is monotone increasing (decreasing)
+over exactly the same intervals that the data $(X_i$, $Y_i)$ is
+monotone increasing (decreasing).
 
 Given the minimum magnitude curvature nature of the initial derivative
 estimates, it is desirable to make the smallest necessary changes to
 the initial interpolating spline $Q$ while enforcing monotonicity. In
-practice a quasi-bisection search is used in place of solely shrinking
-$DQ$ and $D^2Q$. This algorithm is outlined below. The goal is to
-converge on the boundary of the monotone region in the $(\tau_1$,
-$\alpha$, $\beta$, $\gamma)$ space.
+practice a binary search for the boundary of monotonicity is used in
+place of solely shrinking $DQ$ and $D^2Q$ at breakpoints adjoining
+{\it active} intervals, or intervals for which $Q$ is nonmonotone at
+least once during the search. The binary search considers a Boolean
+function $B(s)$, for $0 \le s \le 1$, that is true if the order six
+polynomial on $[x_i, x_{i+1}]$ matching derivatives $f(x_i)$, $s
+Df(x_i)$, $s D^2f(x_i)$ at $x_i$, and derivatives $f(x_{i+1})$, $s
+Df(x_{i+1})$, $s D^2f(x_{i+1})$ at $x_{i+1}$ is monotone, and false
+otherwise. As is outlined in Algorithm 3, the binary search is only
+applied at those breakpoints adjoining intervals for which $Q$ is
+nonmonotone and hence $B(1)$ is false. It is further assumed that
+there exists $0 \le s^* \le 1$ such that $B(s)$ is true for $0 \le s
+\le s^*$ and false for $s > s^*$. Since the derivative conditions at
+interior breakpoints are shared by intervals left and right of the
+breakpoint, the binary search is performed at all breakpoints
+simultaneously.  Specifically, the monotonicity of $Q$ is checked on
+all active intervals in each step of the binary search to determine
+the next derivative modification at each breakpoint. The goal of this
+search is to converge on the boundary of the monotone region in the
+$(\tau_1$, $\alpha$, $\beta$, $\gamma)$ space for all intervals. This
+multiple-interval binary search allows the value zero to be obtained
+for all derivative values in a fixed number of computations, hence has
+no effect on computational complexity. This binary search algorithm is
+outlined below.
+
 
 %% ===================================================================
-%%              Algorithm 4: Quasi-bisection search
-\vskip 5mm
-{\parindent 0mm
-{\bf Algorithm 4:} {\tt QUASI-BISECTION}$\bigl(x_0, x_1, f \bigr)$
+%%              Algorithm 4: Global binary search
+\vskip 5mm {\parindent 0mm {\bf Algorithm 4:} {\tt
+    MULTIPLE\_BINARY\_SEARCH}$\bigl(X(1{:}n), Y(1{:}n), Q \bigr)$
 
-where $x_0$, $x_1 \in {\bbb R}$, $x_0 < x_1$, and $f$ is an order six
-polynomial that is nonmonotone on the interval $[x_0$, $x_1]$. Defines
-a stepping procedure for function derivative values that ensures $f$
-can be made monotone in a fixed number of steps given a relative
-precision $e \in {\bbb R}$.
+where $(X_i,Y_i) \in \bbb{R}\times\bbb{R}$, $i = 1$, $\ldots$, $n$ are
+data points, and $Q(x)$ is a quintic spline interpolant such that
+$Q(X_i) = Y_i$. Modifies derivative values of $Q$ at data points to
+ensure {\tt IS\_MONOTONE} is true for all intervals defined by
+adjacent data points, given a desired precision $\mu \in {\bbb R}$.
 
 }
 {\parindent=6mm
-\item{} Set a starting {\tt step\_size} and save the initial value of $f$.
-\item{} $\hat f := f$
-\item{} {\tt step\_size} $:= 1/2$
-\item{} {\tt shrinking} $:=$ {\tt TRUE}
-\item{} {\tt do while } $\big( ($ {\tt step\_size} $ > e)$ {\tt or not
-  IS\_MONOTONE}$(x_1$, $x_2$, $f)$ $\big)$
-\item{} \codent {\tt if shrinking then step\_size} $:=$ {\tt step\_size} $/ 2$
-
+\item{} Initialize the step size $s$, make a copy of $Q$, and construct
+  three necessary queues for proceeding with the multiple-interval binary search.
+\item{} $s \: 1$
+\item{} $\hat Q \: Q$
+\item{} {\tt searching} $\:$ {\tt TRUE}
+\item{} {\tt checking} $\:$ empty queue for holding left indices of {\it intervals}
+\item{} {\tt growing} $\:$ empty queue for holding indices of {\it data points}
+\item{} {\tt shrinking} $\:$ empty queue for holding indices of {\it data points}
+\item{} {\tt do} $i = 1$, $n-1$
+\itemitem{} {\tt if not IS\_MONOTONE}$\bigl( X_i$, $X_{i+1}$, $Q \bigr)$ {\tt then}
+\itemitem{} \codent Add interval starting at $i$ to {\tt shrinking}.
+\itemitem{} {\tt endif}
+\item{} {\tt enddo}
+\item{} {\tt do while} $\bigl(${\tt searching or shrinking} is nonempty$\bigr)$
+\itemitem{} Compute the {\it step size} for this iteration of the search.
+\itemitem{} {\tt if  searching  then;} $s \: \max\{\mu, s / 2\}$
+\itemitem{} {\tt else;} \hskip 24mm $s \: 3s / 2$
+\itemitem{} {\tt endif}
+\itemitem{} {\tt if} $(s = \mu)$ {\tt then; searching} $\:$ {\tt FALSE; endif}
+\itemitem{} Increase $DQ$ and $D^2Q$ at all data points in {\tt growing}
+  that are strictly adjoining intervals for which $Q$ is monotone.
+\itemitem{} {\tt do} $(i \in$ {\tt growing}$)$ {\tt and} $(i \not \in$ {\tt shrinking}$)$
+\itemitem{} \codent $DQ(X_i) \: DQ(X_i) + s D\hat Q(X_i)$
+\itemitem{} \codent $D^2Q(X_i) \: D^2Q(X_i) + s D^2\hat Q(X_i)$
+\itemitem{} \codent Add intervals starting at $i-1$ and $i$ to {\tt checking}.
+\itemitem{} {\tt enddo}
+\itemitem{} Decrease $DQ$ and $D^2Q$ at all data points in {\tt shrinking} and
+  ensure those data point indices are placed into {\tt growing}.
+\itemitem{} {\tt do} $i \in$ {\tt shrinking}
+\itemitem{} \codent Add $i$ to {\tt growing} if it is not already present.
+\itemitem{} \codent $DQ(X_i) \: DQ(X_i) - s D\hat Q(X_i)$
+\itemitem{} \codent $D^2Q(X_i) \: D^2Q(X_i) - s D^2\hat Q(X_i)$
+\itemitem{} \codent Add intervals starting at $i-1$ and $i$ to {\tt checking}.
+\itemitem{} {\tt enddo}
+\itemitem{} {Empty {\tt shrinking} queue then check all intervals in
+  {\tt checking} for monotonicity with {\tt IS\_MONOTONE}, placing
+  data points adjacent to intervals for which $Q$ is nonmonotone into
+  {\tt shrinking}.}
+\itemitem{} {\tt do} $i \in$ {\tt checking}
+\itemitem{} \codent {\tt if not IS\_MONOTONE}$\bigl( X_i$, $X_{i+1}$, $Q \bigr)$ {\tt then}
+\itemitem{} \codent \codent Add $i$ and $i+1$ to {\tt shrinking}.
+\itemitem{} \codent {\tt endif}
+\itemitem{} {\tt enddo}
+\item{} {\tt enddo }
 }
 \vskip 5mm
 %% ----------------------------------------------------------------------
 
+%% \itemitem{} Take search steps either modifying derivative values
+%%   towards monotonicity (zero) or towards the original values over all
+%%   intervals that are either nonmonotone or previously modified.
 
-As long as a step size schedule is
-set that allows the value zero to be obtained in a fixed number of
-computations, this has no effect on computational complexity. Notably,
-since {\tt IS\_MONOTONE} handles both nondecreasing and nonincreasing
-simultaneously by taking into account the sign of $v$, Algorithm 3
-produces $Q(x)$ that is monotone increasing (decreasing) over exactly
-the same intervals that the data $(X_i$, $Y_i)$ is monotone increasing
-(decreasing).
 
+In the provided package $\mu = 2^{-26}$, which results in a guaranteed
+$26$ search steps for all intervals that are initially nonmonotone. An
+additional $43$ steps could be required to reduce a derivative to zero
+with step size growth rate of $3/2$. This can only happen when $Q$
+becomes nonmonotone on an interval for the first time while the step
+size equals $\mu$, but for which the only viable solution is a
+derivative value of zero. The maximum number of steps is due to the
+fact that $\sum_{i=0}^{42} \mu (3/2)^i > 1$. In total the {\tt
+  MULTIPLE\_BINARY\_SEARCH} search could require $69$ steps.

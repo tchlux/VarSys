@@ -72,7 +72,7 @@ mqsi[x_,y_,u_] := {
   (* Write a file containing all the points to get the MQSI
      evaluations by using the MQSI command line interface. *)
   Run["rm temp.out"]; (* Remove the existing file. *)
-  Run["./cli temp.data temp.pts temp.out"];
+  Run["./mqsi temp.data temp.pts temp.out"];
   (* Read the values of the MQSI at all points. *)
   qu = Map[Internal`StringToDouble,StringSplit[Import["temp.out","Text"],Whitespace]];
   Run["rm temp.data temp.pts temp.out "]; (* Remove the files *)
@@ -82,7 +82,7 @@ mqsi[x_,y_,u_] := {
 
 (* Make a plot of the MQSI to data, including stylized markers for all
    data determined by local function change conditions. *)
-makePlot[name_, x_, y_, m_:100, markSize_:markerSize, width_:400, height_:150] := {
+makePlot[name_, x_, y_, m_:100, width_:400, height_:130, markSize_:markerSize] := {
   ClearAll[u, qu, points, graphic];
   Print[""];
   Print["Making '"<>name<>"'.."];
@@ -150,8 +150,10 @@ quadraticSensitivity[name_, offset_, q1_, q2_, m_:100, width_:400, height_:150] 
   Print[""];
 }
 
+(* Construct the specific zoomed plot for the paper. This is not a 
+   reusable function, it is only here to compartmentalize code. *)
 makeZoomedPlot[name_, x_, y_, m_:1000, width_:450, height_:350] := {
-  g = makePlot[name, x, y, m, markSize=.015, width, height];
+  g = makePlot[name, x, y, m, width, height, markSize=.015];
   (* Make a subplot zoomed in on a "sharp" looking corner. *)
   windowRadius = .001;
   u = Subdivide[x[[-2]]-windowRadius, x[[-2]]+windowRadius, 100];
@@ -187,33 +189,110 @@ makeZoomedPlot[name_, x_, y_, m_:1000, width_:450, height_:350] := {
 };
 
 
+(* Construct a stacked bar chart (data needs to be stacked already,
+   { {<col 1>}, {<col 2>}, ... {<col N>} }, where there are N xLabels. *)
+stackedBarChart[data_, xlabels_, colors_, yAxisName_, xAxisName_,
+		    showLegend_:True, width_:450, height_:150] := {
+  legend = If[showLegend, Placed[SwatchLegend[
+		  colors, names, LabelStyle->font,
+		  LegendLayout->"Column"], {.2,.7}], None];
+  Show[BarChart[data,ChartLayout->"Stacked",
+		ChartStyle->colors,
+		ChartLegends->legend
+       ],
+       Frame -> {{True, None}, {True, None}},
+       FrameLabel -> {{yAxisName, None}, {xAxisName , None}},
+       FrameTicks -> {{Automatic, Automatic},
+		      {Transpose[{Range[Length[data]],xlabels}], None}},
+       BaseStyle -> font,
+       ImageSize->{width,height},
+       AspectRatio->Full]
+  }[[1]];
+
+
+(* ------------------------------------------------------------------ *)
+
+
 (* Sensitivity demonstration of quadratic facet model. *)
 q1[x_] := x^2;
 q2[x_] := (x-2)^2 + 6;
-quadraticSensitivity["sensitivity.eps", {-1.5,-0.5,0.0,0.5,1.5}, q1, q2]
+quadraticSensitivity["1-sensitivity.eps", {-1.5,-0.5,0.0,0.5,1.5}, q1, q2]
+
+
+(* ------------------------------------------------------------------ *)
 
 
 (* Piecewise polynomial. *)
 y = {0.0, 1.0, 1.0, 1.0, 0.0, 20.0, 19.0, 18.0, 17.0,  0.0,  0.0,  3.0,  0.0,  1.0,  6.0, 16.0, 16.1, 1.0};
 x = Subdivide[0, 1, Length[y]-1];
-makePlot["piecewise-polynomial.eps", x, y, m=1000];
+makePlot["2-piecewise-polynomial.eps", x, y, m=1000];
 
+(* Large tangent *)
+x = { 0.0, 0.2098765432098766, 0.39506172839506193, 0.5555555555555556, 0.691358024691358, 0.8024691358024691, 0.8888888888888888, 0.9506172839506173, 0.9876543209876543, 1.0 };
+y = { -0.00990099009900991, 0.249807128529548, 0.626179482031721, 1.2004889975550124, 2.138318481208833, 3.818560380725758, 7.25688073394495, 15.839916839916839, 43.751381215469486, 98.99999999999991 };
+makePlot["3-large-tangent.eps", x, y, m=1000];
 
 (* Signal decay *)
 x = { 0.0, 0.05263157894736842, 0.10526315789473684, 0.15789473684210525, 0.21052631578947367, 0.2631578947368421, 0.3157894736842105, 0.3684210526315789, 0.42105263157894735, 0.47368421052631576, 0.5263157894736842, 0.5789473684210527, 0.631578947368421, 0.6842105263157894, 0.7368421052631579, 0.7894736842105263, 0.8421052631578947, 0.894736842105263, 0.9473684210526315, 1.0 };
 y = { 0.0, 9.432708787172459, 4.284713438563181, -5.8890539191352635, -5.800712066272032, 1.9184371257428916, 4.989833591891926, 0.6982214699335515, -3.3026390701546022, -1.8935165608964157, 1.6291755274134456, 2.104355002689216, -0.3299203058930831, -1.754105324112179, -0.5050258870439092, 1.1574764406463904, 0.9092650864532725, -0.5285051026957308, -0.9718230935964967, -8.906522175617114*10^(-16) };
-makePlot["signal-decay.eps", x, y, m=1000];
+makePlot["4-signal-decay.eps", x, y, m=1000];
 
 
-(* Large tanget *)
-x = { 0.0, 0.2098765432098766, 0.39506172839506193, 0.5555555555555556, 0.691358024691358, 0.8024691358024691, 0.8888888888888888, 0.9506172839506173, 0.9876543209876543, 1.0 };
-y = { -0.00990099009900991, 0.249807128529548, 0.626179482031721, 1.2004889975550124, 2.138318481208833, 3.818560380725758, 7.25688073394495, 15.839916839916839, 43.751381215469486, 98.99999999999991 };
-makePlot["large-tangent.eps", x, y, m=1000];
+(* ------------------------------------------------------------------ *)
+
+
+(* Real VarSys data used to demonstrate the CDF approximation. *)
+data = Transpose[Import["3.2GHz-readers.csv"]][[1,2;;]];
+(* Set the random seed for repeatability. *)
+SeedRandom[1];
+sample = Sort[RandomSample[data,100]];
+(* Plot MQSI and the 'truth' in the same visual. *)
+(*   generate approximation of CDF with MQSI using equally spaced percentiles. *)
+groups = 13;
+smoothed = sample[[ 1 ;; Length[sample] ;; Floor[Length[sample]/groups] ]];
+x = Join[{data[[1]]}, smoothed, {data[[-1]]}];
+y = Join[{0}, Subdivide[0,1,Length[x]-3], {1}];
+approx = makePlot["5-real-data.eps", x, y, m=1000];
+(*   generate 'truth' as an empirical CDF *)
+trueEDF = EmpiricalDistribution[data];
+trueCDF[x_] := CDF[trueEDF,x];
+truth = Plot[trueCDF[x], {x,data[[1]],data[[-1]]}, PlotStyle->{Thickness[.003],red,Dashed}];
+vis = Show[{truth,approx},
+	   ImageSize->{450,220}, AspectRatio->Full,
+	   Method->{"AxesInFront"->False}, PlotRange->Full];
+Export["5-real-data.eps",vis];
+
+
+(* ------------------------------------------------------------------ *)
 
 
 (* Random monotone, with sub-window showing smoothness. *)
 x = { 0.025926231827891333, 0.13457994534493356, 0.18443986564691528, 0.2046486340378425, 0.26682727510286663, 0.29965467367452314, 0.3303348210038741, 0.42036780208748903, 0.4353223926182769, 0.43599490214200376, 0.5135781212657464, 0.5291420942770391, 0.5496624778787091, 0.6192709663506637, 0.6211338327692949, 0.7853351478166735 };
 y = { 0.06528650438687811, 0.079645477009061, 0.09653091566061256, 0.10694568430998297, 0.12715997170127746, 0.20174322626496533, 0.2203062070705597, 0.22601200060423587, 0.34982628500329926, 0.42812232759738944, 0.46778748458230024, 0.4942368373819278, 0.505246090121704, 0.5967453089785958, 0.846561485357468, 0.8539752926394888 };
-makeZoomedPlot["random-monotone.eps", x, y, m=1000, width=450, height=350];
+makeZoomedPlot["6-random-monotone.eps", x, y, m=1000, width=450, height=350];
+
+
+(* ------------------------------------------------------------------ *)
+
+
+(* Timing data stacked bar chart. *)
+data = Import["timing_data.csv","csv"];
+sizes = data[[2;;,1]];
+names = data[[1,2;;]]
+data = data[[2;;,2;;]];
+
+(* 10 -- 100 *)
+tempSizes = sizes[[;;10]];
+tempData = data[[;;10]];
+chart = stackedBarChart[tempData, tempSizes, {red, green, blue},
+			"Time (seconds)", ""];
+Export["7-runtimes-10.eps",chart];
+
+(* 100 -- 1000  *)
+tempSizes = sizes[[10;;]];
+tempData = data[[10;;]];
+chart = stackedBarChart[tempData, tempSizes, {red, green, blue},
+			"Time (seconds)", "Data Size", False];
+Export["8-runtimes-100.eps",chart];
 
 

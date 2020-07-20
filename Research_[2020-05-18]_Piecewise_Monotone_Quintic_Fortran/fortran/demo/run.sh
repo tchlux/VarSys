@@ -2,8 +2,8 @@
 
 SRC_DIR=".."
 CUR_DIR="$(pwd)"
-# Name the executable 'cli' for "command line interface".
-EXEC="cli"
+# Name the command line interface executable 'mqsi'.
+EXEC="mqsi"
 
 # Declare the variables for compilation.
 F03=gfortran

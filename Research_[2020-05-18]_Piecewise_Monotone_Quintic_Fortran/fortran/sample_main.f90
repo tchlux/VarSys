@@ -2,8 +2,18 @@
 !                          sample_main.f90
 ! 
 ! DESCRIPTION:
-!   This file (sample_main.f90) contains a sample main program that
-!   calls MQSI to interpolate handcrafted nonmonotone data.
+!   This file (sample_main.f90) contains a sample main program that calls
+!   MQSI to interpolate handcrafted nonmonotone data. Compile with:
+! 
+!    $F03 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 MQSI.f90 \
+!       sample_main.f90 -o main $LIB
+!
+!   where '$F03' is the name of the Fortran 2003 compiler, '$OPTS' are
+!   compiler options such as '-O3', and '$LIB' provides a flag to link
+!   BLAS and LAPACK. If the BLAS and LAPACK libraries are not
+!   available on your system, then replace $LIB with the filenames
+!   'blas.f lapack.f'; these files contain the routines from the BLAS
+!   and LAPACK libraries that are necessary for this package.
 !
 ! CONTAINS:
 !   PROGRAM SAMPLE_MAIN
@@ -32,7 +42,7 @@
 ! CONTRIBUTORS:
 !   Thomas C.H. Lux (tchlux@vt.edu)
 !   Layne T. Watson (ltwatson@computer.org)
-!   William I. Thacker (thacker@winthrop.edu)
+!   William I. Thacker (thackerw@winthrop.edu)
 ! 
 ! VERSION HISTORY:
 !   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
@@ -93,7 +103,7 @@ IF (INFO .NE. 0) WRITE(*,111) INFO
 WRITE (*,121)
 121 FORMAT('     I', 5X, 'X(I)', 5X, 'Y(I)', 3X, 'Spline Value')
 DO I=1,ND
-     WRITE(*,131) I, X(I), Y(I), U(I)
+   WRITE(*,131) I, X(I), Y(I), U(I)
 END DO
 131 FORMAT( I6, 3F9.2)
 
@@ -110,7 +120,7 @@ IF (INFO .NE. 0) WRITE(*,161) INFO
 WRITE(*,171)
 171 FORMAT(/,'   I   First Derivative')
 DO I=1,ND
-WRITE(*,181) I,U(I)
+   WRITE(*,181) I,U(I)
 END DO
 181 FORMAT(I4, 2X, F9.2)
 
@@ -122,7 +132,7 @@ IF (INFO .NE. 0) WRITE(*,191) INFO
 WRITE(*,201)
 201 FORMAT(/,'   I   Second Derivative')
 DO I=1,ND
-WRITE(*,181) I,U(I)
+   WRITE(*,181) I,U(I)
 END DO
 
 END PROGRAM SAMPLE_MAIN

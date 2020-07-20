@@ -6,10 +6,6 @@
 !   value, integral, or derivative(s) of a B-spline given its knot
 !   sequence.
 ! 
-!   W A R N I N G : This routine has NO ERROR CHECKING and assumes
-!   informed usage for speed. It has undefined behavior for input that
-!   doesn't match specifications.
-! 
 ! CONTAINS:
 !   SUBROUTINE EVAL_BSPLINE(T, XY, D)
 !     USE REAL_PRECISION, ONLY: R8
@@ -26,14 +22,16 @@
 ! CONTRIBUTORS:
 !   Thomas C.H. Lux (tchlux@vt.edu)
 !   Layne T. Watson (ltwatson@computer.org)
-!   William I. Thacker (thacker@winthrop.edu)
+!   William I. Thacker (thackerw@winthrop.edu)
 ! 
 ! VERSION HISTORY:
 !   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
 ! 
 SUBROUTINE EVAL_BSPLINE(T, XY, D)
-! Subroutine for evaluating a B-spline with provided knot sequence, T. For
-! sake of speed, this routine DOES NOT DO ERROR CHECKING. Use with caution.
+! Subroutine for evaluating a B-spline with provided knot sequence, T.
+! W A R N I N G : This routine has NO ERROR CHECKING and assumes
+! informed usage for speed. It has undefined behavior for input that
+! doesn't match specifications.
 ! 
 ! INPUT:
 !   T(1:N) -- The nondecreasing sequence of N knots for the B-spline.
@@ -161,8 +159,12 @@ int_or_diff : IF (DERIV .LT. 0) THEN
 WHERE (TN .LE. XY(:))
    BIATX(:,N) = 1.0_R8
 END WHERE
-! The loop starts at the back, raising the order of all
-! constituents to match the order of the first.
+! Currently the first B-spline in BIATX(:,1) has full order and covers
+! all knots, but each following B-spline spans fewer knots (having
+! lower order). This loop starts at the back of BIATX at the far right
+! (order 1) constituent B-spline, raising the order of all constituent
+! B-splines to match the order of the first by using the standard
+! forward evaluation.
 raise_order : DO I = 1, L
    DO J = N-I, K
       LEFT = (TN - T(J))
@@ -215,8 +217,10 @@ BIATX(:,1) = BIATX(:,1) * (TN - T(1))
 ELSE IF (DERIV .GT. 0) THEN
 ! Compute a derivative of the B-spline (if D > 0).
 compute_derivative : DO J = N-DERIV, K
-   ! Cycle over each knot, following the same structure with the
-   ! derivative computing relation instead of the B-spline one.
+   ! Cycle over each knot just as for standard evaluation, however
+   ! instead of using the recurrence relation for evaluating the value
+   ! of the B-spline, use the recurrence relation for computing the
+   ! value of the derivative of the B-spline.
    DO I = 1, N-J
       ! Assure that the divisor will not cause invalid computations.
       LEFT = (T(I+J-1) - T(I))

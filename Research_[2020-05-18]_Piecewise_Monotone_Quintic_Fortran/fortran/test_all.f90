@@ -6,16 +6,20 @@
 !   package. Here is an example command to compile and run all tests:
 ! 
 !    $F03 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 MQSI.f90 \
-!      test.f90 -o test lapack.f blas.f && ./test
-! 
+!      test.f90 -o test $LIB && ./test
+!
 !   where '$F03' is the name of the Fortran 2003 compiler, '$OPTS' are
-!   compiler options such as '-O3'.
+!   compiler options such as '-O3', and '$LIB' provides a flag to link
+!   BLAS and LAPACK. If the BLAS and LAPACK libraries are not
+!   available on your system, then replace $LIB with the filenames
+!   'blas.f lapack.f'; these files contain the routines from the BLAS
+!   and LAPACK libraries that are necessary for this package.
 ! 
 !   All tests will be run and an error message will be printed for any
-!   failed test cases. Otherwise a message saying tests have passed will
-!   be directed to standard output. A small timing test will also be
-!   run to display the expected time required to fit and evaluate a
-!   MQSI to data of a given size.
+!   failed test cases. Otherwise a message saying tests have passed
+!   will be directed to standard output. A small timing test will also
+!   be run to display the expected time required to fit and evaluate a
+!   monotone quintic spline interpolant to data of a given size.
 ! 
 ! CONTAINS:
 !   PROGRAM TEST_ALL
@@ -52,7 +56,7 @@
 ! CONTRIBUTORS:
 !   Thomas C.H. Lux (tchlux@vt.edu)
 !   Layne T. Watson (ltwatson@computer.org)
-!   William I. Thacker (thacker@winthrop.edu)
+!   William I. Thacker (thackerw@winthrop.edu)
 ! 
 ! VERSION HISTORY:
 !   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
@@ -65,7 +69,7 @@ IMPLICIT NONE
 ! 
 ! The number of equally spaced points used when checking monotonicity,
 ! and the number of repeated trials used when collecting timing data.
-INTEGER, PARAMETER :: TRIALS = 20
+INTEGER, PARAMETER :: TRIALS = 100
 ! The maximum allowable error in spline approximations to data.
 REAL(KIND=R8), PARAMETER :: ERROR_TOLERANCE = SQRT(EPSILON(1.0_R8))
 ! The different sizes of data provided for testing monotone interpolation.
@@ -108,12 +112,13 @@ INTERFACE
 END INTERFACE
 ! Iteration indices.
 INTEGER :: I, J, K, L
-! Boolean declaring whether or not all tests have successfully passed.
+! Boolean for whether or not all tests have successfully passed.
 LOGICAL :: ALL_PASSED
-! Time recording variables.
-REAL :: EVAL_TIMES(TIMING_PERCENTILES,&
-     SIZE(TEST_FUNC_NAMES),SIZE(EQ_SPACED)), &
-     FIT_TIMES(TIMING_PERCENTILES,SIZE(TEST_FUNC_NAMES),SIZE(EQ_SPACED))
+! Time recording variables for spline evaluation EVAL_TIMES, and for
+! construction of the spline interpolant FIT_TIMES. These are REAL
+! valued because the system call for TIME requires a REAL value.
+REAL :: EVAL_TIMES(TIMING_PERCENTILES,SIZE(TEST_FUNC_NAMES),SIZE(EQ_SPACED))
+REAL :: FIT_TIMES( TIMING_PERCENTILES,SIZE(TEST_FUNC_NAMES),SIZE(EQ_SPACED))
 ! ------------------------------------------------------------------
 ALL_PASSED = .TRUE.
 
@@ -219,12 +224,12 @@ FUNCTION PASSES_TEST(F_NUM, N, EQUALLY_SPACED_X, TRIALS, EVAL_TIME, FIT_TIME)
   INTEGER, INTENT(IN) :: TRIALS 
   !  Optional storage for timing results.
   REAL, INTENT(OUT), OPTIONAL, DIMENSION(:) :: EVAL_TIME, FIT_TIME
-  !  Boolean declaring if a test was passed.
+  !  Boolean for if a test was passed.
   LOGICAL :: PASSES_TEST
   ! Local variables.
   !  Data location X, values Y, spline knots SK, and spline coefficients SC.
   REAL(KIND=R8) :: X(1:N), Y(1:N), SK(1:3*N+6), SC(1:3*N)
-  !  Iteration indices I and J, subroutine execution flag INFO.
+  !  Iteration index I, random seed size J, subroutine execution flag INFO.
   INTEGER :: I, INFO, J
   !  Storage for seeding the random number generator (for repeatability).
   INTEGER, DIMENSION(:), ALLOCATABLE :: SEED
@@ -293,7 +298,7 @@ FUNCTION PASSES_TEST(F_NUM, N, EQUALLY_SPACED_X, TRIALS, EVAL_TIME, FIT_TIME)
      END DO shrink_xy
   ! Unknown test number (incorrect usage of this testing routine).
   ELSE
-     WRITE (*,100) J
+     WRITE (*,100) F_NUM
 100  FORMAT(/,'Unknown test number',I3,/)
      PASSES_TEST = .FALSE.
      IF (PRESENT(EVAL_TIME) .AND. PRESENT(FIT_TIME)) THEN     
@@ -325,7 +330,7 @@ REAL(KIND=R8), DIMENSION(:), INTENT(IN)    :: X
 !  Data values.
 REAL(KIND=R8), DIMENSION(:), INTENT(INOUT) :: Y
 !  Result, TRUE if passed, FALSE otherwise.
-LOGICAL, INTENT(INOUT) :: PASSES
+LOGICAL, INTENT(OUT) :: PASSES
 !  Number of test points between values of X.
 INTEGER, INTENT(IN) :: N_TEST
 ! Local variables.

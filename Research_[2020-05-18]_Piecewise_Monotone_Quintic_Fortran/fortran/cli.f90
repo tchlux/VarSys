@@ -3,10 +3,23 @@
 ! 
 ! DESCRIPTION:
 !   This file defines a command line interface program to the MQSI
-!   package. The command line interface accepts data (to build the
-!   MQSI) and points (to fill with the MQSI) in files and outputs
-!   filled values at points to a file.
+!   package. The command line interface accepts data (to build a
+!   monotone quintic spline interpolant) and points (to approximate
+!   with MQSI) in files and outputs approximated values at points
+!   to a file. Compile with:
+! 
+!    $F03 $OPTS REAL_PRECISION.f90 EVAL_BSPLINE.f90 SPLINE.f90 MQSI.f90 \
+!       cli.f90 -o cli $LIB
 !
+!   where '$F03' is the name of the Fortran 2003 compiler, '$OPTS' are
+!   compiler options such as '-O3', and '$LIB' provides a flag to link
+!   BLAS and LAPACK. If the BLAS and LAPACK libraries are not
+!   available on your system, then replace $LIB with the filenames
+!   'blas.f lapack.f'; these files contain the routines from the BLAS
+!   and LAPACK libraries that are necessary for this package. Running
+!   the program with no arguments causes usage information to be
+!   printed to standard output.
+! 
 ! CONTAINS:
 !   PROGRAM CLI
 ! 
@@ -30,6 +43,7 @@
 !     INTEGER, INTENT(OUT) :: INFO
 !     INTEGER, INTENT(IN), OPTIONAL :: D
 !   END SUBROUTINE EVAL_SPLINE
+! 
 ! 
 ! CONTRIBUTORS:
 !   Thomas C.H. Lux (tchlux@vt.edu)
@@ -59,8 +73,14 @@ INTERFACE
  END SUBROUTINE EVAL_SPLINE
 END INTERFACE
 
-INTEGER :: I, INFO, C, M, N, NCC
+! MQSI status integer INFO, number of command line arguments C, number
+! of points to approximate M, and number of data points N.
+INTEGER :: INFO, C, M, N
+! Holder for the input data point file name FILE_NAME, reused as the
+! file name for the output file of approximated values. 
 CHARACTER(LEN=218) :: FILE_NAME
+! Spline coefficients SC, spline knots SK, approximation points U,
+! data locations X, and data values Y.
 REAL(KIND=R8), ALLOCATABLE :: SC(:), SK(:), U(:), X(:), Y(:)
 
 ! Get the number of command line arguments provided.
@@ -75,8 +95,8 @@ IF ((C .EQ. 2) .OR. (C .EQ. 3)) THEN
    ! Allocate storage based on N.
    ALLOCATE(X(N), Y(N), SC(1:3*N), SK(1:3*N+6))
    ! Read in the X and Y data.
-   READ(10,*) X
-   READ(10,*) Y
+   READ(10,*) X(:)
+   READ(10,*) Y(:)
    CLOSE(10)
 
    ! Open the points file and read the number of points.
@@ -86,7 +106,7 @@ IF ((C .EQ. 2) .OR. (C .EQ. 3)) THEN
    ! Allocate storage based on M.
    ALLOCATE(U(M))
    ! Read in the points.
-   READ(11,*) U
+   READ(11,*) U(:)
    CLOSE(11)
 
    ! Construct a MQSI.
@@ -96,7 +116,7 @@ IF ((C .EQ. 2) .OR. (C .EQ. 3)) THEN
    ! Evaluate the spline at all points (result is updated in-place in U).
    CALL EVAL_SPLINE(SK, SC, U, INFO)
    IF (INFO .NE. 0) WRITE(*,111) INFO
-111 FORMAT(/,'EVAL_SPLINE returned info= ',I4)
+111 FORMAT(/,'EVAL_SPLINE returned info = ',I4)
 
    ! Set the output file name (if it was provided).
    IF (C .EQ. 3) THEN ; CALL GET_COMMAND_ARGUMENT(3,FILE_NAME)      
@@ -122,8 +142,8 @@ ELSE
          'X(1:N) and real function values Y(1:N), and "<points-file>" is',/,&
          'a path to a file starting with an integer M immediately followed',/,&
          'by real valued locations U(1:M) of points to be approximated',/&
-         'with an MQSI over (X,Y).',/,/&
-         'Values at all U(1:M) are predicted and written to "<output-file>"',/&
+         'with MQSI over (X,Y).',/,/&
+         'Values at all U(1:M) are produced by MQSI and written to "<output-file>"',/&
          'if it is provided, otherwise "output.txt".',/)
 END IF
 
