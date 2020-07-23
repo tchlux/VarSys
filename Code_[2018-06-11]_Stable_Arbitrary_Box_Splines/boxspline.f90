@@ -1,9 +1,19 @@
-! This file (boxspline.f90) contains the subroutine BOXSPLEV that can
-! be used to evaluate a box-spline, defined by its associated
-! direction vector set, at given evaluation points.
+! ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+!                         boxspline.f90
+! 
+! DESCRIPTION:
+!   This file contains the subroutine BOXSPLEV that can be used
+!   to evaluate a box-spline, defined by its associated direction
+!   vector set, at given evaluation points.
+! 
+! CONTRIBUTORS:
+!   Thomas C.H. Lux (tchlux@vt.edu)
+!   Layne T. Watson (ltwatson@computer.org)
+! 
+! VERSION HISTORY:
+!   July 2018 -- (tchl) Created file, (ltw) reviewed and revised.
 ! 
 ! ====================================================================
-
 SUBROUTINE BOXSPLEV(UNIQUE_DVECS, DVEC_MULTS, EVAL_PTS, BOX_EVALS, ERROR)
   ! BOXSPLEV evaluates a box-spline, defined by a direction vector set
   ! in dimension S, at given evaluation points.

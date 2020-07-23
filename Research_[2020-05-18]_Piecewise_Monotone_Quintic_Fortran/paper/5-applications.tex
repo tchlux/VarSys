@@ -42,6 +42,7 @@ problem with large variations in slope. Notice that despite drastic
 shifts in slope, the resulting monotone quintic spline interpolant
 provides smooth and reasonable estimates to function values between data.
 \par}
+\iffalse
 \vskip 15mm
 \centerline{\epsfxsize=4truein \epsffile{vis/7-runtimes-10.eps}}
 \centerline{\epsfxsize=4truein \epsffile{vis/8-runtimes-100.eps}}
@@ -57,6 +58,7 @@ the quadratic facet (Algorithm 1) take roughly one microsecond
 ($10^{-6}$ seconds) per breakpoint, while the binary search
 (Algorithm 4) takes roughly four microseconds per breakpoint.
 \par}
+\fi
 \endinsert
 
 Throughout, all visuals have points that are stylized by local
@@ -78,14 +80,14 @@ from a storage medium. Figure 4 provides a particularly difficult
 monotone interpolation challenge using randomly generated monotone
 data.
 
-Finally, Figure 5 provides execution times on a computer running MacOS
-10.15.5 with a 2 GHz Intel Core I5 CPU. The total time is
-broken down by the major stages of {\tt MQSI}. Most of the computation
-time is spent solving the banded linear system for B-spline
-coefficients in {\tt FIT\_SPLINE}.
-
-% For large problems ($n > 100$) it would be faster
-% to construct splines over intervals independently (each interval
-% requiring a $6 \times 6$ linear system to be solved), however the
-% singular linear system is chosen here for the decreased redundancy
-% in the spline description.
+On a computer running MacOS 10.15.5 with a 2 GHz Intel Core i5 CPU, the
+quadratic facet (Algorithm 1) takes roughly one microsecond ($10^{-6}$
+seconds) per breakpoint, while the binary search (Algorithm 4) takes roughly
+four microseconds per breakpoint; these times were generated from 100
+repeated trials averaged over 14 different testing functions.  The vast
+majority of execution time is spent solving the banded linear system of
+equations in the routine {\tt FIT\_SPLINE} for the $B$-spline coefficients.
+For large problems ($n > 100$) it would be faster to construct splines
+over intervals independently (each interval requiring a $6 \times 6$ linear
+system to be solved), however the single linear system is chosen here for
+the decreased redundancy in the spline description.

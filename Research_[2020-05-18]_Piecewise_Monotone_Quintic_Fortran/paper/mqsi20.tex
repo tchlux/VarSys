@@ -127,7 +127,10 @@ minus 1pt \lineskiplimit=2pt \lineskip=2pt plus 1pt
 \bigskip
 
 \hrule\bigskip\smallskip \footnote{}{\hskip
--\parindent{\parindent=0pt\rmVIII Authors' addresses:
+-\parindent{\parindent=0pt\rmVIII
+This work was supported by National Science Foundation Grants CNS-1565314,
+CNS-1838271, and DGE-154362.
+Authors' addresses:
 T. C. H. Lux, L. T. Watson, Departments of Computer Science, Mathematics,
 and Aerospace and Ocean Engineering, Virginia Polytechnic Institute \&
 State University, Blacksburg, VA 24061; e-mails: {\ttVIII tchlux@vt.edu,
@@ -168,7 +171,7 @@ G.4 [{\bfVIII Mathematics of Computing}]: Mathematical Software
 General Terms: Algorithms, Monotonicity, Documentation
 
 \medskip
-Additional Key Words and Phrases: Quintic Spline, interpolation
+Additional Key Words and Phrases: quintic spline, interpolation
 
 }
 
@@ -192,9 +195,10 @@ Additional Key Words and Phrases: Quintic Spline, interpolation
 %% This work was supported by the National Science Foundation Grants CNS-1565314 and CNS-1838271.
 
 % ====================================================================
-% Bibliography
+%                            Bibliography
+% \vfil\goodbreak
 \heading{\hlvVIII BIBLIOGRAPHY} {
-\baselineskip=2pt \parskip=100mm
+\baselineskip=2pt%\parskip=100mm
 \frenchspacing
 % Temporary 'caps', 'sl', and 'rm'.
 \let\caps=\capsVIII
@@ -211,7 +215,7 @@ Additional Key Words and Phrases: Quintic Spline, interpolation
 %  #4 -- Journal
 %  #5 -- Volume, number, and pages
 \def\refj#1#2#3#4#5{\noindent\hangindent=10pt\hangafter=1
-{\caps #1}\ys #2.\ys {\rm #3}. {\sl #4}, #5.\vskip 6pt}
+{\caps #1}\ys #2.\ys {\rm #3}. {\sl #4}, #5.\vskip 6pt minus 3pt}
 
 %\refb is for books
 %  #1 -- Author(s)
@@ -219,7 +223,7 @@ Additional Key Words and Phrases: Quintic Spline, interpolation
 %  #3 -- Title
 %  #4 -- Publisher, City, State
 \def\refb#1#2#3#4{\noindent\hangindent=10pt\hangafter=1
-{\caps #1}\ys #2.\ys{\sl #3}. {\rm #4}.\vskip 6pt}
+{\caps #1}\ys #2.\ys{\sl #3}. {\rm #4}.\vskip 6pt minus 3pt}
 
 %\reft is for tech. reports, theses, and conferences
 %  #1 -- Author(s)
@@ -227,7 +231,7 @@ Additional Key Words and Phrases: Quintic Spline, interpolation
 %  #3 -- Title
 %  #4 -- Technical report ID, Publisher, City, State
 \def\reft#1#2#3#4{\noindent\hangindent=10pt\hangafter=1
-{\caps #1}\ys #2.\ys{\rm #3}. {\rm #4}.\vskip 6pt}
+{\caps #1}\ys #2.\ys{\rm #3}. {\rm #4}.\vskip 6pt minus 3pt}
 
 %% -------------------------------------------------------------------
   
@@ -238,8 +242,8 @@ Additional Key Words and Phrases: Quintic Spline, interpolation
   Automation Science and Engineering}{7(1):167--172}
 
 % brennan2019measure
-\refj{Brennan, A.}{2020}{Measure, Modulation and Metadesign: NC
-  Fabrication in Industrial Design and Architecture}{Journal of Design
+\refj{Brennan, A.}{2020}{Measure, modulation and metadesign: NC
+  fabrication in industrial design and architecture}{Journal of Design
   History}{33(1):66--82}
 
 % deboor1978practical
@@ -247,7 +251,11 @@ Additional Key Words and Phrases: Quintic Spline, interpolation
 New York}
 
 % cameron2019moana
-\refj{Cameron, K. W., Anwar, A., Cheng, Y., Xu, L., Li, B., Ananth, U., Bernard, J., Jearls, C., Lux,  T. C. H., Hong, Y., Watson, L. T., and Butt, A. R.}{2019}{MOANA: Modeling and Analyzing I/O Variability in Parallel System Experimental Design}{IEEE Transactions on Parallel and Distributed Systems}{30(8):1843--1856}
+\refj{Cameron, K. W., Anwar, A., Cheng, Y., Xu, L., Li, B., Ananth, U.,
+Bernard, J., Jearls, C., Lux,  T. C. H., Hong, Y., Watson, L. T., and Butt,
+A. R.}{2019}{MOANA: modeling and analyzing I/O variability in parallel
+system experimental design}{IEEE Transactions on Parallel and Distributed
+Systems}{30(8):1843--1856}
 
 % fritsch1980monotone
 \refj{Fritsch., F and Carlson., R.}{1980}{Monotone piecewise cubic
@@ -277,8 +285,8 @@ New York}
 
 % hess1994positive
 \refj{He{\ss}, W. and Schmidt, J. W.}{1994}{Positive quartic, monotone
-  quintic $C^2$-spline interpolation in one and two dimensions}{Journal
-  of Computational and Applied Mathematics}{55(1):51–-67}
+  quintic $\scriptstyle C^2$-spline interpolation in one and two
+  dimensions}{Journal of Computational and Applied Mathematics}{55(1):51–-67}
 
 % knott2012interpolating
 \reft{Knott, G. D.}{2012}{Interpolating cubic splines}{Springer Science
@@ -318,9 +326,9 @@ New York}
   Science}{1(1):127–-130}
 
 % yao2018unconditionally
-\refj{Yao, J. and Nelson, K. E.}{2018}{An Unconditionally Monotone
-  $C^2$ Quartic Spline Method with Nonoscillation
-  Derivatives}{Advances in Pure Mathematics}{8(LLNL-JRNL-742107)}
+\refj{Yao, J. and Nelson, K. E.}{2018}{An unconditionally monotone
+  $\scriptstyle C^2$ quartic spline method with nonoscillation
+  derivatives}{Advances in Pure Mathematics}{8(LLNL-JRNL-742107)}
 
 }
 %% -------------------------------------------------------------------
