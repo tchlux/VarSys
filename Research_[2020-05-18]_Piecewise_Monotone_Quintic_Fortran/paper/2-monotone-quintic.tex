@@ -241,16 +241,16 @@ place of solely shrinking $DQ$ and $D^2Q$ at breakpoints adjoining
 {\it active\/} intervals, or intervals over which $Q$ is nonmonotone at
 least once during the search. The binary search considers a Boolean
 function $B_i(s)$, for $0 \le s \le 1$, that is true if the order six
-polynomial $f(x)$ on $[X_i, X_{i+1}]$ matching derivatives
-$f(X_i)=Y_i$, $Df(X_i)=s \,u_i$, $D^2f(X_i)=s \,v_i$ at $X_i$, and derivatives
-$f(X_{i+1})=Y_{i+1}$, $Df(X_{i+1})=s \,u_{i+1}$, $D^2f(X_{i+1})=s \,v_{i+1}$
+polynomial $Q(x)$ on $[X_i, X_{i+1}]$ matching derivatives
+$Q(X_i)=Y_i$, $DQ(X_i)=s \,u_i$, $D^2Q(X_i)=s \,v_i$ at $X_i$, and derivatives
+$Q(X_{i+1})=Y_{i+1}$, $DQ(X_{i+1})=s \,u_{i+1}$, $D^2Q(X_{i+1})=s \,v_{i+1}$
 at $X_{i+1}$ is monotone, and false otherwise. As is outlined in Algorithm
 3, the binary search is only applied at those breakpoints adjoining intervals
 $[X_i, X_{i+1}]$ over which $Q$ is nonmonotone and hence $B_i(1)$ is false.
 It is further assumed that there exists $0 \le s^* \le 1$ such that $B_i(s)$
 is true for $0 \le s \le s^*$ and false for some $1 > s > s^*$. Since the
 derivative conditions at interior breakpoints are shared by intervals left
-and right of the breakpoint, the binary search is performed at all
+ and right of the breakpoint, the binary search is performed at all
 breakpoints simultaneously.  Specifically, the monotonicity of $Q$ is
 checked on all active intervals in each step of the binary search to
 determine the next derivative modification at each breakpoint. The goal

@@ -6,12 +6,13 @@
 !   quintic spline interpolant of data in terms of its B-spline basis.
 ! 
 ! CONTAINS:
-!   SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
+!   SUBROUTINE MQSI(X, Y, T, BCOEF, INFO, UV)
 !     USE REAL_PRECISION, ONLY: R8
 !     REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: X
 !     REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: Y
 !     REAL(KIND=R8), INTENT(OUT),   DIMENSION(:) :: T, BCOEF
 !     INTEGER, INTENT(OUT) :: INFO
+!     REAL(KIND=R8), INTENT(OUT), DIMENSION(:,:), OPTIONAL :: UV
 !   END SUBROUTINE MQSI
 ! 
 ! DEPENDENCIES:
@@ -35,7 +36,7 @@
 ! VERSION HISTORY:
 !   June 2020 -- (tchl) Created file, (ltw / wit) reviewed and revised.
 ! 
-SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
+SUBROUTINE MQSI(X, Y, T, BCOEF, INFO, UV)
 ! Computes a monotone quintic spline interpolant (MQSI), Q(X), to data
 ! in terms of spline coefficients BCOEF for a B-spline basis defined by
 ! knots T. Q(X) is theoretically guaranteed to be monotone increasing
@@ -65,8 +66,11 @@ SUBROUTINE MQSI(X, Y, T, BCOEF, INFO)
 !        function values and derivative values causes the linear system used
 !        to compute the final spline interpolant to have a prohibitively
 !        large condition number.
+!     8  The optional array UV must have size at least ND x 2.
 !   >10  20 plus the info flag as returned by DGBSV from LAPACK when
 !        computing the final spline interpolant.
+!   UV(1:ND,1:2) -- First and second derivatives of Q(X) at the breakpoints
+!     (optional argument).
 !   
 USE REAL_PRECISION, ONLY: R8
 IMPLICIT NONE
@@ -75,6 +79,7 @@ REAL(KIND=R8), INTENT(IN),    DIMENSION(:) :: X
 REAL(KIND=R8), INTENT(INOUT), DIMENSION(:) :: Y
 REAL(KIND=R8), INTENT(OUT),   DIMENSION(:) :: T, BCOEF
 INTEGER, INTENT(OUT) :: INFO
+REAL(KIND=R8), INTENT(OUT), DIMENSION(:,:), OPTIONAL :: UV
 ! Local variables.
 !  Estimated first and second derivatives (columns) by quadratic
 !  facet model at all data points (rows).
@@ -130,6 +135,10 @@ DO I = 1, ND-1
          (ABS(Y(IP1) - Y(I)) .GT. TP38)) THEN; INFO = 6; RETURN
    END IF
 END DO
+IF (PRESENT(UV)) THEN
+   IF ((SIZE(UV,DIM=1) .LT. ND) .OR. (SIZE(UV,DIM=2) .LT. 2)) THEN
+      INFO = 8; RETURN; END IF
+END IF
 ! Scale Y by an exact power of 2 to make Y and X commensurate, store
 ! scaled Y in FX and also back in Y.
 J = INT(LOG((1.0_R8+MAXVAL(ABS(Y(:))))/MAXVAL(ABS(X(:)))) / LOG(2.0_R8))
@@ -401,9 +410,11 @@ END DO
 ! this routine requires the enforced separation of the values X(I).
 CALL FIT_SPLINE(X, FX, T, BCOEF, INFO)
 
-! Restore Y to its original value.
+! Restore Y to its original value and unscale spline and derivative values.
 BCOEF(1:3*ND) = SCALE * BCOEF(1:3*ND)
 Y(:) = SCALE*Y(:) ! Restore original Y.
+IF (PRESENT(UV)) THEN; UV(1:ND,1:2) = FX(1:ND,2:3); END IF ! Return first
+! and second derivative values at breakpoints.
 
 CONTAINS
 
