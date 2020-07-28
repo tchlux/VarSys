@@ -137,6 +137,21 @@ An $IBM$ least squares fit $\hat f(z) = \sum_{j}P_j B^{c^{(i_j)}}(z)$ can genera
 
 \section{Voronoi Mesh}
 
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.6\textwidth,]{Figures/NA/VM_Construction.pdf}
+  \caption{Above is a depiction of the Voronoi cell
+    boundaries (dashed lines) about a set of interpolation points
+    (dots) in two dimensions. In this example, the Voronoi mesh basis
+    function about the center most point has nonzero weight in the
+    shaded region and transitions from a value of one at the point to
+    zero at the boundary of the twice expanded Voronoi cell (solid
+    line).
+  \vspace{-.1cm}}
+  \label{fig:voronoi-basis}
+\end{figure}
+
 The final of the three meshes utilizes 2-norm distances to define boundaries rather than max norm distances. It also does not rely on box splines as the underlying basis function. A well-studied technique for classification and approximation is the nearest neighbor algorithm \cite{cover1967nearest}. Nearest neighbor inherently utilizes the convex region $v^{x^{(i)}}$ (Voronoi cell \cite{dirichlet1850reduction}) consisting of all points closer to $x^{(i)}$ than any other point $x^{(j)}$. The Voronoi mesh smooths the nearest neighbor approximation by utilizing the Voronoi cells to define support via a generic basis function $V: \mathbb{R}^d \rightarrow \mathbb{R}_+$ given by
 
 $$ V^{x^{(i)}}(y) = \left(1 - \frac{\bigl\|y - x^{(i)}\bigr\|_2}{2 \ d(y \mid x^{(i)})} \right)_+, $$

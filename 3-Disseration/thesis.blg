@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2019)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: thesis.aux
+The style file: plainnat.bst
+Database file #1: thesis.bib
+Warning--empty institution in stanford1993fast
+Warning--empty journal in gregory1985shape
+Warning--there's a number but no volume in gregory1985shape
+You've used 81 entries,
+            2773 wiz_defined-function locations,
+            1081 strings with 21080 characters,
+and the built_in function-call counts, 43523 in all, are:
+= -- 3875
+> -- 2923
+< -- 70
++ -- 988
+- -- 906
+* -- 3638
+:= -- 6700
+add.period$ -- 284
+call.type$ -- 81
+change.case$ -- 536
+chr.to.int$ -- 80
+cite$ -- 165
+duplicate$ -- 1813
+empty$ -- 3235
+format.name$ -- 1040
+if$ -- 9129
+int.to.chr$ -- 2
+int.to.str$ -- 1
+missing$ -- 80
+newline$ -- 437
+num.names$ -- 324
+pop$ -- 1072
+preamble$ -- 1
+purify$ -- 458
+quote$ -- 0
+skip$ -- 1495
+stack$ -- 0
+substring$ -- 1567
+swap$ -- 254
+text.length$ -- 26
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 861
+warning$ -- 3
+while$ -- 366
+width$ -- 0
+write$ -- 1113
+(There were 3 warnings)

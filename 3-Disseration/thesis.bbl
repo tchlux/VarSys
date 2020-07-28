@@ -1,0 +1,580 @@
+\begin{thebibliography}{81}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Abadi et~al.(2015)Abadi, Agarwal, Barham, Brevdo, Chen, Citro,
+  Corrado, Davis, Dean, Devin, Ghemawat, Goodfellow, Harp, Irving, Isard, Jia,
+  Jozefowicz, Kaiser, Kudlur, Levenberg, Man\'{e}, Monga, Moore, Murray, Olah,
+  Schuster, Shlens, Steiner, Sutskever, Talwar, Tucker, Vanhoucke, Vasudevan,
+  Vi\'{e}gas, Vinyals, Warden, Wattenberg, Wicke, Yu, and
+  Zheng]{tensorflow2015-whitepaper}
+Mart\'{\i}n Abadi, Ashish Agarwal, Paul Barham, Eugene Brevdo, Zhifeng Chen,
+  Craig Citro, Greg~S. Corrado, Andy Davis, Jeffrey Dean, Matthieu Devin,
+  Sanjay Ghemawat, Ian Goodfellow, Andrew Harp, Geoffrey Irving, Michael Isard,
+  Yangqing Jia, Rafal Jozefowicz, Lukasz Kaiser, Manjunath Kudlur, Josh
+  Levenberg, Dandelion Man\'{e}, Rajat Monga, Sherry Moore, Derek Murray, Chris
+  Olah, Mike Schuster, Jonathon Shlens, Benoit Steiner, Ilya Sutskever, Kunal
+  Talwar, Paul Tucker, Vincent Vanhoucke, Vijay Vasudevan, Fernanda Vi\'{e}gas,
+  Oriol Vinyals, Pete Warden, Martin Wattenberg, Martin Wicke, Yuan Yu, and
+  Xiaoqiang Zheng.
+\newblock {TensorFlow}: Large-scale machine learning on heterogeneous systems,
+  2015.
+\newblock URL \url{https://www.tensorflow.org/}.
+\newblock Software available from tensorflow.org.
+
+\bibitem[Ali et~al.(2015)Ali, Khan, and Vasilakos]{ali2015security}
+Mazhar Ali, Samee~U Khan, and Athanasios~V Vasilakos.
+\newblock Security in cloud computing: Opportunities and challenges.
+\newblock \emph{Information Sciences}, 305:\penalty0 357--383, 2015.
+
+\bibitem[Amos et~al.(2014)Amos, Easterling, Watson, Thacker, Castle, and
+  Trosset]{amos2014algorithm}
+Brandon~D. Amos, David~R. Easterling, Layne~T. Watson, William~I. Thacker,
+  Brent~S. Castle, and Michael~W. Trosset.
+\newblock Algorithm xxx: Qnstop—quasi-newton algorithm for stochastic
+  optimization.
+\newblock \emph{Technical Report 14-02, Dept. of Computer Science, VPI\&SU,
+  Blacksburg, VA}, 2014.
+
+\bibitem[Bailey and Snavely(2005)]{bailey2005performance}
+David~H Bailey and Allan Snavely.
+\newblock Performance modeling: Understanding the past and predicting the
+  future.
+\newblock In \emph{European Conference on Parallel Processing}, pages 185--195.
+  Springer, 2005.
+
+\bibitem[Barker et~al.(2009)Barker, Davis, Hoisie, Kerbyson, Lang, Pakin, and
+  Sancho]{barker2009using}
+Kevin~J. Barker, Kei Davis, Adolfy Hoisie, Darren~J. Kerbyson, Michael Lang,
+  Scott Pakin, and Jos{\'e}~Carlos Sancho.
+\newblock Using performance modeling to design large-scale systems.
+\newblock \emph{Computer}, 42\penalty0 (11), 2009.
+
+\bibitem[Barthelmann et~al.(2000)Barthelmann, Novak, and
+  Ritter]{barthelmann2000high}
+Volker Barthelmann, Erich Novak, and Klaus Ritter.
+\newblock High dimensional polynomial interpolation on sparse grids.
+\newblock \emph{Advances in Computational Mathematics}, 12\penalty0
+  (4):\penalty0 273--288, 2000.
+
+\bibitem[Basak et~al.(2007)Basak, Pal, and Patranabis]{basak2007support}
+Debasish Basak, Srimanta Pal, and Dipak~Chandra Patranabis.
+\newblock Support vector regression.
+\newblock \emph{Neural Information Processing-Letters and Reviews}, 11\penalty0
+  (10):\penalty0 203--224, 2007.
+
+\bibitem[Beckman et~al.(2008)Beckman, Iskra, Yoshii, Coghlan, and
+  Nataraj]{beckman2008benchmarking}
+Pete Beckman, Kamil Iskra, Kazutomo Yoshii, Susan Coghlan, and Aroon Nataraj.
+\newblock Benchmarking the effects of operating system interference on
+  extreme-scale parallel machines.
+\newblock \emph{Cluster Computing}, 11\penalty0 (1):\penalty0 3--16, 2008.
+
+\bibitem[Bengio and Grandvalet(2004)]{bengio2004no}
+Yoshua Bengio and Yves Grandvalet.
+\newblock No unbiased estimator of the variance of k-fold cross-validation.
+\newblock \emph{Journal of machine learning research}, 5\penalty0
+  (Sep):\penalty0 1089--1105, 2004.
+
+\bibitem[Berglund et~al.(2009)Berglund, Brodnik, Jonsson, Staffanson, and
+  Soderkvist]{berglund2009planning}
+Tomas Berglund, Andrej Brodnik, H{\aa}kan Jonsson, Mats Staffanson, and Inge
+  Soderkvist.
+\newblock Planning smooth and obstacle-avoiding b-spline paths for autonomous
+  mining vehicles.
+\newblock \emph{IEEE Transactions on Automation Science and Engineering},
+  7\penalty0 (1):\penalty0 167--172, 2009.
+
+\bibitem[Bos et~al.(2010)Bos, De~Marchi, Sommariva, and
+  Vianello]{bos2010computing}
+Len Bos, Stefano De~Marchi, Alvise Sommariva, and Marco Vianello.
+\newblock Computing multivariate fekete and leja points by numerical linear
+  algebra.
+\newblock \emph{SIAM Journal on Numerical Analysis}, 48\penalty0 (5):\penalty0
+  1984--1999, 2010.
+
+\bibitem[Brennan(2020)]{brennan2020measure}
+AnnMarie Brennan.
+\newblock Measure, modulation and metadesign: Nc fabrication in industrial
+  design and architecture.
+\newblock \emph{Journal of Design History}, 11 2020.
+\newblock ISSN 0952-4649.
+\newblock \doi{10.1093/jdh/epz042}.
+\newblock URL \url{https://doi.org/10.1093/jdh/epz042}.
+
+\bibitem[{Cameron} et~al.(2019){Cameron}, {Anwar}, {Cheng}, {Xu}, {Li},
+  {Ananth}, {Bernard}, {Jearls}, {Lux}, {Hong}, {Watson}, and
+  {Butt}]{cameron2019moana}
+K.~W. {Cameron}, A.~{Anwar}, Y.~{Cheng}, L.~{Xu}, B.~{Li}, U.~{Ananth},
+  J.~{Bernard}, C.~{Jearls}, T.~C.~H. {Lux}, Y.~{Hong}, L.~T. {Watson}, and
+  A.~R. {Butt}.
+\newblock Moana: Modeling and analyzing i/o variability in parallel system
+  experimental design.
+\newblock \emph{IEEE Transactions on Parallel and Distributed Systems}, 2019.
+\newblock ISSN 1045-9219.
+\newblock \doi{10.1109/TPDS.2019.2892129}.
+
+\bibitem[Chang et~al.(2018)Chang, Watson, Lux, Li, Xu, Butt, Cameron, and
+  Hong]{chang2018polynomial}
+Tyler~H. Chang, Layne~T. Watson, Thomas C.~H. Lux, Bo~Li, Li~Xu, Ali~R. Butt,
+  Kirk~W. Cameron, and Yili Hong.
+\newblock A polynomial time algorithm for multivariate interpolation in
+  arbitrary dimension via the delaunay triangulation.
+\newblock In \emph{Proceedings of the ACMSE 2018 Conference}, ACMSE '18, pages
+  12:1--12:8, New York, NY, USA, 2018. ACM.
+\newblock ISBN 978-1-4503-5696-1.
+\newblock \doi{10.1145/3190645.3190680}.
+\newblock URL \url{http://doi.acm.org/10.1145/3190645.3190680}.
+
+\bibitem[Cheney and Light(2009)]{cheney2009course}
+Elliott~Ward Cheney and William~Allan Light.
+\newblock \emph{A Course in Approximation Theory}, volume 101.
+\newblock American Mathematical Soc., 2009.
+
+\bibitem[Chollet et~al.(2015)]{chollet2015keras}
+Fran\c{c}ois Chollet et~al.
+\newblock Keras.
+\newblock \url{https://keras.io}, 2015.
+
+\bibitem[Clevert et~al.(2015)Clevert, Unterthiner, and
+  Hochreiter]{clevert2015fast}
+Djork-Arn{\'e} Clevert, Thomas Unterthiner, and Sepp Hochreiter.
+\newblock Fast and accurate deep network learning by exponential linear units
+  (elus).
+\newblock \emph{arXiv preprint arXiv:1511.07289}, 2015.
+
+\bibitem[Cortez and Morais(2007)]{cortez2007data}
+Paulo Cortez and An{\'\i}bal de Jesus~Raimundo Morais.
+\newblock A data mining approach to predict forest fires using meteorological
+  data.
+\newblock \emph{13th Portuguese Conference on Artificial Intelligence}, 2007.
+
+\bibitem[Cortez and Silva(2008)]{cortez2008using}
+Paulo Cortez and Alice Maria~Gon{\c{c}}alves Silva.
+\newblock Using data mining to predict secondary school student performance.
+\newblock \emph{Proceedings of 5th Annual Future Business Technology
+  Conference, Porto}, 2008.
+
+\bibitem[Cover and Hart(1967)]{cover1967nearest}
+Thomas Cover and Peter Hart.
+\newblock Nearest neighbor pattern classification.
+\newblock \emph{IEEE Transactions on Information Theory}, 13\penalty0
+  (1):\penalty0 21--27, 1967.
+
+\bibitem[Dahl et~al.(2013)Dahl, Sainath, and Hinton]{dahl2013improving}
+George~E. Dahl, Tara~N. Sainath, and Geoffrey~E. Hinton.
+\newblock Improving deep neural networks for lvcsr using rectified linear units
+  and dropout.
+\newblock In \emph{IEEE International Conference on Acoustics, Speech and
+  Signal Processing (ICASSP), 2013}, pages 8609--8613. IEEE, 2013.
+
+\bibitem[De et~al.(2007)De, Kothari, and Mann]{de2007identifying}
+Pradipta De, Ravi Kothari, and Vijay Mann.
+\newblock Identifying sources of operating system jitter through fine-grained
+  kernel instrumentation.
+\newblock In \emph{IEEE International Conference on Cluster Computing}, pages
+  331--340. IEEE, 2007.
+
+\bibitem[de~Boor(1978)]{de1978practical}
+Carl de~Boor.
+\newblock \emph{A Practical Guide to Splines}, volume~27.
+\newblock Springer-Verlag New York, 1978.
+
+\bibitem[De~Boor et~al.(2013)De~Boor, H{\"o}llig, and
+  Riemenschneider]{de2013box}
+Carl De~Boor, Klaus H{\"o}llig, and Sherman Riemenschneider.
+\newblock \emph{Box splines}, volume~98.
+\newblock Springer Science \& Business Media, 2013.
+
+\bibitem[De~Vito et~al.(2008)De~Vito, Massera, Piga, Martinotto, and
+  Di~Francia]{de2008field}
+S~De~Vito, E~Massera, M~Piga, L~Martinotto, and G~Di~Francia.
+\newblock On field calibration of an electronic nose for benzene estimation in
+  an urban pollution monitoring scenario.
+\newblock \emph{Sensors and Actuators B: Chemical}, 129\penalty0 (2):\penalty0
+  750--757, 2008.
+
+\bibitem[Dennis~Jr and Schnabel(1996)]{dennis1996numerical}
+John~E Dennis~Jr and Robert~B Schnabel.
+\newblock \emph{Numerical Methods for Unconstrained Optimization and Nonlinear
+  Equations}, volume~16.
+\newblock Siam, 1996.
+
+\bibitem[Dirichlet(1850)]{dirichlet1850reduction}
+G~Lejeune Dirichlet.
+\newblock {\"U}ber die reduction der positiven quadratischen formen mit drei
+  unbestimmten ganzen zahlen.
+\newblock \emph{Journal f{\"u}r die Reine und Angewandte Mathematik},
+  40:\penalty0 209--227, 1850.
+
+\bibitem[Dutour~Sikiri{\'c} et~al.(2009)Dutour~Sikiri{\'c}, Sch{\"u}rmann, and
+  Vallentin]{dutour2009complexity}
+Mathieu Dutour~Sikiri{\'c}, Achill Sch{\"u}rmann, and Frank Vallentin.
+\newblock Complexity and algorithms for computing voronoi cells of lattices.
+\newblock \emph{Mathematics of Computation}, 78\penalty0 (267):\penalty0
+  1713--1731, 2009.
+
+\bibitem[Ferri et~al.(1994)Ferri, Pudil, Hatef, and
+  Kittler]{ferri1994comparative}
+F~Ferri, P~Pudil, M~Hatef, and J~Kittler.
+\newblock Comparative study of techniques for large-scale feature selection.
+\newblock \emph{Pattern Recognition in Practice IV}, 1994:\penalty0 403--413,
+  1994.
+
+\bibitem[Friedman(1991)]{friedman1991multivariate}
+Jerome~H. Friedman.
+\newblock Multivariate adaptive regression splines.
+\newblock \emph{The Annals of Statistics}, pages 1--67, 1991.
+
+\bibitem[Friedman and the Computational Statistics Laboritory~of
+  Stanford~University(1993)]{stanford1993fast}
+Jerome~H. Friedman and the Computational Statistics Laboritory~of
+  Stanford~University.
+\newblock Fast mars.
+\newblock Technical report, 1993.
+
+\bibitem[Fritsch and Carlson(1980)]{fritsch1980monotone}
+F.~Fritsch and R.~Carlson.
+\newblock Monotone piecewise cubic interpolation.
+\newblock \emph{SIAM Journal on Numerical Analysis}, 17\penalty0 (2):\penalty0
+  238--246, 1980.
+\newblock \doi{10.1137/0717021}.
+\newblock URL \url{https://doi.org/10.1137/0717021}.
+
+\bibitem[Fritsch(1982)]{fritsch1982piecewise}
+Frederick~N Fritsch.
+\newblock Piecewise cubic hermite interpolation package. final specifications.
+\newblock Technical report, Lawrence Livermore National Lab., CA (USA), 1982.
+
+\bibitem[Goh(2017)]{goh2017why}
+Gabriel Goh.
+\newblock Why momentum really works.
+\newblock \emph{Distill}, 2017.
+\newblock \doi{10.23915/distill.00006}.
+\newblock URL \url{http://distill.pub/2017/momentum}.
+
+\bibitem[Gordon and Wixom(1978)]{gordon1978shepard}
+William~J Gordon and James~A Wixom.
+\newblock Shepard’s method of “metric interpolation” to bivariate and
+  multivariate interpolation.
+\newblock \emph{Mathematics of Computation}, 32\penalty0 (141):\penalty0
+  253--264, 1978.
+
+\bibitem[Gregory(1985)]{gregory1985shape}
+John~A Gregory.
+\newblock Shape preserving spline interpolation.
+\newblock \penalty0 (19850020252), 1985.
+\newblock URL
+  \url{https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/19850020252.pdf}.
+
+\bibitem[Grobelny et~al.(2007)Grobelny, Bueno, Troxel, George, and
+  Vetter]{grobelny2007fase}
+Eric Grobelny, David Bueno, Ian Troxel, Alan~D. George, and Jeffrey~S. Vetter.
+\newblock Fase: A framework for scalable performance prediction of hpc systems
+  and applications.
+\newblock \emph{Simulation}, 83\penalty0 (10):\penalty0 721--745, 2007.
+
+\bibitem[Guyon and Elisseeff(2003)]{guyon2003introduction}
+Isabelle Guyon and Andr{\'e} Elisseeff.
+\newblock An introduction to variable and feature selection.
+\newblock \emph{Journal of Machine Learning Research}, 3\penalty0
+  (Mar):\penalty0 1157--1182, 2003.
+
+\bibitem[Haralick and Watson(1981)]{haralick1981facet}
+Robert~M Haralick and Layne Watson.
+\newblock A facet model for image data.
+\newblock \emph{Computer Graphics and Image Processing}, 15\penalty0
+  (2):\penalty0 113--129, 1981.
+
+\bibitem[He and Shi(1998)]{he1998monotone}
+Xuming He and Peide Shi.
+\newblock Monotone b-spline smoothing.
+\newblock \emph{Journal of the American Statistical Association}, 93\penalty0
+  (442):\penalty0 643--650, 1998.
+
+\bibitem[Herman and Oftedal(2006)]{herman2006techniques}
+Daniel Herman and Mark Oftedal.
+\newblock Techniques and workflows for computer graphics animation system,
+  2006.
+\newblock US Patent App. 11/406,050.
+
+\bibitem[He{\ss} and Schmidt(1994)]{hess1994positive}
+Walter He{\ss} and Jochen~W Schmidt.
+\newblock Positive quartic, monotone quintic $\scriptstyle c^2$-spline
+  interpolation in one and two dimensions.
+\newblock \emph{Journal of Computational and Applied Mathematics}, 55\penalty0
+  (1):\penalty0 51--67, 1994.
+\newblock \doi{10.1016/0377-0427(94)90184-8}.
+
+\bibitem[Hornik et~al.(1989)Hornik, Stinchcombe, and
+  White]{hornik1989multilayer}
+Kurt Hornik, Maxwell Stinchcombe, and Halbert White.
+\newblock Multilayer feedforward networks are universal approximators.
+\newblock \emph{Neural networks}, 2\penalty0 (5):\penalty0 359--366, 1989.
+
+\bibitem[Knott(2012)]{knott2000interpolating}
+Gary~D Knott.
+\newblock \emph{Interpolating Cubic Splines}, volume~18.
+\newblock Springer Science \& Business Media, 2012.
+
+\bibitem[Kohavi et~al.(1995)]{kohavi1995study}
+Ron Kohavi et~al.
+\newblock A study of cross-validation and bootstrap for accuracy estimation and
+  model selection.
+\newblock In \emph{IJCAI}, volume 14(2), pages 1137--1145. Montreal, Canada,
+  1995.
+
+\bibitem[Kövari and Pommerenke(1968)]{kovari_pommerenke_1968}
+T.~Kövari and Ch. Pommerenke.
+\newblock On the distribution of fekete points.
+\newblock \emph{Mathematika}, 15\penalty0 (1):\penalty0 70–75, 1968.
+
+\bibitem[Lazos et~al.(2014)Lazos, Sproul, and Kay]{lazos2014optimisation}
+Dimitris Lazos, Alistair~B Sproul, and Merlinde Kay.
+\newblock Optimisation of energy management in commercial buildings with
+  weather forecasting inputs: A review.
+\newblock \emph{Renewable and Sustainable Energy Reviews}, 39:\penalty0
+  587--603, 2014.
+
+\bibitem[Lee and Schachter(1980)]{lee1980two}
+Der-Tsai Lee and Bruce~J Schachter.
+\newblock Two algorithms for constructing a delaunay triangulation.
+\newblock \emph{International Journal of Computer \& Information Sciences},
+  9\penalty0 (3):\penalty0 219--242, 1980.
+
+\bibitem[Leitenstorfer and Tutz(2007)]{leitenstorfer2007generalized}
+Florian Leitenstorfer and Gerhard Tutz.
+\newblock Generalized monotonic regression based on b-splines with an
+  application to air pollution data.
+\newblock \emph{Biostatistics}, 8\penalty0 (3):\penalty0 654--673, 2007.
+
+\bibitem[Lilliefors(1967)]{lilliefors1967kolmogorov}
+Hubert~W Lilliefors.
+\newblock On the kolmogorov-smirnov test for normality with mean and variance
+  unknown.
+\newblock \emph{Journal of the American Statistical Association}, 62\penalty0
+  (318):\penalty0 399--402, 1967.
+
+\bibitem[Lofstead et~al.(2010)Lofstead, Zheng, Liu, Klasky, Oldfield,
+  Kordenbrock, Schwan, and Wolf]{lofstead2010managing}
+Jay Lofstead, Fang Zheng, Qing Liu, Scott Klasky, Ron Oldfield, Todd
+  Kordenbrock, Karsten Schwan, and Matthew Wolf.
+\newblock Managing variability in the io performance of petascale storage
+  systems.
+\newblock In \emph{International Conference on High Performance Computing,
+  Networking, Storage and Analysis (SC), 2010}, pages 1--12. IEEE, 2010.
+
+\bibitem[Lux et~al.(2016)Lux, Pittman, Shende, and Shende]{lux2016applications}
+Thomas C~H Lux, Randall Pittman, Maya Shende, and Anil Shende.
+\newblock Applications of supervised learning techniques on undergraduate
+  admissions data.
+\newblock In \emph{Proceedings of the ACM International Conference on Computing
+  Frontiers}, pages 412--417. ACM, 2016.
+
+\bibitem[Lux et~al.(2018{\natexlab{a}})Lux, Watson, Chang, Bernard, Li, Yu, Xu,
+  Back, Butt, Cameron, et~al.]{lux2018nonparametric}
+Thomas C~H Lux, Layne~T Watson, Tyler~H Chang, Jon Bernard, Bo~Li, Xiaodong Yu,
+  Li~Xu, Godmar Back, Ali~R Butt, Kirk~W Cameron, et~al.
+\newblock Nonparametric distribution models for predicting and managing
+  computational performance variability.
+\newblock In \emph{SoutheastCon 2018}, pages 1--7. IEEE, 2018{\natexlab{a}}.
+
+\bibitem[Lux et~al.(2018{\natexlab{b}})Lux, Watson, Chang, Bernard, Li, Yu, Xu,
+  Back, Butt, Cameron, et~al.]{lux2018novel}
+Thomas C~H Lux, Layne~T Watson, Tyler~H Chang, Jon Bernard, Bo~Li, Xiaodong Yu,
+  Li~Xu, Godmar Back, Ali~R Butt, Kirk~W Cameron, et~al.
+\newblock Novel meshes for multivariate interpolation and approximation.
+\newblock In \emph{Proceedings of the ACMSE 2018 Conference}, page~13. ACM,
+  2018{\natexlab{b}}.
+
+\bibitem[Lux et~al.(2020)Lux, Watson, Chang, Xu, Wang, and
+  Hong]{lux2020algorithm}
+Thomas~C.H. Lux, Layne~T. Watson, Tyler~H. Chang, Li~Xu, Yueyao Wang, and Yili
+  Hong.
+\newblock An algorithm for constructing monotone quintic interpolating splines.
+\newblock In \emph{Proceedings of the High Performance Computing Symposium}.
+  Spring Simulation Multiconference, May 2020.
+
+\bibitem[M{\o}ller(1993)]{moller1993scaled}
+Martin~Fodslette M{\o}ller.
+\newblock A scaled conjugate gradient algorithm for fast supervised learning.
+\newblock \emph{Neural networks}, 6\penalty0 (4):\penalty0 525--533, 1993.
+
+\bibitem[Navidi(2015)]{navidi_2015}
+William~Cyrus. Navidi.
+\newblock \emph{Statistics for Engineers and Scientists}.
+\newblock McGraw-Hill Education, 4 edition, 2015.
+
+\bibitem[Norcott(2017)]{iozone}
+W.~D. Norcott.
+\newblock Iozone filesystem benchmark, 2017.
+\newblock URL \url{http://www.iozone.org}.
+\newblock http://www.iozone.org [Online; accessed 2017-11-12].
+
+\bibitem[Park(1994)]{park1994optimal}
+Jeong-Soo Park.
+\newblock Optimal latin-hypercube designs for computer experiments.
+\newblock \emph{Journal of statistical planning and inference}, 39\penalty0
+  (1):\penalty0 95--111, 1994.
+
+\bibitem[Patel et~al.(2009)Patel, Ranabahu, and Sheth]{patel2009service}
+Pankesh Patel, Ajith~H Ranabahu, and Amit~P Sheth.
+\newblock Service level agreement in cloud computing.
+\newblock \emph{Wright State University CORE Scholar Repository}, 2009.
+
+\bibitem[Pedregosa et~al.(2011)Pedregosa, Varoquaux, Gramfort, Michel, Thirion,
+  Grisel, Blondel, Prettenhofer, Weiss, Dubourg, Vanderplas, Passos,
+  Cournapeau, Brucher, Perrot, and Duchesnay]{scikit-learn}
+F.~Pedregosa, G.~Varoquaux, A.~Gramfort, V.~Michel, B.~Thirion, O.~Grisel,
+  M.~Blondel, P.~Prettenhofer, R.~Weiss, V.~Dubourg, J.~Vanderplas, A.~Passos,
+  D.~Cournapeau, M.~Brucher, M.~Perrot, and E.~Duchesnay.
+\newblock Scikit-learn: Machine learning in {P}ython.
+\newblock \emph{Journal of Machine Learning Research}, 12:\penalty0 2825--2830,
+  2011.
+
+\bibitem[Piah and Unsworth(2011)]{abd2011improved}
+{Abd Rahni Mt} Piah and Keith Unsworth.
+\newblock Improved sufficient conditions for monotonic piecewise rational
+  quartic interpolation.
+\newblock \emph{Sains Malaysiana}, 40\penalty0 (10):\penalty0 1173--1178, 2011.
+
+\bibitem[Pozzolo et~al.(2015)Pozzolo, Caelen, Johnson, and
+  Bontempi]{pozzolo2015calibrating}
+A.~D. Pozzolo, O.~Caelen, R.~A. Johnson, and G.~Bontempi.
+\newblock Calibrating probability with undersampling for unbalanced
+  classification.
+\newblock In \emph{IEEE Symposium Series on Computational Intelligence}, pages
+  159--166. IEEE, Dec 2015.
+\newblock \doi{10.1109/SSCI.2015.33}.
+\newblock URL \url{https://www.kaggle.com/mlg-ulb/creditcardfraud}.
+\newblock [Online; accessed 2019-01-25].
+
+\bibitem[Pudil et~al.(1994)Pudil, Novovi{\v{c}}ov{\'a}, and
+  Kittler]{pudil1994floating}
+Pavel Pudil, Jana Novovi{\v{c}}ov{\'a}, and Josef Kittler.
+\newblock Floating search methods in feature selection.
+\newblock \emph{Pattern Recognition Letters}, 15\penalty0 (11):\penalty0
+  1119--1125, 1994.
+
+\bibitem[Quint(2003)]{quint2003scalable}
+Antoine Quint.
+\newblock Scalable vector graphics.
+\newblock \emph{IEEE MultiMedia}, 10\penalty0 (3):\penalty0 99--102, 2003.
+
+\bibitem[Ramsay et~al.(1988)]{ramsay1988monotone}
+James~O Ramsay et~al.
+\newblock Monotone regression splines in action.
+\newblock \emph{Statistical Science}, 3\penalty0 (4):\penalty0 425--441, 1988.
+
+\bibitem[Robbins and Monro(1951)]{robbins1951stochastic}
+Herbert Robbins and Sutton Monro.
+\newblock A stochastic approximation method.
+\newblock \emph{The Annals of Mathematical Statistics}, pages 400--407, 1951.
+
+\bibitem[Rudy and Cherti(2017)]{rudy2017pyearth}
+J.~Rudy and M.~Cherti.
+\newblock Py-earth: A python implementation of multivariate adaptive regression
+  splines, 2017.
+\newblock URL \url{https://github.com/scikit-learn-contrib/py-earth}.
+\newblock https://github.com/scikit-learn-contrib/py-earth [Online; accessed
+  2017-07-09].
+
+\bibitem[Rumelhart et~al.(1988)Rumelhart, Hinton, Williams,
+  et~al.]{rumelhart1988learning}
+David~E Rumelhart, Geoffrey~E Hinton, Ronald~J Williams, et~al.
+\newblock Learning representations by back-propagating errors.
+\newblock \emph{Cognitive modeling}, 5\penalty0 (3):\penalty0 1, 1988.
+
+\bibitem[Shepard(1968)]{shepard1968two}
+Donald Shepard.
+\newblock A two-dimensional interpolation function for irregularly-spaced data.
+\newblock In \emph{Proceedings of the 1968 23rd ACM national conference}, pages
+  517--524. ACM, 1968.
+
+\bibitem[Snavely et~al.(2002)Snavely, Carrington, Wolter, Labarta, Badia, and
+  Purkayastha]{snavely2002framework}
+Allan Snavely, Laura Carrington, Nicole Wolter, Jesus Labarta, Rosa Badia, and
+  Avi Purkayastha.
+\newblock A framework for performance modeling and prediction.
+\newblock In \emph{Supercomputing, ACM/IEEE Conference}, pages 21--21. IEEE,
+  2002.
+
+\bibitem[Thacker et~al.(2010)Thacker, Zhang, Watson, Birch, Iyer, and
+  Berry]{thacker2010algorithm}
+William~I. Thacker, Jingwei Zhang, Layne~T. Watson, Jeffrey~B. Birch,
+  Manjula~A. Iyer, and Michael~W. Berry.
+\newblock Algorithm 905: Sheppack: Modified shepard algorithm for interpolation
+  of scattered multivariate data.
+\newblock \emph{ACM Transactions on Mathematical Software (TOMS)}, 37\penalty0
+  (3):\penalty0 34, 2010.
+
+\bibitem[Tsanas et~al.(2010)Tsanas, Little, McSharry, and
+  Ramig]{tsanas2010accurate}
+Athanasios Tsanas, Max~A Little, Patrick~E McSharry, and Lorraine~O Ramig.
+\newblock Accurate telemonitoring of parkinson's disease progression by
+  noninvasive speech tests.
+\newblock \emph{IEEE Transactions on Biomedical Engineering}, 57\penalty0
+  (4):\penalty0 884--893, 2010.
+
+\bibitem[Ulrich and Watson(1994)]{ulrich1994positivity}
+Gary Ulrich and Layne~T Watson.
+\newblock Positivity conditions for quartic polynomials.
+\newblock \emph{SIAM Journal on Scientific Computing}, 15\penalty0
+  (3):\penalty0 528--544, 1994.
+\newblock \doi{10.1137/0915035}.
+\newblock URL \url{https://doi.org/10.1137/0915035}.
+
+\bibitem[unther Greiner and Hormann(1996)]{unther1996interpolating}
+G~unther Greiner and Kai Hormann.
+\newblock Interpolating and approximating scattered 3d-data with hierarchical
+  tensor product b-splines.
+\newblock In \emph{Proceedings of Chamonix}, page~1, 1996.
+
+\bibitem[Wang et~al.(2009)Wang, Butt, Pandey, and Gupta]{wang2009simulation}
+Guanying Wang, Ali~R. Butt, Prashant Pandey, and Karan Gupta.
+\newblock A simulation approach to evaluating design decisions in mapreduce
+  setups.
+\newblock In \emph{IEEE International Symposium on Modeling, Analysis \&
+  Simulation of Computer and Telecommunication Systems (MASCOTS'09)}, pages
+  1--11. IEEE, 2009.
+
+\bibitem[Wang et~al.(2013)Wang, Khasymski, Krish, and Butt]{wang2013towards}
+Guanying Wang, Aleksandr Khasymski, K.~R. Krish, and Ali~R. Butt.
+\newblock Towards improving mapreduce task scheduling using online simulation
+  based predictions.
+\newblock In \emph{International Conference on Parallel and Distributed Systems
+  (ICPADS), 2013}, pages 299--306. IEEE, 2013.
+
+\bibitem[Wang and Tan(2004)]{wang2004rational}
+Qiang Wang and Jieqing Tan.
+\newblock Rational quartic spline involving shape parameters.
+\newblock \emph{Journal of Information and Computational Science}, 1\penalty0
+  (1):\penalty0 127--130, 2004.
+
+\bibitem[Williams(2009)]{williams2009rattle}
+Graham~J. Williams.
+\newblock Weather dataset rattle package.
+\newblock In \emph{Rattle: A Data Mining GUI for R}, volume~1, pages 45--55.
+  The R Journal, 2009.
+\newblock URL
+  \url{https://www.kaggle.com/jsphyg/weather-dataset-rattle-package}.
+\newblock [Online; accessed 2019-01-25].
+
+\bibitem[Yao and Nelson(2018)]{yao2018unconditionally}
+Jin Yao and Karl~E Nelson.
+\newblock An unconditionally monotone $\scriptstyle c^2$ quartic spline method
+  with nonoscillation derivatives.
+\newblock \emph{Advances in Pure Mathematics}, 8\penalty0 (1):\penalty0 25--40,
+  2018.
+
+\bibitem[Ye et~al.(2010)Ye, Jiang, Chen, Huang, and Wang]{ye2010analyzing}
+Kejiang Ye, Xiaohong Jiang, Siding Chen, Dawei Huang, and Bei Wang.
+\newblock Analyzing and modeling the performance in xen-based virtual cluster
+  environment.
+\newblock In \emph{12th IEEE International Conference on High Performance
+  Computing and Communications (HPCC)}, pages 273--280. IEEE, 2010.
+
+\end{thebibliography}

@@ -3,20 +3,20 @@ doc=pdflatex
 bib=bibtex
 delete=rm -f
 
-prelim.pdf: *.tex prelim.bib VTthesis.cls Makefile
-	$(doc) prelim
-	$(bib) prelim
-	$(doc) prelim
-	$(doc) prelim
+thesis.pdf: *.tex thesis.bib VTthesis.cls Makefile
+	$(doc) thesis
+	$(bib) thesis
+	$(doc) thesis
+	$(doc) thesis
 
 clean:
-	$(delete) prelim.bbl
-	$(delete) prelim.blg
-	$(delete) prelim.nlo
-	$(delete) prelim.lof
-	$(delete) prelim.log
-	$(delete) prelim.lot
-	$(delete) prelim.toc
-	$(delete) prelim.out
-	$(delete) prelim.aux
+	$(delete) thesis.bbl
+	$(delete) thesis.blg
+	$(delete) thesis.nlo
+	$(delete) thesis.lof
+	$(delete) thesis.log
+	$(delete) thesis.lot
+	$(delete) thesis.toc
+	$(delete) thesis.out
+	$(delete) thesis.aux
 
