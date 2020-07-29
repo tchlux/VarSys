@@ -37,7 +37,7 @@
 %\documentclass[doublespace,draft]{VTthesis}
 
 % Title of your thesis
-\title{Interpolants and Error Bounds for Modeling and Predicting Variability in Computer Systems}
+\title{Interpolants, Error Bounds, and Mathematical Software for Modeling and Predicting Variability in Computer Systems}
 
 
 % You should include 3-5 keywords, separated by commas
@@ -73,7 +73,7 @@
 %% \acknowledge{...}
 
 % The abstract is required and should be <=250 words for thesis, <=350 words for dissertation.
-\abstract{Function approximation is an important problem. This work presents applications of interpolants to modeling random variables. Specifically, this work studies the prediction of distributions of random variables applied to computer system throughput variability. New methods for interpolating data with moderately high dimension are presented and novel theoretical error bounds are constructed for piecewise linear interpolation. Finally, a mathematical software for approximating distributions from data samples via monotone quintic splines is proposed.}
+\abstract{Function approximation is an important problem. This work presents applications of interpolants to modeling random variables. Specifically, this work studies the prediction of distributions of random variables applied to computer system throughput variability. Existing approximation methods including multivariate adaptive regression splines, support vector regressors, multilayer perceptrons, Shepard variants, and the Delaunay mesh are investigated in the context of computer variability modeling. New methods of approximation using Box splines, Voronoi cells, and Delaunay for interpolating distributions of data with moderately high dimension are presented and compared with existing approaches. Novel theoretical error bounds are constructed for piecewise linear interpolants over functions with a Lipschitz continuous gradient. Finally, a mathematical software that constructs monotone quintic spline interpolants for distribution approximation from data samples is proposed.}
 
 % The general audience abstract is required. There are currently no word limits.
 \abstractgenaud{It is common for scientists to collect data on something they are studying. Often scientists want to create a (predictive) model of that phenomenon based on the data, but the choice of \textit{how} to model the data is a difficult one to answer. This work proposes methods for modeling data that operate under very few assumptions that are broadly applicable across science. Finally, a software package is proposed that would allow scientists to better understand the \textit{true} distribution of their data given relatively few observations.}
@@ -98,34 +98,34 @@
 
 %% Introduction of variability modeling, the importance of modeling in science in general, then dive into the specific application of modeling techniques to systems (and security).
 \chapter{The Importance and Applications of Variability} \label{ch:apps}
-\input{apps}
+\input{1-apps}
 
 %% Describe all of the interpolants and regressors that will be used throughout this work. (except meshes)
 \chapter{Algorithms for Constructing Approximations} \label{ch:algs}
-\input{algs}
+\input{2-algs}
 
 %% Demonstrate the naive application of interpolants and regressors to data. Discuss results.
 \chapter{Na\"{\i}ve Approximations of Variability} \label{ch:naive}
-\input{naive}
+\input{3-naive}
 
 %% Introduce the theory on box splines. Introduce the algorithms that rely on box splines. Show the results of the code that produces box splines.
 %% Demonstrate the application of these meshes (and box splines particularly) to approximation problems. Discuss results.
 \chapter{Box Splines: Uses, Constructions, and Applications} \label{ch:boxes}
-\input{boxes}
+\input{4-boxes}
 
 %% Introduce a measurement for error when predicting distribution outputs, then show what happens when system behavior is predicted as a distribution.
 \chapter{Stronger Approximations of Variability} \label{ch:strong}
-\input{strong}
+\input{5-strong}
 
 %% Construct error theory that works for all observed applications to this point.
 \chapter{An Error Bound on Piecewise Linear Interpolation} \label{ch:error}
 %% Apply approximation algorithms to a final set of problems. Discuss results.
-\input{error}
+\input{6-error}
 
 %% Propose new method to improve predictions for distributions.
 %% \chapter{Improving Variability Estimates with Monotone $C^2$ Splines} 
 \chapter{A Package for Monotone Quintic Spline Interpolation} \label{ch:splines}
-\input{splines}
+\input{7-splines}
 
 
 %% Bibliography.
