@@ -244,18 +244,21 @@ IF (INFO .NE. 0) THEN; INFO = INFO + 20; RETURN; END IF
 ! Check to see if the linear system was correctly solved by looking at
 ! the difference between produced B-spline values and provided values.
 DO DERIV = 0, NCC-1
-   ! Reuse the first row of AB as scratch space (the first column
-   ! might not be large enough, but the first row certainly is).
-   AB(1,1:NB) = XI(:)
-   ! Evaluate this spline at all breakpoints. Correct usage is
-   ! enforced here, so it is expected that INFO=0 always.
-   CALL EVAL_SPLINE(T, BCOEF, AB(1,1:NB), INFO, D=DERIV)
-   ! Check the precision of the reproduced values.
-   ! Return an error if the precision is too low.
-   IF (MAXVAL( ABS((AB(1,1:NB) - FX(:,DERIV+1)) &
-      / (1.0_R8 + ABS(FX(:,DERIV+1)))) ) .GT. MAX_ERROR) THEN
-      INFO = 7; RETURN
-   END IF
+   DO I = 1, NB
+      ! Compute the first and last B-spline that have a knot at this breakpoint.
+      I1 = MAX(1, (I-2)*NCC+1)
+      I2 = MIN(NB*NCC, (I+1)*NCC)
+      ! Evaluate this spline at this breakpoint. Correct usage is
+      ! enforced here, so it is expected that INFO=0 always.
+      AB(1,1) = XI(I)
+      CALL EVAL_SPLINE(T(I1:I2+2*NCC), BCOEF(I1:I2), AB(1,1:1), INFO, D=DERIV)
+      ! Check the precision of the reproduced value.
+      ! Return an error if the precision is too low.
+      IF (ABS( (AB(1,1) - FX(I,DERIV+1)) / &
+           (1.0_R8 + ABS(FX(I,DERIV+1))) ) .GT. MAX_ERROR) THEN
+         INFO = 7; RETURN
+      END IF
+   END DO
 END DO
 
 END SUBROUTINE FIT_SPLINE

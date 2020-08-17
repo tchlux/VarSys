@@ -275,6 +275,7 @@ makeZoomedPlot["6-random-monotone.eps", x, y, m=1000, width=450, height=350];
 (* ------------------------------------------------------------------ *)
 
 
+Print["Making timing graphics '7-runtimes-10' and '8-runtimes-100'.."]
 (* Timing data stacked bar chart. *)
 data = Import["timing_data.csv","csv"];
 sizes = data[[2;;,1]];

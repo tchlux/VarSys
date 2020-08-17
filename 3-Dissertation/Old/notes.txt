@@ -1,0 +1,158 @@
+
+This is the layout of the generic learning framework. Everywhere there
+is an outward error, there is a function. The "Environment" is a
+provided function, all other functions are learned functions. The
+prediction of a trajectory given the environment, the prediction of
+the best objectives to maximize reward, and the prediction of actions
+that achieve objectives are all generic learned functions.
+
+______________________________________________________________________
+                                                                      
+                                                    Reward            
+                                                                      
+                                                      |               
+                                                      v               
+                                                                      
+Environment   -->   Predict trajectory  -->  Predict best objectives  
+                                                                      
+    ^         |              ^                        |               
+    |         |              |                        |               
+    |         v              |                        |               
+                                                      |               
+Predict action to        Objectives                   |               
+achieve objective  <--  (in terms of      <-----------                
+                         observations)                                
+                                                                      
+______________________________________________________________________
+
+
+Classical reinforcement learning only considers a function given the
+environment and a reward, however that is a less general framework. In
+general the reward function can change, causing instability of the
+learning algorithm that predictions actions. However, if objectives
+are always stated in terms of observations, then the action prediction
+function can be much more robust to changes in reward function.
+
+We should consider everything but the leftmost column to be another
+reinforcement learning problem. The "reward" is simply another
+environment, where the "action" of that model is the selection of
+objectives for the other learner. How do we measure distance to an
+observation? Do we always use the two norm? Do we allow the metric to
+be learned? Do we always use the one norm? What about when a range of
+objectives is acceptable? Do we constantly change the objective to be
+the nearest to the current?
+
+I need to implement this system and see how well it works.
+
+Self-organizing unstructured learning algorithm
+Structured optimization for unbiased learning
+Learned objective value estimator
+
+Optimize up to current point best as possible. Maximize generalization
+to current moment.
+
+Passive execution versus active execution. Passive execution will
+follow predetermined sequence of objectives, most likely. Active
+execution will closely monitor selection of objectives. Part of
+natural prediction is the prediction of the sequence of objectives
+that will be selected.
+
+Exploration is done when objectives are selected that that have been
+seen least frequently before or specifically those for which a stable
+trajectory cannot be generated into and out of.
+
+Objectives are always selected from previous observations.
+
+----------------------------------------------------------------------
+
+Observe an input, objective is an input, produce output.
+
+Always try and minimize the metric difference between current input
+and objective input.
+
+Pick the objective most similar that is in a sequence to the correct
+objective.
+
+Optimize path between objectives by exploring until it looks like the
+chosen trajectory is a local maximum (within some tolerance).
+
+----------------------------------------------------------------------
+
+Weight distance along a direction by the average slope of the function
+because that is an indicator for how much error is expected in any
+given direction.
+
+If we use the existing components, then this costs O(d n log(n)), if
+we create new components we have to convert to them with a O(n d^2)
+operation, so we will not do that for now.
+
+We will not hurt the uniform error bounds, because all we did is play
+with constants by linearly changing the shape of the space.
+
+Adding dimensions will not hurt the uniform error bound.
+
+Add the first (metric) principle component each subspace as a new input.
+
+First build a model over the first component of the full space. Then
+split the space into two, and build a model over the first component
+of each subspace as well as using a shared model over each subspace.
+Estimate the expected error of each of these models, ranking them by
+their error. Final prediction is the convex combination of all
+predictions made by all models. Use apriori tree method to infer the
+information content of a branch when splitting. Only split and look
+for more information with subsets that already demonstrate large
+information content.
+
+Determine the independence of models based on the level of the
+hierarchy they are stored at.
+
+Use the metric weighting vector (not the first PC).
+
+- Get the average metric slope of along all coordinates.
+- Build a (n)-1 model.
+- Split the coordinates into two groups, largest & smallest metric slope.
+- Build a (n/2)-1 model, and (n)-2 model.
+- Split each sub-model according to the same rule.
+- Build a (n/4)-1 model and a (n)-4 model.
+- Split each sub-model according to the same rule. (only best)
+- Build a (n/16)-1 model, a (n/8)-2 model above those, and a (n)-8 model.
+
+----------------------------------------------------------------------
+
+Normalize the expected metric slope along each component. Show that
+that improves the performance of nearest neighbor.
+
+Pick the top slopes, split up by them.
+
+Need a discretization, incorporate this into the learning process as
+objective selection ASAP.
+
+----------------------------------------------------------------------
+
+Speed of prediction is the real issue with the interpolants. They must
+produce predictions *very* fast to compete with modern neural
+networks. I mean on the order of a microsecond even for large data.
+To be any good, the interpolant should also be continuous in value.
+
+I need to make a smooth version of nearest neighbor that can make
+predictions in log-time based on the size of the data. Then I need to
+create a wicked fast implementation of that algorithm. I also need
+that algorithm to model stochastic functions (automatically do
+splitting).
+
+I need a way to split up the output space into separate (or duplicate)
+predictions done over subspaces on the input. When predicting a
+vector-valued output, try to localize and predict subsets of the
+output.
+
+I still cannot justify depth in this model. There's no way to justify
+this! The depth is just how we identify "reuse" of existing
+predictors. If I can reuse existing predictors then I do not need
+depth. But, do I also need to feed the output of predictors into
+others? Essentially, how can I learn transformations? I think that
+transforming a problem to a familiar form is the job of the PCA,
+applying the best existing model is the job of model-redundancy
+estimation.
+
+
+
