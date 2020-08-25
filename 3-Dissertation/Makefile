@@ -4,9 +4,9 @@ bib=bibtex
 delete=rm -f
 
 thesis.pdf: *.tex thesis.bib VTthesis.cls Makefile
-	$(doc) thesis
-	$(bib) thesis
-	$(doc) thesis
+	$(doc) thesis > /dev/null
+	$(bib) thesis > /dev/null
+	$(doc) thesis > /dev/null
 	$(doc) thesis
 
 clean:

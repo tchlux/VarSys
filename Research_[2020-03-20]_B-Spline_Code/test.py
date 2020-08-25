@@ -1,5 +1,5 @@
 import numpy as np
-import fmodpy
+import og_fmodpy as fmodpy
 from util.plot import Plot
 
 splines = fmodpy.fimport("splines.f90", verbose=True,
@@ -8,8 +8,8 @@ splines = fmodpy.fimport("splines.f90", verbose=True,
 
 
 TEST_BANDED_MATRIX = False
-TEST_B_SPLINE = False
-TEST_SPLINE = True
+TEST_B_SPLINE = True
+TEST_SPLINE = False
 
 
 # =============================================
@@ -59,6 +59,9 @@ if TEST_B_SPLINE:
     r = 2
     knots = np.array([0.] + [1]*r + r*[2])
     knots *= len(knots)-2
+
+    knots = np.array([0.0000000000000000,        0.0000000000000000,        0.0000000000000000,        0.0000000000000000,        0.0000000000000000,        0.0000000000000000,       0.14285714285714285])
+
 
     print()
     print("len(knots) : ",len(knots))

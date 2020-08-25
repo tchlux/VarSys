@@ -63,7 +63,7 @@ generating predicted distributions from known distributions and the
 subsequent calculation of error can be seen in Figure
 \ref{fig:prediction-example}. A brief listing of relevant statistical
 terms used throughout this work is provided in the Appendix (Section
-\ref{sec:appendix}).
+\ref{app:error}).
 
 %% ===================================================================
 \subsection{Feature Weighting}
@@ -193,7 +193,7 @@ The ``readers'' test type results demonstrate that the underlying prediction tec
 %% \end{itemize}
 
 \section{Discussion of Distribution Prediction}
-\label{sec:discussion}
+%% \label{sec:discussion}
 
 The results of the IOzone case study indicate that predicting the CDF of I/O throughput at previously unseen system configurations is a challenging problem. The KS statistic captures the worst part of any prediction and hence provides a conservatively large estimate of approximation error. The average absolute errors in the predicted CDFs are always lower than the KS statistics. However, the KS statistic was chosen because of the important statistical theory surrounding it as an error measure. Considering this circumstance, a nonnegligible volume of predictions provide impressively low levels of error. Powerful predictive tools such as those presented in this work allow for more in-depth analysis of system performance variability. For example, system configurations that are most difficult to predict in these tests are likely ``outlier'' configurations that do not resemble those configurations that share many similar parameters. Analysis of these configurations may provide valuable insight into effective application specific operation of computer systems.
 
