@@ -1,0 +1,355 @@
+    def interp_func(x, data=x, func=y, deriv=deriv):
+        # Handle the boundary cases by linearly extrapolating.
+        if (x <= data[0]):    return deriv[0]  * (x - data[0])  + func[0]
+        elif (x >= data[-1]): return deriv[-1] * (x - data[-1]) + func[-1]
+        # Find the interval in which "x" exists.
+        for i in range(len(data)-1):
+            if (data[i] <= x <= data[i+1]): break
+        # If no interval was found, then something unexpected must have happened.
+        else: raise(UnexpectedError("This problem exhibited unexpected behavior."))
+        # Now "data[i] <= x <= data[i+1]" must be true.
+
+        #  The following description more exactly matches what is 
+        #  presented in the original paper, but is less efficient.
+        # 
+        #  Define all the functions mentioned in the equation.
+        # 
+        #   upsilon = lambda t: 3*t**2 - 2*t**3
+        #   lamp = lambda t: t**3 - t**2
+        #   hi = data[i+1] - data[i]
+        #   h1 = lambda x:    upsilon( (data[i+1] - x) / hi )
+        #   h2 = lambda x:    upsilon( (x  -  data[i]) / hi )
+        #   h3 = lambda x: -hi * lamp( (data[i+1] - x) / hi )
+        #   h4 = lambda x:  hi * lamp( (x  -  data[i]) / hi )
+        #   value = func[i]*h1(x) + func[i+1]*h2(x) + deriv[i]*h3(x) + deriv[i+1]*h4(x)
+
+        # Shorten the expression of variables to more concisely write
+        # the interpolating function in full form.
+        l = data[i]
+        r = data[i+1]
+        fl = func[i]
+        fr = func[i+1]
+        dl = deriv[i]
+        dr = deriv[i+1]
+        h = (r - l)
+
+        # Compute the value outright.
+        value = ( fr * (l - x)**2 * (l - 3 * r + 2 * x) - (r - x) *
+                  (dr * (l - r) * (l - x)**2 + (r - x) *
+                   (dl * (l - r) * (l - x) + fl *
+                    (-3 * l + r + 2 * x))) ) / (l - r)**3
+
+        # Return the interpolating function evaluation.
+        return value
+
+    # Define an interpolation function for return.
+    def deriv_func(x, data=x, func=y, deriv=deriv):
+        # Handle the boundary cases by linearly extrapolating.
+        if (x <= data[0]):    return deriv[0]
+        elif (x >= data[-1]): return deriv[-1]
+        # Find the interval in which "x" exists.
+        for i in range(len(data)-1):
+            if (data[i] <= x <= data[i+1]): break
+        # If no interval was found, then something unexpected must have happened.
+        else: raise(UnexpectedError("This problem exhibited unexpected behavior."))
+        # Now "data[i] <= x <= data[i+1]" must be true.
+        l = data[i]
+        r = data[i+1]
+        fl = func[i]
+        fr = func[i+1]
+        dl = deriv[i]
+        dr = deriv[i+1]
+        h = (r - l)
+        # Compute the value outright.
+        value = (dr * (l - r) * (l + 2 * r - 3 * x) * (l - x) - \
+                 (-dl * (l - r) * (2 * l + r - 3 * x) + \
+                  6 * fl * (l - x) - 6 * fr * (l - x)) * (r - x)) \
+                  / (l - r)**3
+        # Return the interpolating function derivative evaluation.
+        return value
+
+    # Store the derivative function as an attribute of the
+    # interpolating function.
+    interp_func.derivative = deriv_func
+
+    # Return the interpolating function.
+    return interp_func
+
+
+    from util.plot import Plot
+    p = Plot("Spline")
+    low_upp = [-.2, 4.2]
+    p.add_func(str(values), f, low_upp)
+    p.add_func("f'(x)", f.derivative(1), low_upp)
+    p.add_func("f''(x)", f.derivative(2), low_upp)
+    p.show()
+
+    # print()
+    # print('-'*70)
+    # print("MODE:",mode)
+    # print()
+    # print("data[0]:  ",x[0])
+    # print("func[0]:  ",y[0])
+    # print("deriv[0]: ",deriv[0])
+    # for i in range(1, len(x)-1):
+    #     # Compute the secant slope, the left slope ratio and the
+    #     # right slope ratio for this interval of the function.
+    #     secant_slope = (y[i+1] - y[i]) / (x[i+1] - x[i])
+    #     left_ratio = deriv[i] / secant_slope
+    #     right_ratio = deriv[i+1] / secant_slope
+    #     print()
+    #     print("i:            ",i)
+    #     print("data[i]:      ",x[i])
+    #     print("func[i]:      ",y[i])
+    #     print("deriv[i]:     ",deriv[i])
+    #     print("secant_slope: ",secant_slope)
+    #     print("left_ratio:   ",left_ratio)
+    #     print("right_ratio:  ",right_ratio)
+    # print()
+    # print("data[-1]:  ",x[-1])
+    # print("func[-1]:  ",y[-1])
+    # print("deriv[-1]: ",deriv[-1])
+    # print('-'*70)
+    # print()
+
+
+
+    tau1 = lambda: 24 + 2*(A()*B())**(1/2) - 3*(A() + B())
+    alpha = lambda eta: (4 * (B() - eta[1])) / (A()**(1/4) * B()**(3/4))
+    beta = lambda eta: ( 6*(eta[1] - eta[0] - 2*B() - 2*A() + 5) /
+                         (A()**(1/2) + B()**(1/2)) )
+    gamma = lambda eta: (4 * (A() + eta[0])) / (A()**(3/4) * B()**(1/4))
+    eta_star = lambda eta, rho: (rho*eta[0] + (1 - rho)*eta[0],
+                                 rho*eta[1] + (1 - rho)*eta[1])
+
+
+    def print_abg():
+        DDX0 = ratio * original_DDX0 + (1-ratio) * target_DDX0
+        DDX1 = ratio * original_DDX1 + (1-ratio) * target_DDX1
+        a = alpha_constant + alpha_multiplier * DDX1
+        g = gamma_constant + gamma_multiplier * DDX0
+        b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
+        print()
+        print(f"ratio = {ratio}")
+        print(f"DDX0 = {DDX0}")
+        print(f"DDX1 = {DDX1}")
+        print(f" alpha = {a}")
+        print(f" gamma = {g}")
+        print(f" beta  = {b}")
+        if b <= 6:
+            bound = - (b + 2) / 2
+            print("  SMALL, b <= 6")
+        else:
+            bound = -2 * (b - 2)**(1/2)
+            print("  BIG,   b > 6")
+        print(f"  bound = {bound}")
+        print(f"  alpha > bound  ->  {a > bound}")
+        print(f"  gamma > bound  ->  {g > bound}")
+        print()
+
+
+    # Scale the derivative vector to make tau_1 positive.
+    tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
+    if (tau_1 <= 0):
+        # Compute the rescale factor necessary to make tau_1 0.
+        rescale = 24 * (3*(A+B) + 2*(A*B)**(1/2)) / (9*(A**2+B**2) + 14*(A*B))
+        rescale -= 2**(-26) * rescale
+        # Rescale the derivatives
+        DX0 *= rescale
+        DX1 *= rescale
+        # Recompute A and B.
+        A = DX0 / interval_slope
+        B = DX1 / interval_slope
+        # Record the change.
+        changed = True
+
+
+        print("-" * 70)
+        print()
+        print("DDX0:  ",float(original_DDX0))
+        print("DDX1:  ",float(original_DDX1))
+        print()
+        print("DDX TARGET")
+
+        DDX0 = target_DDX0
+        DDX1 = target_DDX1
+        ratio = 0
+        print_abg()
+
+        from math import sqrt
+        # CASE 1:  (alpha == bound) and (beta <= 6)
+        try:
+            print("CASE 1   (alpha == bound) and  (beta <= 6)")
+            ratio = (3*B**0.25*DX0*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 4*(original_DDX0 - original_DDX1)*(X0 - X1)) + 2*sqrt(A)*B**0.75*DX0*(9*U0**2 - 18*U0*U1 + 9*U1**2 + 8*X0 - 8*X1)*(X0 - X1) - 12*A**1.75*sqrt(B)*(U0 - U1)*(X0 - X1)**2 - 4*A**1.25*(U0 - U1)*(X0 - X1)*(7*DX1*(U0 - U1) + 4*original_DDX1*(-X0 + X1)))/(3*B**0.25*DX0*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*X0 - 32*X1) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*X0 - 32*X1) - 80*(X0 - X1)**2) + 18*sqrt(A)*B**0.75*DX0*(U0 - U1)**2*(X0 - X1) - 4*A**1.25*DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*(X0 - X1))*(X0 - X1) - 12*A**1.75*sqrt(B)*(U0 - U1)*(X0 - X1)**2)
+            print_abg()
+        except:
+            print()
+            print("Failed..")
+            print()
+        # CASE 2:  (gamma == bound) and (beta <= 6)
+        try:
+            print("CASE 2   (gamma == bound) and  (beta <= 6)")
+            ratio = (21*DX0**2*(U0 - U1)**3 + 21*DX0*DX1*(U0 - U1)**3 + 2*DX0*(-14*A**0.75*B**0.25*(U0 - U1)**2 + 6*(original_DDX0 - original_DDX1)*(U0 - U1)**2 + sqrt(A)*sqrt(B)*(9*U0**2 - 18*U0*U1 + 9*U1**2 + 8*X0 - 8*X1))*(X0 - X1) - 4*A**0.75*B**0.25*(3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(U0 - U1)*(X0 - X1)**2)/(3*DX0**2*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 3*DX0*DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) - 2*DX0*(-9*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 2*A**0.75*B**0.25*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 120*(X0 - X1))*(X0 - X1) - 12*A**1.25*B**0.75*(U0 - U1)*(X0 - X1)**2)
+            print_abg()
+        except:
+            print()
+            print("Failed..")
+            print()
+        # CASE 3:  (alpha == bound) and (beta > 6)
+        try:
+            print("CASE 3a  (alpha == bound) and (beta > 6)")
+            ratio = (B**1.5*DX0**2*(X0 - X1)**2*((A**1.5*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(B**1.5*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) - 2*sqrt(2)*sqrt((3*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(A*DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*A**1.5*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**2.5*sqrt(B)*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A**2*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*B*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B**2*DX0**2*(X0 - X1)**4))))/(A**1.5*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
+            print_abg()
+        except:
+            print()
+            print("Failed..")
+            print()
+        try:
+            print("CASE 3b")
+            ratio = (B**1.5*DX0**2*(X0 - X1)**2*((A**1.5*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(B**1.5*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) + 2*sqrt(2)*sqrt((3*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(A*DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*A**1.5*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**2.5*sqrt(B)*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A**2*(U0 - U1)*(7*DX1*(U0 - U1) + (3*sqrt(A)*sqrt(B) - 4*original_DDX1)*(X0 - X1))*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*B*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B**2*DX0**2*(X0 - X1)**4))))/(A**1.5*(DX1*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
+            print_abg()
+        except:
+            print()
+            print("Failed..")
+            print()
+        # CASE 4:  (gamma == bound) and (beta > 6)
+        try:
+            print("CASE 4a  (gamma == bound) and (beta > 6)")
+            ratio = (sqrt(B)*DX0**2*(X0 - X1)**2*((sqrt(A)*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(sqrt(B)*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) - 2*sqrt(2)*sqrt((3*A*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**1.5*sqrt(B)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B*DX0**2*(X0 - X1)**4))))/(sqrt(A)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
+            print_abg()
+        except:
+            print()
+            print("Failed..")
+            print()
+        try:
+            print("CASE 4b  (gamma == bound) and (beta > 6)")
+            ratio = (sqrt(B)*DX0**2*(X0 - X1)**2*((sqrt(A)*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1)))/(sqrt(B)*DX0**2*(X0 - X1)**2) - (12*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))))/(sqrt(A)*sqrt(B)*(X0 - X1)**2) + 2*sqrt(2)*sqrt((3*A*(U0 - U1)**2*(7*DX0*(U0 - U1) + 7*DX1*(U0 - U1) + 2*(3*sqrt(A)*sqrt(B) + 2*original_DDX0 - 2*original_DDX1)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2 - 16*A**1.5*sqrt(B)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2*(X0 - X1)**2 - 3*A*(U0 - U1)*(7*DX0*(U0 - U1) + (3*sqrt(A)*sqrt(B) + 4*original_DDX0)*(X0 - X1))*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1))) + 18*DX0**2*(DX0*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + DX1*(U0 - U1)*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 32*(X0 - X1)) + 2*(X0 - X1)*(3*sqrt(A)*sqrt(B)*(U0 - U1)**2 + 40*(-X0 + X1)))**2)/(A*B*DX0**2*(X0 - X1)**4))))/(sqrt(A)*(DX0*(7*U0**2 - 14*U0*U1 + 7*U1**2 + 16*X0 - 16*X1) + 3*sqrt(A)*sqrt(B)*(U0 - U1)*(X0 - X1))**2)
+            print_abg()
+        except:
+            print()
+            print("Failed..")
+            print()
+
+        print()
+
+
+    # Set A = max(0, A) and B = max(0, B).
+    if (A < 0): DX0 = A = 0
+    if (B < 0): DX1 = B = 0
+
+    # # Scale the derivative vector to make tau_1 positive.
+    # tau_1 = 24 + 2*(A*B)**(1/2) - 3*(A+B)
+    # if (tau_1 <= 0):
+    #     # Compute the rescale factor necessary to make tau_1 0.
+    #     rescale = 24 * (3*(A+B) + 2*(A*B)**(1/2)) / (9*(A**2+B**2) + 14*(A*B))
+    #     # Rescale the derivatives
+    #     DX0 *= rescale
+    #     DX1 *= rescale
+    #     # Recompute A and B.
+    #     A = DX0 / interval_slope
+    #     B = DX1 / interval_slope
+    #     # Record the change.
+    #     changed = True
+    from util.system import Timer
+    a = Timer()
+    f = monotone_quintic_spline(x,y, fix_previous=False)
+    print("Time:",a(),"seconds")
+    exit()
+
+
+
+
+
+# y2 = np.array([[0.,-1], [0,0]])
+# g = spline_fit(x, y2)
+# plot_spline("g", g, p)
+
+# y3 = y1 - y2
+# h = spline_fit(x, y3)
+# plot_spline("spline f-g", h, p)
+            
+# def diff(x, d=0):
+#     x = np.array([x], dtype=float)
+#     return (splines.eval_spline(f.knots, f.coefs, x, d=d) -
+#             splines.eval_spline(g.knots, g.coefs, x, d=d))[0]
+# p.add_func("f-g", diff, [min(x), max(x)])
+
+
+        # Verify that the function is monotone (according to check function).
+        try: assert(is_monotone())
+        except:
+            print("-"*70)
+            print("function_change: ",function_change)
+            print("interval_width:  ",interval_width)
+            print("interval_slope:  ",interval_slope)
+            print("x: ",x)
+            print("y: ",y)
+            print("DX0: ",DX0)
+            print("DX1: ",DX1)
+            print("DDX0: ",DDX0)
+            print("DDX1: ",DDX1)
+            print("target_DDX0: ",target_DDX0)
+            print("target_DDX1: ",target_DDX1)
+            print("low_bound: ",low_bound)
+            print("upp_bound: ",upp_bound)
+            print()
+            a = alpha_constant + alpha_multiplier * DDX1
+            g = gamma_constant + gamma_multiplier * DDX0
+            b = beta_constant  + beta_multiplier  * (DDX0 - DDX1)
+            if b <= 6: bound = - (b + 2) / 2
+            else:      bound = -2 * (b - 2)**(1/2)
+            print("a:     ",a)
+            print("g:     ",g)
+            print("b:     ",b)
+            print("bound: ",bound)
+            print()
+            raise(Exception("Monotonicity was violated for unknown reasons."))
+
+
+
+    x = [0.97, 1.00]
+    y0 = [-0.01,  1.29, -23.75]
+    y1 = [0.00,  0.00,  109.08]
+    # Convert all values to fractions.
+    x = list(map(Fraction, x))
+    y0 = list(map(Fraction, y0))
+    y1 = list(map(Fraction, y1))
+    print("y0: ",[float(v) for v in y0])
+    print("y1: ",[float(v) for v in y1])
+    print(monotone_quintic(x, [y0, y1]))
+    print("y0: ",[float(v) for v in y0])
+    print("y1: ",[float(v) for v in y1])
+    from polynomial import polynomial_piece
+    f = polynomial_piece(y0, y1, interval=x)
+    p = Plot()
+    p.add_func("last", f, x)
+    p.show()
+    exit()
+
+
+    x = [0.97, 1.00]
+    y0 = [-0.01,  1.29, -23.75]
+    y1 = [0.00,  0.00,  192.19]
+    # Convert all values to fractions.
+    x = list(map(Fraction, x))
+    y0 = list(map(Fraction, y0))
+    y1 = list(map(Fraction, y1))
+    print(monotone_quintic(x, [y0, y1]))
+    print("y0: ",[float(v) for v in y0])
+    print("y1: ",[float(v) for v in y1])
+    from polynomial import polynomial_piece
+    f = polynomial_piece(y0, y1, interval=x)
+    p = Plot()
+    p.add_func("last", f, x)
+    p.show()
+    exit()
+
+
+
+    # Continuity with one-pass monotone fix.
+    f = monotone_quintic_spline(x, y, fix_previous=False)
+    p.add_func("monotone c2 (no fix)", f, interval, group='2m', color=p.color(6), **kwargs)
+    p.add_func("monotone c2d1 (no fix)", f.derivative(), interval, 
+               dash="dash", color=p.color(6,alpha=.5), group='2m', **kwargs)
+
+
