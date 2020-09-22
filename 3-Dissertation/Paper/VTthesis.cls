@@ -311,7 +311,8 @@ frame=single,
   \@program \\
   \vfill
 
-  \noindent \@principaladvisor, \ifbool{@coad}{Co-c}{C}hair \\
+  % \noindent \@principaladvisor, \ifbool{@coad}{Co-c}{C}hair \\  
+  \noindent \@principaladvisor, Chair \\
   \ifbool{@coad}{\@coadvisor, Co-chair\\}{}
   \ifbool{@1st}{\@firstreader\\}{}
   \ifbool{@2nd}{\@secondreader\\}{}
